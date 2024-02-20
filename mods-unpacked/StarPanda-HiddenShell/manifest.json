@@ -1,0 +1,21 @@
+{
+	"name": "HiddenShell",
+	"namespace": "StarPanda",
+	"version_number": "1.0.0",
+	"description": "No mercy, now the bullets are hidden and very dangerous! Test your luck dancing on the edge of life and death! ",
+	"website_url": "https://github.com/example/repo",
+	"dependencies": [],
+	"extra": {
+		"godot": {
+			"compatible_mod_loader_version": ["4.0.0"],
+			"compatible_game_version": ["1.1.0"],
+			"authors": ["StarPanda"],
+			"tags": [],
+			"description_rich": "",
+			"optional_dependencies": [],
+			"load_before": [],
+			"incompatibilities": [],
+			"config_schema": {}
+		}
+	}
+}
