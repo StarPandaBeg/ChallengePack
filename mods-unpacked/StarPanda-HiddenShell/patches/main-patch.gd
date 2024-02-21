@@ -1,7 +1,7 @@
-extends "res://mods-unpacked/StarPanda-HiddenShell/patches/patch.gd"
+extends "./patch.gd"
 
-const customShellSpawner = preload("res://mods-unpacked/StarPanda-HiddenShell/util/CustomShellSpawner.gd")
-const customShellLoader = preload("res://mods-unpacked/StarPanda-HiddenShell/util/CustomShellLoader.gd")
+const customShellSpawner = preload("../util/CustomShellSpawner.gd")
+const customShellLoader = preload("../util/CustomShellLoader.gd")
 
 const STPND_HIDDENSHELL_LOG := "StarPanda-HiddenShell:MainPatch"
 

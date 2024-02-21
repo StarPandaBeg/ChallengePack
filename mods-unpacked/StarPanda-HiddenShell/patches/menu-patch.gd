@@ -1,4 +1,4 @@
-extends "res://mods-unpacked/StarPanda-HiddenShell/patches/patch.gd"
+extends "./patch.gd"
 
 const STPND_HIDDENSHELL_LOG := "StarPanda-HiddenShell:MenuPatch"
 
