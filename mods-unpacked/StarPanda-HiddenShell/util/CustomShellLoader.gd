@@ -1,13 +1,15 @@
 extends ShellLoader
 
+const GameConfig = preload("./HSGameConfig.gd")
+
 var modePhrases := {
-	"DEFAULT": loadingDialogues,
-	"QUANTITY": ["Some of them are live.", "Now this is a real game."],
-	"HIDDEN": ["You won't know their real number.", "Now this is a real game."]
+	GameConfig.GameMode.DEFAULT: loadingDialogues,
+	GameConfig.GameMode.QUANTITY: ["Some of them are live.", "Now this is a real game."],
+	GameConfig.GameMode.HIDDEN: ["You won't know their real number.", "Now this is a real game."]
 }
 
 func LoadShells():
-	var current_mode_s = ProjectSettings.get_setting("hiddenshell_mode", "DEFAULT")
+	var current_mode = ProjectSettings.get_setting("hiddenshell_mode", 0)
 	
 	camera.BeginLerp("enemy")
 	if (!roundManager.shellLoadingSpedUp): await get_tree().create_timer(.8, false).timeout
@@ -16,7 +18,7 @@ func LoadShells():
 	animator_shotgun.play("grab shotgun_pointing enemy")
 	await get_tree().create_timer(.45, false).timeout
 	
-	var phrases = modePhrases[current_mode_s]
+	var phrases = modePhrases[current_mode]
 	var phrasesAmount = len(phrases)
 	
 	if (roundManager.playerData.numberOfDialogueRead < phrasesAmount):
@@ -28,7 +30,7 @@ func LoadShells():
 		roundManager.playerData.numberOfDialogueRead += 1
 		
 	var numberOfShells = roundManager.roundArray[roundManager.currentRound].amountBlank + roundManager.roundArray[roundManager.currentRound].amountLive
-	if (current_mode_s == "HIDDEN"):
+	if (current_mode == GameConfig.GameMode.HIDDEN):
 		numberOfShells = 8
 	
 	for i in range(numberOfShells):

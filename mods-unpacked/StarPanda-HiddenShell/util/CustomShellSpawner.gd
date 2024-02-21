@@ -1,20 +1,22 @@
 extends ShellSpawner
 
+const GameConfig = preload("./HSGameConfig.gd")
+
 func SpawnShells(numberOfShells : int, numberOfLives : int, numberOfBlanks : int, shufflingArray : bool):
 	super.SpawnShells(numberOfShells, numberOfLives, numberOfBlanks, shufflingArray)
 	
-	var current_mode_s = ProjectSettings.get_setting("hiddenshell_mode", "DEFAULT")
-	if (current_mode_s == "DEFAULT"):
+	var current_mode = ProjectSettings.get_setting("hiddenshell_mode", 0)
+	if (current_mode == GameConfig.GameMode.DEFAULT):
 		return
 	roundManager.playerData.skippingShellDescription = true
 	
-	if (current_mode_s == "QUANTITY"):
+	if (current_mode == GameConfig.GameMode.QUANTITY):
 		for shell in spawnedShellObjectArray:
 			var branch = shell.get_child(0)
 			branch.mesh.set_surface_override_material(1, branch.mat_blank)
 			
 func MainShellRoutine():
-	var current_mode_s = ProjectSettings.get_setting("hiddenshell_mode", "DEFAULT")
+	var current_mode = ProjectSettings.get_setting("hiddenshell_mode", 0)
 	
 	if (roundManager.playerData.currentBatchIndex != 0):
 		roundManager.shellLoadingSpedUp = true
@@ -39,7 +41,7 @@ func MainShellRoutine():
 	SpawnShells(temp_nr, temp_live, temp_blank, temp_shuf)
 	seq = sequenceArray
 	
-	if (current_mode_s != "HIDDEN"):
+	if (current_mode != GameConfig.GameMode.HIDDEN):
 		anim_compartment.play("show shells")
 		PlayLatchSound()
 		PlayAudioIndicators()
@@ -59,7 +61,8 @@ func MainShellRoutine():
 		roundManager.playerData.skippingShellDescription = true
 	if (!roundManager.playerData.skippingShellDescription): dialogue.ShowText_Forever(finalstring)
 	if (roundManager.playerData.skippingShellDescription && !skipDialoguePresented):
-		dialogue.ShowText_Forever("YOU KNOW THE DRILL." if current_mode_s != "HIDDEN" else "NOTHING HERE FOR YOUR EYES")
+		var text = "YOU KNOW THE DRILL." if (current_mode != GameConfig.GameMode.HIDDEN) else "NOTHING HERE FOR YOUR EYES"
+		dialogue.ShowText_Forever(text)
 		maindur = 2.5
 		skipDialoguePresented = true
 	if(!roundManager.playerData.skippingShellDescription): await get_tree().create_timer(2.5, false).timeout
@@ -67,7 +70,7 @@ func MainShellRoutine():
 	dialogue.HideText()
 	#HIDE SHELLS
 	
-	if (current_mode_s != "HIDDEN"):
+	if (current_mode != GameConfig.GameMode.HIDDEN):
 		anim_compartment.play("hide shells")
 		PlayLatchSound()
 		if(roundManager.shellLoadingSpedUp): await get_tree().create_timer(.2, false).timeout

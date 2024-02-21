@@ -1,5 +1,7 @@
 extends "./patch.gd"
 
+# Deprecated: Will be deleted soon cause it replaced by custom manager
+
 const STPND_HIDDENSHELL_LOG := "StarPanda-HiddenShell:MenuPatch"
 
 enum Mode {
@@ -90,17 +92,19 @@ func _register_options_button_real(root: Node, button: ButtonClass):
 	ModLoaderLog.debug("'Mode' real button registered", STPND_HIDDENSHELL_LOG)
 	
 func _change_mode():
-	var current_mode_s = ProjectSettings.get_setting("hiddenshell_mode", "DEFAULT")
-	var current_mode = Mode.get(current_mode_s)	
-	var new_mode = current_mode + 1 if (current_mode + 1 < modesTotal) else 0
+	var current_mode_s = ProjectSettings.get_setting("hiddenshell_mode", 0)
+	var current_mode = Mode.keys()[current_mode_s]	
+	var new_mode = current_mode_s + 1 if (current_mode_s + 1 < modesTotal) else 0
 	var new_mode_s = Mode.keys()[new_mode]
 	
-	ProjectSettings.set_setting("hiddenshell_mode", new_mode_s)
+	ProjectSettings.set_setting("hiddenshell_mode", new_mode)
 	mode_label.text = "shell visibility: " + new_mode_s
 	ModLoaderLog.info("New mode: " + new_mode_s, STPND_HIDDENSHELL_LOG)
 	
 func _show_mode_switch():
-	var current_mode_s = ProjectSettings.get_setting("hiddenshell_mode", "DEFAULT")	
+	var current_mode = ProjectSettings.get_setting("hiddenshell_mode", 0)
+	var current_mode_s = Mode.keys()[current_mode]
+	
 	mode_label.text = "shell visibility: " + current_mode_s
 	mode_button.ui.visible = true
 	mode_button.isActive = true
