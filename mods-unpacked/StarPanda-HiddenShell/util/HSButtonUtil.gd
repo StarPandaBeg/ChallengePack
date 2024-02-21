@@ -34,10 +34,38 @@ static func createButtonLabel() -> Label:
 	label.set("theme_override_colors/font_shadow_color", Color.BLACK)
 	label.set("theme_override_fonts/font", font)
 	label.set("theme_override_font_sizes/font_size", 26)
-	
 	return label
 	
 static func setState(button: ButtonClass, state: bool) -> void:
 	button.SetFilter("stop" if state else "ignore")
 	button.isActive = state
 	button.ui.visible = state
+	
+static func createButtonWithConfig(root: Node, config: Dictionary) -> ButtonClass:
+	var uiRoot = _resolveNode(config["ui_root"], root)
+	
+	var label = createButtonLabel()
+	var button = createButton()
+	var logic = createButtonLogic(root, label)
+	
+	label.name = config.get("label_name", "button_label")
+	label.text = config.get("label_text", "")
+	label.position = config.get("label_position", Vector2())
+	label.horizontal_alignment = config.get("label_align", HORIZONTAL_ALIGNMENT_CENTER)
+	
+	button.name = config.get("button_name", "button")
+	button.position = config.get("button_position", Vector2())
+	button.scale = config.get("button_scale", Vector2())
+	logic.name = config.get("logic_name", "logic")
+	
+	button.add_child(logic)
+	uiRoot.add_child(button)
+	uiRoot.add_child(label)	
+	setState(logic, config.get("state", false))
+	
+	return logic
+	
+static func _resolveNode(node, root: Node) -> Node:
+	if (node is Node):
+		return node
+	return root.get_node(node)

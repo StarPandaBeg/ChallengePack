@@ -6,6 +6,18 @@ var menu_items: Array[Control]
 var menu_buttons: Array[ButtonClass]
 var shown: bool
 
+var button_return_config := {
+	"ui_root": "Camera/dialogue UI/menu ui",
+	"label_name": "button_hiddenshell_exit custom",
+	"label_text": "return",
+	"label_position": Vector2(0, 424),
+	"button_name": "true button_hiddenshell_return custom",
+	"button_position": Vector2(439, 430),
+	"button_scale": Vector2(10.154, 2.807),
+	"logic_name": "button class_hiddenshell_return custom",
+	"state": false
+}
+
 func show():
 	menu_manager.ResetButtons()
 	menu_manager.Buttons(false)
@@ -30,27 +42,10 @@ func _configure(root: Node):
 	_reinit_start_button(root)
 
 func _create_return_button(root: Node):
-	var ui_root = root.get_node("Camera/dialogue UI/menu ui")
-	var label = HSButtonUtil.createButtonLabel()
-	var button = HSButtonUtil.createButton()
-	var logic = HSButtonUtil.createButtonLogic(root, label)
+	var logic = HSButtonUtil.createButtonWithConfig(root, button_return_config)
 	
-	label.name = "button_hiddenshell_exit custom"
-	label.text = "return"
-	label.position = Vector2(0, 424)
-	
-	button.name = "true button_hiddenshell_return custom"
-	button.position = Vector2(439, 430)
-	button.scale = Vector2(10.154, 2.807)
-	logic.name = "button class_hiddenshell_return custom"
-	
-	button.add_child(logic)
-	ui_root.add_child(label)
-	ui_root.add_child(button)
 	logic.connect("is_pressed", hide)
-	
-	HSButtonUtil.setState(logic, false)
-	menu_items.append(label)
+	menu_items.append(logic.ui)
 	menu_buttons.append(logic)
 	
 func _reinit_start_button(root: Node):
