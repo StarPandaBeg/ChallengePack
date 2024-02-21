@@ -15,10 +15,7 @@ var mode_label: Node
 func _init():
 	scene_name = "menu"
 
-func apply(root: Node) -> void:
-	if (applied):
-		return
-	
+func _apply(root: Node) -> bool:	
 	_move_exit_button(root)
 	var label = _create_options_button_label(root)
 	var logic = _create_options_button_real(root, label)
@@ -26,8 +23,7 @@ func apply(root: Node) -> void:
 	_hide_mode_switch()
 	
 	ModLoaderLog.info("Applied menu patch!", STPND_HIDDENSHELL_LOG)
-	
-	applied = true
+	return true
 	
 func _move_exit_button(root: Node):
 	var optionsExitLabel = root.get_node("Camera/dialogue UI/menu ui/button_exit options")

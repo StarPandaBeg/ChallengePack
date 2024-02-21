@@ -7,4 +7,9 @@ func getSceneName() -> String:
 	return scene_name
 	
 func apply(root: Node) -> void:
-	pass
+	if (applied):
+		return
+	applied = _apply(root)
+	
+func _apply(root: Node) -> bool:
+	return true

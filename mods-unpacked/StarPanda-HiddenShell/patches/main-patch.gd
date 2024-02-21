@@ -8,10 +8,7 @@ const STPND_HIDDENSHELL_LOG := "StarPanda-HiddenShell:MainPatch"
 func _init():
 	scene_name = "main"
 	
-func apply(root: Node):
-	if (applied):
-		return
-		
+func _apply(root: Node):		
 	var originalSpawner = root.get_node("standalone managers/shell spawner")
 	var originalLoader = root.get_node("standalone managers/shell loader")
 	var newSpawner = _init_custom_spawner(originalSpawner)
@@ -22,7 +19,7 @@ func apply(root: Node):
 	originalSpawner.queue_free()
 	originalLoader.queue_free()
 	ModLoaderLog.info("Applied main patch!", STPND_HIDDENSHELL_LOG)
-	applied = true
+	return true
 	
 func _init_custom_spawner(original: ShellSpawner) -> ShellSpawner:
 	var target = customShellSpawner.new()
