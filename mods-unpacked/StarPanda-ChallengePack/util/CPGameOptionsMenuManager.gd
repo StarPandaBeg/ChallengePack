@@ -1,6 +1,8 @@
-class_name HSGameOptionsMenuManager extends Node
+class_name CPGameOptionsMenuManager extends Node
 
-const GameConfig = preload("./HSGameConfig.gd")
+const GameConfig = preload("./CPGameConfig.gd")
+const CPButtonUtil = preload("../util/CPButtonUtil.gd")
+
 var totalGameModes = len(GameConfig.GameMode.keys())
 
 var menu_manager: MenuManager
@@ -56,7 +58,7 @@ func _configure(root: Node) -> void:
 	_reinit_start_button(root)
 	
 func _create_title(root: Node) -> void:
-	var label = HSButtonUtil.createButtonLabel()
+	var label = CPButtonUtil.createButtonLabel()
 	var parent = root.get_node("Camera/dialogue UI/menu ui")
 	
 	label.name = "challengepack_title"
@@ -68,8 +70,8 @@ func _create_title(root: Node) -> void:
 	menu_items.append(label)	
 
 func _create_buttons(root: Node) -> void:
-	var btn_return_logic = HSButtonUtil.createButtonWithConfig(root, button_return_config)
-	var btn_mode_logic = HSButtonUtil.createButtonWithConfig(root, button_mode_config)
+	var btn_return_logic = CPButtonUtil.createButtonWithConfig(root, button_return_config)
+	var btn_mode_logic = CPButtonUtil.createButtonWithConfig(root, button_mode_config)
 	
 	btn_return_logic.connect("is_pressed", hide)
 	btn_mode_logic.connect("is_pressed", func(): _on_mode_button_click(btn_mode_logic))
@@ -89,7 +91,7 @@ func _reinit_start_button(root: Node) -> void:
 	
 func _set_menu_visibility(state: bool) -> void:
 	for logic in menu_buttons:
-		HSButtonUtil.setState(logic, state)
+		CPButtonUtil.setState(logic, state)
 	for item in menu_items:
 		item.visible = state
 		

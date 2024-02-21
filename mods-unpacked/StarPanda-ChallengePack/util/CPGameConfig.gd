@@ -1,4 +1,4 @@
-class_name HSGameConfig
+class_name CPGameConfig
 
 enum GameMode {
 	DEFAULT,

@@ -1,6 +1,6 @@
 extends ShellLoader
 
-const GameConfig = preload("./HSGameConfig.gd")
+const GameConfig = preload("./CPGameConfig.gd")
 
 var modePhrases := {
 	GameConfig.GameMode.DEFAULT: loadingDialogues,

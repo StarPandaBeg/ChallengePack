@@ -1,6 +1,6 @@
 extends ShellSpawner
 
-const GameConfig = preload("./HSGameConfig.gd")
+const GameConfig = preload("./CPGameConfig.gd")
 
 func SpawnShells(numberOfShells : int, numberOfLives : int, numberOfBlanks : int, shufflingArray : bool):
 	super.SpawnShells(numberOfShells, numberOfLives, numberOfBlanks, shufflingArray)

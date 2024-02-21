@@ -1,4 +1,4 @@
-class_name HSButtonUtil
+class_name CPButtonUtil
 
 static var font = load("res://fonts/fake receipt.otf")
 

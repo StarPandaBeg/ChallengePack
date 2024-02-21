@@ -1,7 +1,7 @@
 extends "./patch.gd"
 
-const customShellSpawner = preload("../util/CustomShellSpawner.gd")
-const customShellLoader = preload("../util/CustomShellLoader.gd")
+const customShellSpawner = preload("../util/CPShellSpawner.gd")
+const customShellLoader = preload("../util/CPShellLoader.gd")
 
 const STPND_CHALLENGEPACK_LOG := "StarPanda-ChallengePack:MainPatch"
 
