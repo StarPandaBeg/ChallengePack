@@ -1,0 +1,21 @@
+[remap]
+
+importer="wavefront_obj"
+importer_version=1
+type="Mesh"
+uid="uid://c2h3wah5577h7"
+path="res://.godot/imported/protector.obj-68f2042a9368322551a76ea8b34b118c.mesh"
+
+[deps]
+
+files=["res://.godot/imported/protector.obj-68f2042a9368322551a76ea8b34b118c.mesh"]
+
+source_file="res://mods-root/mods-unpacked/StarPanda-ChallengePack/models/protector.obj"
+dest_files=["res://.godot/imported/protector.obj-68f2042a9368322551a76ea8b34b118c.mesh", "res://.godot/imported/protector.obj-68f2042a9368322551a76ea8b34b118c.mesh"]
+
+[params]
+
+generate_tangents=true
+scale_mesh=Vector3(1, 1, 1)
+offset_mesh=Vector3(0, 0, 0)
+optimize_mesh=true

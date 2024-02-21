@@ -1,5 +1,6 @@
 extends "./patch.gd"
 
+const GameConfig = preload("../util/CPGameConfig.gd")
 const customShellSpawner = preload("../util/CPShellSpawner.gd")
 const customShellLoader = preload("../util/CPShellLoader.gd")
 
@@ -15,6 +16,7 @@ func _apply(root: Node):
 	var newLoader = _init_custom_loader(originalLoader)
 
 	_inject_custom(root, newSpawner, newLoader)
+	_spawn_protectors(root)
 	
 	originalSpawner.queue_free()
 	originalLoader.queue_free()
@@ -88,4 +90,21 @@ func _inject_custom(root: Node, spawner: ShellSpawner, loader: ShellLoader):
 	dealerAi.shellLoader = loader
 	deathManager.shellLoader = loader
 	ModLoaderLog.debug("CustomShellLoader injected!", STPND_CHALLENGEPACK_LOG)
+	
+func _spawn_protectors(root: Node):
+	var item_mode = ProjectSettings.get_setting("challengepack_item", 0)
+	if (item_mode != GameConfig.ItemMode.HIDDEN):
+		return
+	
+	var parent = root.get_node("tabletop parent/main tabletop")
+	var protector = preload("../instances/protector.tscn")
+	
+	var protectorA = protector.instantiate()
+	var protectorB = protector.instantiate()
+	
+	protectorA.position = Vector3(-4.198, -0.128, 5.254)
+	protectorB.position = Vector3(-4.198, -0.128, -5.254)
+	
+	parent.add_child(protectorA)
+	parent.add_child(protectorB)
 	
