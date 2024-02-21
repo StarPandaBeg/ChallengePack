@@ -3,7 +3,7 @@ extends "./patch.gd"
 const customShellSpawner = preload("../util/CustomShellSpawner.gd")
 const customShellLoader = preload("../util/CustomShellLoader.gd")
 
-const STPND_HIDDENSHELL_LOG := "StarPanda-HiddenShell:MainPatch"
+const STPND_CHALLENGEPACK_LOG := "StarPanda-ChallengePack:MainPatch"
 
 func _init():
 	scene_name = "main"
@@ -18,13 +18,13 @@ func _apply(root: Node):
 	
 	originalSpawner.queue_free()
 	originalLoader.queue_free()
-	ModLoaderLog.info("Applied main patch!", STPND_HIDDENSHELL_LOG)
+	ModLoaderLog.info("Applied main patch!", STPND_CHALLENGEPACK_LOG)
 	return true
 	
 func _init_custom_spawner(original: ShellSpawner) -> ShellSpawner:
 	var target = customShellSpawner.new()
 	
-	target.name = "hiddenshell shell spawner"
+	target.name = "challengepack shell spawner"
 	target.dialogue = original.dialogue
 	target.anim_compartment = original.anim_compartment
 	target.roundManager = original.roundManager
@@ -43,7 +43,7 @@ func _init_custom_spawner(original: ShellSpawner) -> ShellSpawner:
 func _init_custom_loader(original: ShellLoader) -> ShellLoader:
 	var target = customShellLoader.new()
 	
-	target.name = "hiddenshell shell loader"
+	target.name = "challengepack shell loader"
 	target.perm = original.perm
 	target.camera = original.camera
 	target.roundManager = original.roundManager
@@ -82,10 +82,10 @@ func _inject_custom(root: Node, spawner: ShellSpawner, loader: ShellLoader):
 	shellExamine.shellSpawner = spawner
 	shellEject1.shellSpawner = spawner
 	shellEject2.shellSpawner = spawner
-	ModLoaderLog.debug("CustomShellSpawner injected!", STPND_HIDDENSHELL_LOG)
+	ModLoaderLog.debug("CustomShellSpawner injected!", STPND_CHALLENGEPACK_LOG)
 	
 	roundManager.shellLoader = loader
 	dealerAi.shellLoader = loader
 	deathManager.shellLoader = loader
-	ModLoaderLog.debug("CustomShellLoader injected!", STPND_HIDDENSHELL_LOG)
+	ModLoaderLog.debug("CustomShellLoader injected!", STPND_CHALLENGEPACK_LOG)
 	

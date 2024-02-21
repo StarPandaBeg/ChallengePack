@@ -9,7 +9,7 @@ var modePhrases := {
 }
 
 func LoadShells():
-	var current_mode = ProjectSettings.get_setting("hiddenshell_mode", 0)
+	var current_mode = ProjectSettings.get_setting("challengepack_mode", 0)
 	
 	camera.BeginLerp("enemy")
 	if (!roundManager.shellLoadingSpedUp): await get_tree().create_timer(.8, false).timeout

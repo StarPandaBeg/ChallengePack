@@ -5,7 +5,7 @@ const GameConfig = preload("./HSGameConfig.gd")
 func SpawnShells(numberOfShells : int, numberOfLives : int, numberOfBlanks : int, shufflingArray : bool):
 	super.SpawnShells(numberOfShells, numberOfLives, numberOfBlanks, shufflingArray)
 	
-	var current_mode = ProjectSettings.get_setting("hiddenshell_mode", 0)
+	var current_mode = ProjectSettings.get_setting("challengepack_mode", 0)
 	if (current_mode == GameConfig.GameMode.DEFAULT):
 		return
 	roundManager.playerData.skippingShellDescription = true
@@ -16,7 +16,7 @@ func SpawnShells(numberOfShells : int, numberOfLives : int, numberOfBlanks : int
 			branch.mesh.set_surface_override_material(1, branch.mat_blank)
 			
 func MainShellRoutine():
-	var current_mode = ProjectSettings.get_setting("hiddenshell_mode", 0)
+	var current_mode = ProjectSettings.get_setting("challengepack_mode", 0)
 	
 	if (roundManager.playerData.currentBatchIndex != 0):
 		roundManager.shellLoadingSpedUp = true

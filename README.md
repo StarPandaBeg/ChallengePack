@@ -1,10 +1,10 @@
 <br />
 <p align="center">
-   <a href="https://github.com/StarPandaBeg/HiddenShell">
+   <a href="https://github.com/StarPandaBeg/ChallengePack">
     <img src=".github/logo.png" alt="Logo" width="128" height="128" />
    </a>
 
-   <h3 align="center">Hidden Shell - Mod for Buckshot Roulette</h3>
+   <h3 align="center">Challenge Pack - Mod for Buckshot Roulette</h3>
 
    <p align="center">
     Now you'll not see the bullets. <b>Shall we play?</b>
@@ -35,7 +35,7 @@ Pure random - no information about bullets. Test your luck!
 
 ## Installation
 1. Download & Install AGO061 Mod Loader (https://github.com/AGO061/BuckshotRouletteModLoader)
-1. Download mod from [releases](https://github.com/StarPandaBeg/HiddenShell/releases/latest) page
+1. Download mod from [releases](https://github.com/StarPandaBeg/ChallengePack/releases/latest) page
 1. Put mod archive inside */mods* folder (you should create it manually)
 1. Choose mode in the game options
 1. Enjoy

@@ -12,9 +12,9 @@ var shown: bool
 var button_return_config := {
 	"ui_root": "Camera/dialogue UI/menu ui",
 	"label_text": "return",
-	"label_name": "button_hiddenshell_exit custom",
-	"button_name": "true button_hiddenshell_return custom",
-	"logic_name": "button class_hiddenshell_return custom",
+	"label_name": "button_challengepack_exit custom",
+	"button_name": "true button_challengepack_return custom",
+	"logic_name": "button class_challengepack_return custom",
 	"label_position": Vector2(0, 424),
 	"button_position": Vector2(439, 430),
 	"button_scale": Vector2(10.154, 2.807),
@@ -22,9 +22,9 @@ var button_return_config := {
 
 var button_mode_config := {
 	"ui_root": "Camera/dialogue UI/menu ui",
-	"label_name": "button_hiddenshell_mode custom",
-	"button_name": "true button_hiddenshell_mode custom",
-	"logic_name": "button class_hiddenshell_mode custom",
+	"label_name": "button_challengepack_mode custom",
+	"button_name": "true button_challengepack_mode custom",
+	"logic_name": "button class_challengepack_mode custom",
 	"label_position": Vector2(0, 224),
 	"button_position": Vector2(280, 230),
 	"button_scale": Vector2(50, 3),
@@ -41,7 +41,7 @@ func hide() -> void:
 	menu_manager.Return()
 
 func _init(root: Node, real_start: ButtonClass):
-	name = "hiddenshell menu manager"
+	name = "challengepack menu manager"
 	real_start_button = real_start
 	_configure(root)
 
@@ -59,7 +59,7 @@ func _create_title(root: Node) -> void:
 	var label = HSButtonUtil.createButtonLabel()
 	var parent = root.get_node("Camera/dialogue UI/menu ui")
 	
-	label.name = "hiddenshell_title"
+	label.name = "challengepack_title"
 	label.text = "game configuration"
 	label.position = Vector2(0, 100)
 	label.set("theme_override_font_sizes/font_size", 36)
@@ -76,7 +76,7 @@ func _create_buttons(root: Node) -> void:
 	_register_button(btn_return_logic)
 	_register_button(btn_mode_logic)
 	
-	var mode_id = ProjectSettings.get_setting("hiddenshell_mode", 0)
+	var mode_id = ProjectSettings.get_setting("challengepack_mode", 0)
 	btn_mode_logic.ui.text = "shell visibility: " + GameConfig.GameMode.keys()[mode_id]
 	
 func _reinit_start_button(root: Node) -> void:
@@ -98,8 +98,8 @@ func _register_button(logic: ButtonClass) -> void:
 	menu_buttons.append(logic)
 	
 func _on_mode_button_click(sender: ButtonClass) -> void:
-	var mode_id = ProjectSettings.get_setting("hiddenshell_mode", 0)
+	var mode_id = ProjectSettings.get_setting("challengepack_mode", 0)
 	var next_mode = (mode_id + 1) if (mode_id + 1 < totalGameModes) else 0
 	
 	sender.ui.text = "shell visibility: " + GameConfig.GameMode.keys()[next_mode]
-	ProjectSettings.set_setting("hiddenshell_mode", next_mode)
+	ProjectSettings.set_setting("challengepack_mode", next_mode)

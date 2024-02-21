@@ -1,6 +1,6 @@
 extends "./patch.gd"
 
-const STPND_HIDDENSHELL_LOG := "StarPanda-HiddenShell:MenuPatch2"
+const STPND_CHALLENGEPACK_LOG := "StarPanda-ChallengePack:MenuPatch2"
 
 var manager: HSGameOptionsMenuManager
 var menu_custom_start_button: ButtonClass
@@ -16,7 +16,7 @@ func _apply(root: Node) -> bool:
 	_inject_custom_menu(root)
 	_instantiate_custom_manager(root)
 	
-	ModLoaderLog.info("Applied menu 2 patch!", STPND_HIDDENSHELL_LOG)
+	ModLoaderLog.info("Applied menu 2 patch!", STPND_CHALLENGEPACK_LOG)
 	return true
 	
 func _create_custom_start_label(root: Node) -> Label:
@@ -25,10 +25,10 @@ func _create_custom_start_label(root: Node) -> Label:
 	
 	label.position = Vector2(0, 336)
 	label.text = "START"
-	label.name = "button_hiddenshell_start"
+	label.name = "button_challengepack_start"
 	
 	parent.add_child(label)
-	ModLoaderLog.debug("Fake 'Start' button label created", STPND_HIDDENSHELL_LOG)
+	ModLoaderLog.debug("Fake 'Start' button label created", STPND_CHALLENGEPACK_LOG)
 	return label
 	
 func _create_custom_start_button(root: Node, label: Label) -> void:
@@ -38,12 +38,12 @@ func _create_custom_start_button(root: Node, label: Label) -> void:
 	
 	button.position = Vector2(447, 339)
 	button.scale = Vector2(8.182, 3.012)
-	button.name = "true button_hiddenshell_mode"
-	button_logic.name = "button class_hiddenshell_start"
+	button.name = "true button_challengepack_mode"
+	button_logic.name = "button class_challengepack_start"
 	
 	button.add_child(button_logic)
 	parent.add_child(button)
-	ModLoaderLog.debug("Fake 'Start' button created", STPND_HIDDENSHELL_LOG)
+	ModLoaderLog.debug("Fake 'Start' button created", STPND_CHALLENGEPACK_LOG)
 	
 	menu_custom_start_button = button_logic
 	

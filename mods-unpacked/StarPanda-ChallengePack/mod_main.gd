@@ -1,7 +1,7 @@
 extends Node
 
-const STPND_HIDDENSHELL_DIR := "StarPanda-HiddenShell"
-const STPND_HIDDENSHELL_LOG := "StarPanda-HiddenShell:Main"
+const STPND_CHALLENGEPACK_DIR := "StarPanda-ChallengePack"
+const STPND_CHALLENGEPACK_LOG := "StarPanda-ChallengePack:Main"
 
 var mod_dir_path := ""
 var patches_dir_path := ""
@@ -9,7 +9,7 @@ var patches_dir_path := ""
 var patches := {}
 
 func _init() -> void:
-	mod_dir_path = ModLoaderMod.get_unpacked_dir() + STPND_HIDDENSHELL_DIR
+	mod_dir_path = ModLoaderMod.get_unpacked_dir() + STPND_CHALLENGEPACK_DIR
 	add_patches()
 	
 func add_patches() -> void:
@@ -21,14 +21,14 @@ func add_patches() -> void:
 			continue
 		var cl = load(patches_dir_path + "/" + file)
 		var obj = cl.new()
-		ModLoaderLog.info("Found patch for scene '" + obj.getSceneName() + "': " + file, STPND_HIDDENSHELL_LOG)
+		ModLoaderLog.info("Found patch for scene '" + obj.getSceneName() + "': " + file, STPND_CHALLENGEPACK_LOG)
 		
 		if !(patches.has(obj.getSceneName())):
 			patches[obj.getSceneName()] = []
 		patches[obj.getSceneName()].append(obj)
 
 func _ready() -> void:
-	ModLoaderLog.info("Ready!", STPND_HIDDENSHELL_LOG)
+	ModLoaderLog.info("Ready!", STPND_CHALLENGEPACK_LOG)
 	
 func _process(delta):
 	var scene := get_scene_root()
