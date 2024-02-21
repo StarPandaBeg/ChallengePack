@@ -7,7 +7,7 @@
    <h3 align="center">Challenge Pack - Mod for Buckshot Roulette</h3>
 
    <p align="center">
-    Now you'll not see the bullets. <b>Shall we play?</b>
+    Now I keep even more secrets. <b>Shall we play?</b>
    </p>
 </p>
 
@@ -23,7 +23,8 @@ Play a real game with the <b>devil</b>! No mercy, now the bullets are hidden and
 </p>
 
 ## Features
-Two new game modes, which provides more hardcore gameplay
+
+Several new game modes, which provides more hardcore gameplay
 
 <img src=".github/logo.png" alt="Logo" width="16" height="16" /> Quantity mode
 
@@ -33,11 +34,16 @@ Only the number of bullets is known. Guess which of these bullets is loaded?
 
 Pure random - no information about bullets. Test your luck!
 
+<img src=".github/logo.png" alt="Logo" width="16" height="16" /> Hidden items mode
+
+Dealer can keep secrets - now his items are not visible. Enjoy!
+
 ## Installation
+
 1. Download & Install AGO061 Mod Loader (https://github.com/AGO061/BuckshotRouletteModLoader)
 1. Download mod from [releases](https://github.com/StarPandaBeg/ChallengePack/releases/latest) page
-1. Put mod archive inside */mods* folder (you should create it manually)
-1. Choose mode in the game options
+1. Put mod archive inside `/mods` folder (you should create it manually)
+1. Configure game before it starts
 1. Enjoy
 
 ## Screenshots
