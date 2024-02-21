@@ -1,117 +1,70 @@
 extends "./patch.gd"
 
-# Deprecated: Will be deleted soon cause it replaced by custom manager
+const STPND_HIDDENSHELL_LOG := "StarPanda-HiddenShell:MenuPatch2"
 
-const STPND_HIDDENSHELL_LOG := "StarPanda-HiddenShell:MenuPatch"
-
-enum Mode {
-	DEFAULT,
-	QUANTITY,
-	HIDDEN
-}
-var modesTotal = len(Mode.keys())
-
-var mode_button: ButtonClass
-var mode_label: Node
+var manager: HSGameOptionsMenuManager
+var menu_custom_start_button: ButtonClass
+var menu_real_start_button: ButtonClass
 
 func _init():
 	scene_name = "menu"
-
-func _apply(root: Node) -> bool:	
-	_move_exit_button(root)
-	var label = _create_options_button_label(root)
-	var logic = _create_options_button_real(root, label)
-	_register_options_button_real(root, logic)
-	_hide_mode_switch()
 	
-	ModLoaderLog.info("Applied menu patch!", STPND_HIDDENSHELL_LOG)
+func _apply(root: Node) -> bool:
+	var label = _create_custom_start_label(root)
+	_create_custom_start_button(root, label)
+	
+	_inject_custom_menu(root)
+	_instantiate_custom_manager(root)
+	
+	ModLoaderLog.info("Applied menu 2 patch!", STPND_HIDDENSHELL_LOG)
 	return true
 	
-func _move_exit_button(root: Node):
-	var optionsExitLabel = root.get_node("Camera/dialogue UI/menu ui/button_exit options")
-	var optionsExitButton = root.get_node("Camera/dialogue UI/menu ui/true button_return options")
-	optionsExitLabel.position.y += 50
-	optionsExitButton.position.y += 50
-	ModLoaderLog.debug("Original 'return' button moved", STPND_HIDDENSHELL_LOG)
-	
-func _create_options_button_label(root: Node) -> CanvasItem:
-	var optionsModeLabel = Label.new()
+func _create_custom_start_label(root: Node) -> Label:
+	var label = HSButtonUtil.createButtonLabel()
 	var parent = root.get_node("Camera/dialogue UI/menu ui")
-	var font = load("res://fonts/fake receipt.otf")
 	
-	optionsModeLabel.size = Vector2(960, 35)
-	optionsModeLabel.position = Vector2(7.802, 424)
-	optionsModeLabel.scale = Vector2(0.76, 1)
-	optionsModeLabel.pivot_offset = Vector2(480, 0)
-	optionsModeLabel.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.position = Vector2(0, 336)
+	label.text = "START"
+	label.name = "button_hiddenshell_start"
 	
-	optionsModeLabel.set("theme_override_colors/font_shadow_color", Color.BLACK)
-	optionsModeLabel.set("theme_override_fonts/font", font)
-	optionsModeLabel.set("theme_override_font_sizes/font_size", 26)
+	parent.add_child(label)
+	ModLoaderLog.debug("Fake 'Start' button label created", STPND_HIDDENSHELL_LOG)
+	return label
 	
-	parent.add_child(optionsModeLabel)
-	mode_label = optionsModeLabel
-	ModLoaderLog.debug("'Mode' label created", STPND_HIDDENSHELL_LOG)
-	return optionsModeLabel
-	
-func _create_options_button_real(root: Node, label: CanvasItem) -> ButtonClass:
-	var optionsModeButton = Button.new()
-	var optionsModeButtonLogic = ButtonClass.new()
+func _create_custom_start_button(root: Node, label: Label) -> void:
+	var button = HSButtonUtil.createButton()
+	var button_logic = HSButtonUtil.createButtonLogic(root, label)
 	var parent = root.get_node("Camera/dialogue UI/menu ui")
-	var cursorManager = root.get_node("standalone managers/cursor manager")
 	
-	optionsModeButton.size = Vector2(8, 8)
-	optionsModeButton.position = Vector2(300, 428)
-	optionsModeButton.scale = Vector2(48, 3)
-	optionsModeButton.modulate = Color.TRANSPARENT
-	optionsModeButton.self_modulate = Color.TRANSPARENT
+	button.position = Vector2(447, 339)
+	button.scale = Vector2(8.182, 3.012)
+	button.name = "true button_hiddenshell_mode"
+	button_logic.name = "button class_hiddenshell_start"
 	
-	optionsModeButtonLogic.cursor = cursorManager
-	optionsModeButtonLogic.isDynamic = true
-	optionsModeButtonLogic.playing = true
-	optionsModeButtonLogic.ui = label
-	optionsModeButtonLogic.speaker_press = root.get_node("speaker_press")
-	optionsModeButtonLogic.speaker_hover = root.get_node("speaker_hover")
-	optionsModeButtonLogic.name = "button class_hiddenshell_mode"
+	button.add_child(button_logic)
+	parent.add_child(button)
+	ModLoaderLog.debug("Fake 'Start' button created", STPND_HIDDENSHELL_LOG)
 	
-	optionsModeButton.add_child(optionsModeButtonLogic)
-	parent.add_child(optionsModeButton)
+	menu_custom_start_button = button_logic
 	
-	ModLoaderLog.debug("'Mode' real button created", STPND_HIDDENSHELL_LOG)
+func _inject_custom_menu(root: Node) -> void:
+	var menu_manager = root.get_node("standalone managers/menu manager")
 	
-	mode_button = optionsModeButtonLogic	
-	return optionsModeButtonLogic
+	menu_real_start_button = menu_manager.buttons[0]
+	HSButtonUtil.setState(menu_real_start_button, false)
+	HSButtonUtil.setState(menu_custom_start_button, true)
 	
-func _register_options_button_real(root: Node, button: ButtonClass):
-	var optionsMenuButton = root.get_node("Camera/dialogue UI/menu ui/true button_options/button class_options")
-	var optionsExitButton = root.get_node("Camera/dialogue UI/menu ui/true button_return options/button class_return options")
+	menu_manager.buttons[0] = menu_custom_start_button
+	menu_manager.screen_main[4] = menu_custom_start_button.ui
 	
-	button.connect("is_pressed", _change_mode)
-	optionsMenuButton.connect("is_pressed", _show_mode_switch)
-	optionsExitButton.connect("is_pressed", _hide_mode_switch)
-	ModLoaderLog.debug("'Mode' real button registered", STPND_HIDDENSHELL_LOG)
-	
-func _change_mode():
-	var current_mode_s = ProjectSettings.get_setting("hiddenshell_mode", 0)
-	var current_mode = Mode.keys()[current_mode_s]	
-	var new_mode = current_mode_s + 1 if (current_mode_s + 1 < modesTotal) else 0
-	var new_mode_s = Mode.keys()[new_mode]
-	
-	ProjectSettings.set_setting("hiddenshell_mode", new_mode)
-	mode_label.text = "shell visibility: " + new_mode_s
-	ModLoaderLog.info("New mode: " + new_mode_s, STPND_HIDDENSHELL_LOG)
-	
-func _show_mode_switch():
-	var current_mode = ProjectSettings.get_setting("hiddenshell_mode", 0)
-	var current_mode_s = Mode.keys()[current_mode]
-	
-	mode_label.text = "shell visibility: " + current_mode_s
-	mode_button.ui.visible = true
-	mode_button.isActive = true
-	mode_button.SetFilter("stop")
-	
-func _hide_mode_switch():
-	mode_button.ui.visible = false
-	mode_button.isActive = false
-	mode_button.SetFilter("ignore")
+	menu_custom_start_button.connect("is_pressed", func(): _on_custom_start_click(root))
 
+func _on_custom_start_click(root: Node) -> void:
+	manager.show()
+	
+func _instantiate_custom_manager(root: Node) -> void:
+	var parent = root.get_node("standalone managers")
+	var manager = HSGameOptionsMenuManager.new(root, menu_real_start_button)
+	parent.add_child(manager)
+	self.manager = manager
+	
