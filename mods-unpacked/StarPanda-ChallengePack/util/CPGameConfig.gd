@@ -5,3 +5,8 @@ enum GameMode {
 	QUANTITY,
 	HIDDEN
 }
+
+enum ItemMode {
+	DEFAULT,
+	HIDDEN
+}
