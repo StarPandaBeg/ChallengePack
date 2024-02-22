@@ -1,8 +1,10 @@
 extends "./patch.gd"
 
-const GameConfig = preload("../util/CPGameConfig.gd")
-const customShellSpawner = preload("../util/CPShellSpawner.gd")
-const customShellLoader = preload("../util/CPShellLoader.gd")
+const ShellSpawner = preload("res://scripts/ShellSpawner.gd")
+const ShellLoader = preload("res://scripts/ShellLoader.gd")
+const CPGameConfig = preload("../util/CPGameConfig.gd")
+const CPShellSpawner = preload("../util/CPShellSpawner.gd")
+const CPShellLoader = preload("../util/CPShellLoader.gd")
 
 const STPND_CHALLENGEPACK_LOG := "StarPanda-ChallengePack:MainPatch"
 
@@ -24,7 +26,7 @@ func _apply(root: Node):
 	return true
 	
 func _init_custom_spawner(original: ShellSpawner) -> ShellSpawner:
-	var target = customShellSpawner.new()
+	var target = CPShellSpawner.new()
 	
 	target.name = "challengepack shell spawner"
 	target.dialogue = original.dialogue
@@ -43,7 +45,7 @@ func _init_custom_spawner(original: ShellSpawner) -> ShellSpawner:
 	return target
 	
 func _init_custom_loader(original: ShellLoader) -> ShellLoader:
-	var target = customShellLoader.new()
+	var target = CPShellLoader.new()
 	
 	target.name = "challengepack shell loader"
 	target.perm = original.perm
@@ -84,16 +86,16 @@ func _inject_custom(root: Node, spawner: ShellSpawner, loader: ShellLoader):
 	shellExamine.shellSpawner = spawner
 	shellEject1.shellSpawner = spawner
 	shellEject2.shellSpawner = spawner
-	ModLoaderLog.debug("CustomShellSpawner injected!", STPND_CHALLENGEPACK_LOG)
+	ModLoaderLog.debug("CPShellSpawner injected!", STPND_CHALLENGEPACK_LOG)
 	
 	roundManager.shellLoader = loader
 	dealerAi.shellLoader = loader
 	deathManager.shellLoader = loader
-	ModLoaderLog.debug("CustomShellLoader injected!", STPND_CHALLENGEPACK_LOG)
+	ModLoaderLog.debug("CPShellLoader injected!", STPND_CHALLENGEPACK_LOG)
 	
 func _spawn_protectors(root: Node):
 	var item_mode = ProjectSettings.get_setting("challengepack_item", 0)
-	if (item_mode != GameConfig.ItemMode.HIDDEN):
+	if (item_mode != CPGameConfig.ItemMode.HIDDEN):
 		return
 	
 	var parent = root.get_node("tabletop parent/main tabletop")

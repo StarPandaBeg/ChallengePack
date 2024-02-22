@@ -1,10 +1,12 @@
 class_name CPGameOptionsMenuManager extends Node
 
-const GameConfig = preload("./CPGameConfig.gd")
+const ButtonClass = preload("res://scripts/ButtonClass.gd")
+const MenuManager = preload("res://scripts/MenuManager.gd")
+const CPGameConfig = preload("./CPGameConfig.gd")
 const CPButtonUtil = preload("../util/CPButtonUtil.gd")
 
-var totalGameModes = len(GameConfig.GameMode.keys())
-var totalItemModes = len(GameConfig.ItemMode.keys())
+var totalGameModes = len(CPGameConfig.GameMode.keys())
+var totalItemModes = len(CPGameConfig.ItemMode.keys())
 
 var menu_manager: MenuManager
 var real_start_button: ButtonClass
@@ -93,8 +95,8 @@ func _create_buttons(root: Node) -> void:
 	
 	var mode_id = ProjectSettings.get_setting("challengepack_mode", 0)
 	var item_mode_id = ProjectSettings.get_setting("challengepack_item", 0)
-	btn_mode_logic.ui.text = "shell visibility: " + GameConfig.GameMode.keys()[mode_id]
-	btn_items_logic.ui.text = "items visibility: " + GameConfig.ItemMode.keys()[item_mode_id]
+	btn_mode_logic.ui.text = "shell visibility: " + CPGameConfig.GameMode.keys()[mode_id]
+	btn_items_logic.ui.text = "items visibility: " + CPGameConfig.ItemMode.keys()[item_mode_id]
 	
 func _reinit_start_button(root: Node) -> void:
 	real_start_button.ui.position = Vector2(0, 394)
@@ -118,12 +120,12 @@ func _on_mode_button_click(sender: ButtonClass) -> void:
 	var mode_id = ProjectSettings.get_setting("challengepack_mode", 0)
 	var next_mode = (mode_id + 1) if (mode_id + 1 < totalGameModes) else 0
 	
-	sender.ui.text = "shell visibility: " + GameConfig.GameMode.keys()[next_mode]
+	sender.ui.text = "shell visibility: " + CPGameConfig.GameMode.keys()[next_mode]
 	ProjectSettings.set_setting("challengepack_mode", next_mode)
 	
 func _on_item_button_click(sender: ButtonClass) -> void:
 	var mode_id = ProjectSettings.get_setting("challengepack_item", 0)
 	var next_mode = (mode_id + 1) if (mode_id + 1 < totalItemModes) else 0
 	
-	sender.ui.text = "items visibility: " + GameConfig.ItemMode.keys()[next_mode]
+	sender.ui.text = "items visibility: " + CPGameConfig.ItemMode.keys()[next_mode]
 	ProjectSettings.set_setting("challengepack_item", next_mode)

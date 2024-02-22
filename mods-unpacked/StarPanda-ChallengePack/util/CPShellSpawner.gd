@@ -1,16 +1,16 @@
-extends ShellSpawner
+extends "res://scripts/ShellSpawner.gd"
 
-const GameConfig = preload("./CPGameConfig.gd")
+const CPGameConfig = preload("./CPGameConfig.gd")
 
 func SpawnShells(numberOfShells : int, numberOfLives : int, numberOfBlanks : int, shufflingArray : bool):
 	super.SpawnShells(numberOfShells, numberOfLives, numberOfBlanks, shufflingArray)
 	
 	var current_mode = ProjectSettings.get_setting("challengepack_mode", 0)
-	if (current_mode == GameConfig.GameMode.DEFAULT):
+	if (current_mode == CPGameConfig.GameMode.DEFAULT):
 		return
 	roundManager.playerData.skippingShellDescription = true
 	
-	if (current_mode == GameConfig.GameMode.QUANTITY):
+	if (current_mode == CPGameConfig.GameMode.QUANTITY):
 		for shell in spawnedShellObjectArray:
 			var branch = shell.get_child(0)
 			branch.mesh.set_surface_override_material(1, branch.mat_blank)
@@ -41,7 +41,7 @@ func MainShellRoutine():
 	SpawnShells(temp_nr, temp_live, temp_blank, temp_shuf)
 	seq = sequenceArray
 	
-	if (current_mode != GameConfig.GameMode.HIDDEN):
+	if (current_mode != CPGameConfig.GameMode.HIDDEN):
 		anim_compartment.play("show shells")
 		PlayLatchSound()
 		PlayAudioIndicators()
@@ -61,7 +61,7 @@ func MainShellRoutine():
 		roundManager.playerData.skippingShellDescription = true
 	if (!roundManager.playerData.skippingShellDescription): dialogue.ShowText_Forever(finalstring)
 	if (roundManager.playerData.skippingShellDescription && !skipDialoguePresented):
-		var text = "YOU KNOW THE DRILL." if (current_mode != GameConfig.GameMode.HIDDEN) else "NOTHING HERE FOR YOUR EYES"
+		var text = "YOU KNOW THE DRILL." if (current_mode != CPGameConfig.GameMode.HIDDEN) else "NOTHING HERE FOR YOUR EYES"
 		dialogue.ShowText_Forever(text)
 		maindur = 2.5
 		skipDialoguePresented = true
@@ -70,7 +70,7 @@ func MainShellRoutine():
 	dialogue.HideText()
 	#HIDE SHELLS
 	
-	if (current_mode != GameConfig.GameMode.HIDDEN):
+	if (current_mode != CPGameConfig.GameMode.HIDDEN):
 		anim_compartment.play("hide shells")
 		PlayLatchSound()
 		if(roundManager.shellLoadingSpedUp): await get_tree().create_timer(.2, false).timeout

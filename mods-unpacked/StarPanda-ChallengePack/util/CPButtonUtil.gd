@@ -1,5 +1,6 @@
 class_name CPButtonUtil
 
+const ButtonClass = preload("res://scripts/ButtonClass.gd")
 static var font = load("res://fonts/fake receipt.otf")
 
 static func createButtonLogic(root: Node, label: Label) -> ButtonClass:

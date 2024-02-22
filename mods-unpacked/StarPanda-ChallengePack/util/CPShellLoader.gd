@@ -1,11 +1,11 @@
-extends ShellLoader
+extends "res://scripts/ShellLoader.gd"
 
-const GameConfig = preload("./CPGameConfig.gd")
+const CPGameConfig = preload("./CPGameConfig.gd")
 
 var modePhrases := {
-	GameConfig.GameMode.DEFAULT: loadingDialogues,
-	GameConfig.GameMode.QUANTITY: ["Some of them are live.", "Now this is a real game."],
-	GameConfig.GameMode.HIDDEN: ["You won't know their real number.", "Now this is a real game."]
+	CPGameConfig.GameMode.DEFAULT: loadingDialogues,
+	CPGameConfig.GameMode.QUANTITY: ["Some of them are live.", "Now this is a real game."],
+	CPGameConfig.GameMode.HIDDEN: ["You won't know their real number.", "Now this is a real game."]
 }
 
 func LoadShells():
@@ -30,7 +30,7 @@ func LoadShells():
 		roundManager.playerData.numberOfDialogueRead += 1
 		
 	var numberOfShells = roundManager.roundArray[roundManager.currentRound].amountBlank + roundManager.roundArray[roundManager.currentRound].amountLive
-	if (current_mode == GameConfig.GameMode.HIDDEN):
+	if (current_mode == CPGameConfig.GameMode.HIDDEN):
 		numberOfShells = 8
 	
 	for i in range(numberOfShells):

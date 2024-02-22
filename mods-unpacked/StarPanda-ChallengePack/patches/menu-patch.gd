@@ -1,6 +1,8 @@
 extends "./patch.gd"
 
 const STPND_CHALLENGEPACK_LOG := "StarPanda-ChallengePack:MenuPatch2"
+
+const ButtonClass = preload("res://scripts/ButtonClass.gd")
 const CPButtonUtil = preload("../util/CPButtonUtil.gd")
 const CPGameOptionsMenuManager = preload("../util/CPGameOptionsMenuManager.gd")
 
