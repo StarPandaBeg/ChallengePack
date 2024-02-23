@@ -1,0 +1,6 @@
+[gd_resource type="StandardMaterial3D" load_steps=2 format=3 uid="uid://bbo78ki510rw2"]
+
+[ext_resource type="Texture2D" uid="uid://cs1ty23171m7g" path="res://mods-unpacked/StarPanda-ChallengePack/models/protector_base_b.png" id="1_788ji"]
+
+[resource]
+albedo_texture = ExtResource("1_788ji")

@@ -1,9 +1,17 @@
-[gd_scene load_steps=3 format=3 uid="uid://c2ec0fjxo5fg"]
+[gd_scene load_steps=4 format=3 uid="uid://c2ec0fjxo5fg"]
 
-[ext_resource type="Material" uid="uid://cbwx0kl5bhwuv" path="res://mods-unpacked/StarPanda-ChallengePack/materials/mat_protector.tres" id="1_2ymwj"]
+[ext_resource type="Material" uid="uid://cbwx0kl5bhwuv" path="res://mods-unpacked/StarPanda-ChallengePack/materials/mat_protector_a.tres" id="1_878go"]
 [ext_resource type="ArrayMesh" uid="uid://c2h3wah5577h7" path="res://mods-unpacked/StarPanda-ChallengePack/models/protector.obj" id="2_nb5nn"]
+[ext_resource type="Material" uid="uid://bbo78ki510rw2" path="res://mods-unpacked/StarPanda-ChallengePack/materials/mat_protector_b.tres" id="3_y12nr"]
 
-[node name="MeshInstance3D" type="MeshInstance3D"]
-transform = Transform3D(-1.22392e-07, 0, 3, 0, 2, 0, -2.8, 0, -1.31134e-07, 0, 0, 0)
-material_override = ExtResource("1_2ymwj")
+[node name="Protectors" type="Node3D"]
+
+[node name="Protector A" type="MeshInstance3D" parent="."]
+transform = Transform3D(-1.22392e-07, 0, 3, 0, 2, 0, -2.8, 0, -1.31134e-07, -4.198, -0.128, 5.254)
+material_override = ExtResource("1_878go")
+mesh = ExtResource("2_nb5nn")
+
+[node name="Protector B" type="MeshInstance3D" parent="."]
+transform = Transform3D(-1.22392e-07, 0, 3, 0, 2, 0, -2.8, 0, -1.31134e-07, -4.198, -0.128, -5.254)
+material_override = ExtResource("3_y12nr")
 mesh = ExtResource("2_nb5nn")

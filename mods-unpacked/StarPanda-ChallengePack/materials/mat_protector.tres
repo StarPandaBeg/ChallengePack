@@ -1,6 +1,0 @@
-[gd_resource type="StandardMaterial3D" load_steps=2 format=3 uid="uid://cbwx0kl5bhwuv"]
-
-[ext_resource type="Texture2D" uid="uid://btia5hx70p3rf" path="res://models/signature machine/signature machine2_base metal keyboard.png" id="1_mtfwc"]
-
-[resource]
-albedo_texture = ExtResource("1_mtfwc")

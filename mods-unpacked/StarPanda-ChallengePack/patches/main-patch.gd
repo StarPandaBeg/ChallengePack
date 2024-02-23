@@ -101,12 +101,6 @@ func _spawn_protectors(root: Node):
 	var parent = root.get_node("tabletop parent/main tabletop")
 	var protector = preload("../instances/protector.tscn")
 	
-	var protectorA = protector.instantiate()
-	var protectorB = protector.instantiate()
-	
-	protectorA.position = Vector3(-4.198, -0.128, 5.254)
-	protectorB.position = Vector3(-4.198, -0.128, -5.254)
-	
-	parent.add_child(protectorA)
-	parent.add_child(protectorB)
+	var protectorObj = protector.instantiate()
+	parent.add_child(protectorObj)
 	
