@@ -33,8 +33,8 @@ var button_mode_config := {
 	"label_name": "button_challengepack_mode custom",
 	"button_name": "true button_challengepack_mode custom",
 	"logic_name": "button class_challengepack_mode custom",
-	"label_position": Vector2(0, 224),
-	"button_position": Vector2(280, 230),
+	"label_position": Vector2(0, 204),
+	"button_position": Vector2(280, 210),
 	"button_scale": Vector2(50, 3),
 }
 var button_items_config := {
@@ -42,8 +42,8 @@ var button_items_config := {
 	"label_name": "button_challengepack_items custom",
 	"button_name": "true button_challengepack_items custom",
 	"logic_name": "button class_challengepack_items custom",
-	"label_position": Vector2(0, 254),
-	"button_position": Vector2(280, 260),
+	"label_position": Vector2(0, 234),
+	"button_position": Vector2(280, 240),
 	"button_scale": Vector2(50, 3),
 }
 var button_shuffle_config := {
@@ -51,8 +51,8 @@ var button_shuffle_config := {
 	"label_name": "button_challengepack_shuffle custom",
 	"button_name": "true button_challengepack_shuffle custom",
 	"logic_name": "button class_challengepack_shuffle custom",
-	"label_position": Vector2(0, 284),
-	"button_position": Vector2(280, 290),
+	"label_position": Vector2(0, 264),
+	"button_position": Vector2(280, 270),
 	"button_scale": Vector2(50, 3),
 }
 var button_turn_config := {
@@ -60,8 +60,8 @@ var button_turn_config := {
 	"label_name": "button_challengepack_turn custom",
 	"button_name": "true button_challengepack_turn custom",
 	"logic_name": "button class_challengepack_turn custom",
-	"label_position": Vector2(0, 344),
-	"button_position": Vector2(280, 350),
+	"label_position": Vector2(0, 324),
+	"button_position": Vector2(280, 330),
 	"button_scale": Vector2(50, 3),
 }
 
