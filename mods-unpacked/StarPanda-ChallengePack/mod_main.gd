@@ -7,6 +7,7 @@ var mod_dir_path := ""
 var patches_dir_path := ""
 
 var patches := {}
+var last_scene := ""
 
 func _init() -> void:
 	mod_dir_path = ModLoaderMod.get_unpacked_dir() + STPND_CHALLENGEPACK_DIR
@@ -34,10 +35,13 @@ func _process(delta):
 	var scene := get_scene_root()
 	if !(patches.has(scene.name)):
 		return
-	
+		
+	var repeated = (last_scene == scene.name)
+	last_scene = scene.name
+		
 	var patchArr = patches[scene.name]
 	for patch in patchArr:
-		patch.apply(scene)
+		patch.apply(scene, repeated)
 		
 func get_scene_root() -> Node:
 	return get_tree().get_root().get_child(2)

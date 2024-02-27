@@ -10,8 +10,13 @@ const STPND_CHALLENGEPACK_LOG := "StarPanda-ChallengePack:MainPatch"
 
 func _init():
 	scene_name = "main"
+	repeatable = true
 	
-func _apply(root: Node):		
+func _apply(root: Node):
+	var patched = !root.has_node("standalone managers/shell spawner")
+	if (patched):
+		return
+		
 	var originalSpawner = root.get_node("standalone managers/shell spawner")
 	var originalLoader = root.get_node("standalone managers/shell loader")
 	var newSpawner = _init_custom_spawner(originalSpawner)
