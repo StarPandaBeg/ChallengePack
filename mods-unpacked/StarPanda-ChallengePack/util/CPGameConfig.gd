@@ -15,3 +15,9 @@ enum ShuffleMode {
 	YES,
 	NO
 }
+
+enum TurnMode {
+	ALWAYS_FIRST,
+	ROUND_ROBIN,
+	RANDOM
+}

@@ -2,6 +2,9 @@ extends "res://scripts/ShellLoader.gd"
 
 const CPGameConfig = preload("./CPGameConfig.gd")
 
+var dealerFirstMessageShown := false
+var rnd = RandomNumberGenerator.new()
+var lastTurn := 1
 var modePhrases := {
 	CPGameConfig.GameMode.DEFAULT: loadingDialogues,
 	CPGameConfig.GameMode.QUANTITY: ["Some of them are live.", "Now this is a real game."],
@@ -71,11 +74,39 @@ func LoadShells():
 	await get_tree().create_timer(.8, false).timeout
 	animator_shotgun.play("enemy put down shotgun")
 	DealerHandsDropShotgun()
+	_resolve_first_turn()
+	pass
+
+func _resolve_first_turn() -> void:
+	var turn_mode = ProjectSettings.get_setting("challengepack_turn", 0)
+	if (turn_mode == CPGameConfig.TurnMode.ALWAYS_FIRST):
+		await _turn_player()
+		return
+	
+	var next_turn = 1 if (lastTurn == 0) else 0
+	if (turn_mode == CPGameConfig.TurnMode.RANDOM):
+		next_turn = rnd.randi_range(0, 1)
+	
+	if (next_turn == 0):
+		await _turn_player()
+	else:
+		await _turn_devil()
+	lastTurn = next_turn
+	
+func _turn_player() -> void:
 	camera.BeginLerp("home")
-	#ALLOW INTERACTION
 	await get_tree().create_timer(.6, false).timeout
 	perm.SetStackInvalidIndicators()
 	cursor.SetCursor(true, true)
 	perm.SetIndicators(true)
 	perm.SetInteractionPermissions(true)
-	pass
+	
+func _turn_devil() -> void:
+	await get_tree().create_timer(.6, false).timeout
+	if (!dealerFirstMessageShown):
+		dialogue.ShowText_Forever("I'll be the first")
+		await get_tree().create_timer(1.9, false).timeout
+		dialogue.HideText()
+		dealerFirstMessageShown = true
+	dealerAI.BeginDealerTurn()
+	

@@ -9,6 +9,7 @@ const CPButtonUtil = preload("../util/CPButtonUtil.gd")
 var totalGameModes = len(CPGameConfig.GameMode.keys())
 var totalItemModes = len(CPGameConfig.ItemMode.keys())
 var totalShuffleModes = len(CPGameConfig.ShuffleMode.keys())
+var totalTurnModes = len(CPGameConfig.TurnMode.keys())
 
 var menu_manager: MenuManager
 var real_start_button: ButtonClass
@@ -52,6 +53,15 @@ var button_shuffle_config := {
 	"logic_name": "button class_challengepack_shuffle custom",
 	"label_position": Vector2(0, 284),
 	"button_position": Vector2(280, 290),
+	"button_scale": Vector2(50, 3),
+}
+var button_turn_config := {
+	"ui_root": "Camera/dialogue UI/menu ui",
+	"label_name": "button_challengepack_turn custom",
+	"button_name": "true button_challengepack_turn custom",
+	"logic_name": "button class_challengepack_turn custom",
+	"label_position": Vector2(0, 344),
+	"button_position": Vector2(280, 350),
 	"button_scale": Vector2(50, 3),
 }
 
@@ -112,16 +122,19 @@ func _create_buttons(root: Node) -> void:
 	var btn_mode_logic = CPButtonUtil.createButtonWithConfig(root, button_mode_config)
 	var btn_items_logic = CPButtonUtil.createButtonWithConfig(root, button_items_config)
 	var btn_shuffle_logic = CPButtonUtil.createButtonWithConfig(root, button_shuffle_config)
+	var btn_turn_logic = CPButtonUtil.createButtonWithConfig(root, button_turn_config)
 	
 	btn_return_logic.connect("is_pressed", hide)
 	btn_mode_logic.connect("is_pressed", func(): _on_mode_button_click("challengepack_mode", totalGameModes))
 	btn_items_logic.connect("is_pressed", func(): _on_mode_button_click("challengepack_item", totalItemModes))
 	btn_shuffle_logic.connect("is_pressed", func(): _on_mode_button_click("challengepack_shuffle", totalShuffleModes))
+	btn_turn_logic.connect("is_pressed", func(): _on_mode_button_click("challengepack_turn", totalTurnModes))
 	
 	_register_button(btn_return_logic)
 	_register_button(btn_mode_logic)
 	_register_button(btn_items_logic)
 	_register_button(btn_shuffle_logic)
+	_register_button(btn_turn_logic)
 	_update_labels()
 	
 func _reinit_start_button(root: Node) -> void:
@@ -152,7 +165,9 @@ func _update_labels():
 	var mode_id = ProjectSettings.get_setting("challengepack_mode", 0)
 	var item_mode_id = ProjectSettings.get_setting("challengepack_item", 0)
 	var shuffle_mode_id = ProjectSettings.get_setting("challengepack_shuffle", 0)
+	var turn_mode_id = ProjectSettings.get_setting("challengepack_turn", 0)
 	
 	menu_buttons[1].ui.text = "shell visibility: " + CPGameConfig.GameMode.keys()[mode_id]
 	menu_buttons[2].ui.text = "items visibility: " + CPGameConfig.ItemMode.keys()[item_mode_id]
 	menu_buttons[3].ui.text = "shuffle bullets: " + CPGameConfig.ShuffleMode.keys()[shuffle_mode_id]
+	menu_buttons[4].ui.text = "first turn: " + CPGameConfig.TurnMode.keys()[turn_mode_id].replace("_", " ")
