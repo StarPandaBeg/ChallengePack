@@ -2,6 +2,7 @@ class_name CPGameOptionsMenuManager extends Node
 
 const ButtonClass = preload("res://scripts/ButtonClass.gd")
 const MenuManager = preload("res://scripts/MenuManager.gd")
+const CPModConfig = preload("./CPModConfig.gd")
 const CPGameConfig = preload("./CPGameConfig.gd")
 const CPButtonUtil = preload("../util/CPButtonUtil.gd")
 
@@ -66,6 +67,7 @@ func _ready():
 	
 func _configure(root: Node) -> void:
 	_create_title(root)
+	_create_version_label(root)
 	_create_buttons(root)
 	_reinit_start_button(root)
 	
@@ -77,6 +79,20 @@ func _create_title(root: Node) -> void:
 	label.text = "game configuration"
 	label.position = Vector2(0, 100)
 	label.set("theme_override_font_sizes/font_size", 36)
+	
+	parent.add_child(label)
+	menu_items.append(label)
+	
+func _create_version_label(root: Node) -> void:
+	var label = CPButtonUtil.createButtonLabel()
+	var parent = root.get_node("Camera/dialogue UI/menu ui")
+	
+	label.name = "challengepack_version"
+	label.text = "ChallengePack v" + CPModConfig.get_version()
+	label.position = Vector2(-93, 515)
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	label.set("theme_override_colors/font_color", Color.WEB_GRAY)
+	label.set("theme_override_font_sizes/font_size", 16)
 	
 	parent.add_child(label)
 	menu_items.append(label)	
