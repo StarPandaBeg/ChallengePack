@@ -1,7 +1,7 @@
 extends Node
 
-const STPND_CHALLENGEPACK_DIR := "StarPanda-ChallengePack"
 const STPND_CHALLENGEPACK_LOG := "StarPanda-ChallengePack:Main"
+const CPModConfig = preload("./util/CPModConfig.gd")
 
 var mod_dir_path := ""
 var patches_dir_path := ""
@@ -10,7 +10,7 @@ var patches := {}
 var last_scene := ""
 
 func _init() -> void:
-	mod_dir_path = ModLoaderMod.get_unpacked_dir() + STPND_CHALLENGEPACK_DIR
+	mod_dir_path = CPModConfig.get_root_path()
 	add_patches()
 	
 func add_patches() -> void:
