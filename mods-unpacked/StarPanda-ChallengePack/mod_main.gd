@@ -22,14 +22,14 @@ func add_patches() -> void:
 			continue
 		var cl = load(patches_dir_path + "/" + file)
 		var obj = cl.new()
-		ModLoaderLog.info("Found patch for scene '" + obj.getSceneName() + "': " + file, STPND_CHALLENGEPACK_LOG)
+		ModLoaderLog.debug("Found patch for scene '" + obj.getSceneName() + "': " + file, STPND_CHALLENGEPACK_LOG)
 		
 		if !(patches.has(obj.getSceneName())):
 			patches[obj.getSceneName()] = []
 		patches[obj.getSceneName()].append(obj)
 
 func _ready() -> void:
-	ModLoaderLog.info("Ready!", STPND_CHALLENGEPACK_LOG)
+	ModLoaderLog.info("Mod Ready!", STPND_CHALLENGEPACK_LOG)
 	
 func _process(delta):
 	var scene := get_scene_root()
@@ -38,6 +38,9 @@ func _process(delta):
 		
 	var repeated = (last_scene == scene.name)
 	last_scene = scene.name
+	
+	if (!repeated):
+		ModLoaderLog.debug("Scene loaded: " + last_scene, STPND_CHALLENGEPACK_LOG)
 		
 	var patchArr = patches[scene.name]
 	for patch in patchArr:
