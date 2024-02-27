@@ -114,21 +114,15 @@ func _create_buttons(root: Node) -> void:
 	var btn_shuffle_logic = CPButtonUtil.createButtonWithConfig(root, button_shuffle_config)
 	
 	btn_return_logic.connect("is_pressed", hide)
-	btn_mode_logic.connect("is_pressed", func(): _on_mode_button_click(btn_mode_logic))
-	btn_items_logic.connect("is_pressed", func(): _on_item_button_click(btn_items_logic))
-	btn_shuffle_logic.connect("is_pressed", func(): _on_shuffle_button_click(btn_shuffle_logic))
+	btn_mode_logic.connect("is_pressed", func(): _on_mode_button_click("challengepack_mode", totalGameModes))
+	btn_items_logic.connect("is_pressed", func(): _on_mode_button_click("challengepack_item", totalItemModes))
+	btn_shuffle_logic.connect("is_pressed", func(): _on_mode_button_click("challengepack_shuffle", totalShuffleModes))
 	
 	_register_button(btn_return_logic)
 	_register_button(btn_mode_logic)
 	_register_button(btn_items_logic)
 	_register_button(btn_shuffle_logic)
-	
-	var mode_id = ProjectSettings.get_setting("challengepack_mode", 0)
-	var item_mode_id = ProjectSettings.get_setting("challengepack_item", 0)
-	var shuffle_mode_id = ProjectSettings.get_setting("challengepack_shuffle", 0)
-	btn_mode_logic.ui.text = "shell visibility: " + CPGameConfig.GameMode.keys()[mode_id]
-	btn_items_logic.ui.text = "items visibility: " + CPGameConfig.ItemMode.keys()[item_mode_id]
-	btn_shuffle_logic.ui.text = "shuffle bullets: " + CPGameConfig.ShuffleMode.keys()[shuffle_mode_id]
+	_update_labels()
 	
 func _reinit_start_button(root: Node) -> void:
 	real_start_button.ui.position = Vector2(0, 394)
@@ -148,23 +142,17 @@ func _register_button(logic: ButtonClass) -> void:
 	menu_items.append(logic.ui)
 	menu_buttons.append(logic)
 	
-func _on_mode_button_click(sender: ButtonClass) -> void:
+func _on_mode_button_click(setting_name, total_modes, default_value = 0) -> void:
+	var mode_id = ProjectSettings.get_setting(setting_name, default_value)
+	var next_mode = (mode_id + 1) if (mode_id + 1 < total_modes) else 0
+	ProjectSettings.set_setting(setting_name, next_mode)
+	_update_labels()
+	
+func _update_labels():
 	var mode_id = ProjectSettings.get_setting("challengepack_mode", 0)
-	var next_mode = (mode_id + 1) if (mode_id + 1 < totalGameModes) else 0
+	var item_mode_id = ProjectSettings.get_setting("challengepack_item", 0)
+	var shuffle_mode_id = ProjectSettings.get_setting("challengepack_shuffle", 0)
 	
-	sender.ui.text = "shell visibility: " + CPGameConfig.GameMode.keys()[next_mode]
-	ProjectSettings.set_setting("challengepack_mode", next_mode)
-	
-func _on_item_button_click(sender: ButtonClass) -> void:
-	var mode_id = ProjectSettings.get_setting("challengepack_item", 0)
-	var next_mode = (mode_id + 1) if (mode_id + 1 < totalItemModes) else 0
-	
-	sender.ui.text = "items visibility: " + CPGameConfig.ItemMode.keys()[next_mode]
-	ProjectSettings.set_setting("challengepack_item", next_mode)
-	
-func _on_shuffle_button_click(sender: ButtonClass) -> void:
-	var mode_id = ProjectSettings.get_setting("challengepack_shuffle", 0)
-	var next_mode = (mode_id + 1) if (mode_id + 1 < totalShuffleModes) else 0
-	
-	sender.ui.text = "shuffle bullets: " + CPGameConfig.ShuffleMode.keys()[next_mode]
-	ProjectSettings.set_setting("challengepack_shuffle", next_mode)
+	menu_buttons[1].ui.text = "shell visibility: " + CPGameConfig.GameMode.keys()[mode_id]
+	menu_buttons[2].ui.text = "items visibility: " + CPGameConfig.ItemMode.keys()[item_mode_id]
+	menu_buttons[3].ui.text = "shuffle bullets: " + CPGameConfig.ShuffleMode.keys()[shuffle_mode_id]
