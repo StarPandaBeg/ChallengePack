@@ -10,3 +10,8 @@ enum ItemMode {
 	DEFAULT,
 	HIDDEN
 }
+
+enum ShuffleMode {
+	YES,
+	NO
+}

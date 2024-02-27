@@ -17,6 +17,7 @@ func SpawnShells(numberOfShells : int, numberOfLives : int, numberOfBlanks : int
 			
 func MainShellRoutine():
 	var current_mode = ProjectSettings.get_setting("challengepack_mode", 0)
+	var shuffle_mode = ProjectSettings.get_setting("challengepack_shuffle", 0)
 	
 	if (roundManager.playerData.currentBatchIndex != 0):
 		roundManager.shellLoadingSpedUp = true
@@ -76,7 +77,7 @@ func MainShellRoutine():
 		if(roundManager.shellLoadingSpedUp): await get_tree().create_timer(.2, false).timeout
 		else: await get_tree().create_timer(.5, false).timeout
 	#CHECK IF INSERTING INTO CHAMBER IN RANDOM ORDER.
-	if (roundManager.roundArray[roundManager.currentRound].insertingInRandomOrder):
+	if (roundManager.roundArray[roundManager.currentRound].insertingInRandomOrder && shuffle_mode == CPGameConfig.ShuffleMode.YES):
 		sequenceArray.shuffle()
 		sequenceArray.shuffle()
 	roundManager.LoadShells()
