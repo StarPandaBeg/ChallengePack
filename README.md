@@ -19,24 +19,40 @@
 <br/>
 
 <p align="center">
-Play a real game with the <b>devil</b>! No mercy, now the bullets are hidden and very dangerous! Test your luck dancing on the edge of life and death! 
+Play a real game with the <b>devil</b>! No mercy, now game become really hard! Test your luck dancing on the edge of life and death! 
 </p>
 
 ## Features
 
 Several new game modes, which provides more hardcore gameplay
 
-<img src=".github/logo.png" alt="Logo" width="16" height="16" /> Quantity mode
+#### Shell Visibility:
 
-Only the number of bullets is known. Guess which of these bullets is loaded?
+<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _Default_ - Bullets shown like in original game
 
-<img src=".github/logo.png" alt="Logo" width="16" height="16" /> Hidden mode
+<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _Quantity_ - Only the number of bullets is known. Guess which of these bullets is loaded?
 
-Pure random - no information about bullets. Test your luck!
+<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _Hidden_ - Pure random - no information about bullets. Test your luck!
 
-<img src=".github/logo.png" alt="Logo" width="16" height="16" /> Hidden items mode
+#### Items Visibility:
 
-Dealer can keep secrets - now his items are not visible. Enjoy!
+<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _Default_ - items visible like in original game
+
+<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _Hidden_ - Dealer can keep secrets - now his items are not visible. Enjoy!
+
+#### Shuffle Bullets:
+
+<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _Yes_ - bullets will be randomly loaded like in original game
+
+<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _No_ - Bullets will be loaded in the same order as they lay on the table
+
+#### First turn:
+
+<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _Always First_ - player always shoot first like in original game
+
+<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _Round Robin_ - after reloading, the one who didn't get the gun last time goes
+
+<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _Random_ - after reloading, the next player is chosen randomly
 
 ## Installation
 
