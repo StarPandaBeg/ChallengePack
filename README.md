@@ -13,6 +13,8 @@
 
 ---
 
+> ⚠⚠ Steam Version Support isn't tested and not guaranted. May be bugs or unpredictable behaviour! ⚠⚠
+
 <div align="center">
   <img src=".github/promo.png" alt="">
 </div>
