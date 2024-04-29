@@ -13,7 +13,7 @@
 
 ---
 
-> ⚠⚠ Steam Version Support isn't tested and not guaranted. May be bugs or unpredictable behaviour! ⚠⚠
+> ⚠⚠ Add Steam Version Support! ⚠⚠
 
 <div align="center">
   <img src=".github/promo.png" alt="">
