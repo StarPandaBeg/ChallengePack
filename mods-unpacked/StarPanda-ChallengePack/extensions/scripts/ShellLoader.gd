@@ -1,29 +1,34 @@
 extends "res://scripts/ShellLoader.gd"
 
-const CPGameConfig = preload("./CPGameConfig.gd")
+const CPGameConfig = preload("res://mods-unpacked/StarPanda-ChallengePack/util/CPGameConfig.gd")
 
-var dealerFirstMessageShown := false
-var rnd = RandomNumberGenerator.new()
-var lastTurn := 1
 var modePhrases := {
-	CPGameConfig.GameMode.DEFAULT: loadingDialogues,
 	CPGameConfig.GameMode.QUANTITY: ["Some of them are live.", "Now this is a real game."],
 	CPGameConfig.GameMode.HIDDEN: ["You won't know their real number.", "Now this is a real game."]
 }
+var lastTurn := 1
+var rnd = RandomNumberGenerator.new()
+var dealerFirstMessageShown := false
 
 func LoadShells():
+	ModLoaderLog.info("Running custom ShellLoader.LoadShells!", "StarPanda-ChallengePack:Main")
 	var current_mode = ProjectSettings.get_setting("challengepack_mode", 0)
-	
+
+	if (current_mode == CPGameConfig.GameMode.DEFAULT):
+		await super()
+		_resolve_first_turn()
+		return
+
+	var phrases = modePhrases[current_mode]
+	var phrasesAmount = len(phrases)
+
 	camera.BeginLerp("enemy")
 	if (!roundManager.shellLoadingSpedUp): await get_tree().create_timer(.8, false).timeout
 	await(DealerHandsGrabShotgun())
 	await get_tree().create_timer(.2, false).timeout
 	animator_shotgun.play("grab shotgun_pointing enemy")
 	await get_tree().create_timer(.45, false).timeout
-	
-	var phrases = modePhrases[current_mode]
-	var phrasesAmount = len(phrases)
-	
+
 	if (roundManager.playerData.numberOfDialogueRead < phrasesAmount):
 		if (diaindex >= phrasesAmount):
 			diaindex = 0
@@ -31,7 +36,7 @@ func LoadShells():
 		diaindex += 1
 		await get_tree().create_timer(3, false).timeout
 		roundManager.playerData.numberOfDialogueRead += 1
-		
+	
 	var numberOfShells = roundManager.roundArray[roundManager.currentRound].amountBlank + roundManager.roundArray[roundManager.currentRound].amountLive
 	if (current_mode == CPGameConfig.GameMode.HIDDEN):
 		numberOfShells = 8
@@ -74,6 +79,7 @@ func LoadShells():
 	await get_tree().create_timer(.8, false).timeout
 	animator_shotgun.play("enemy put down shotgun")
 	DealerHandsDropShotgun()
+	
 	_resolve_first_turn()
 	pass
 
@@ -95,11 +101,14 @@ func _resolve_first_turn() -> void:
 	
 func _turn_player() -> void:
 	camera.BeginLerp("home")
+	#ALLOW INTERACTION
+	roundManager.playerCurrentTurnItemArray = []
 	await get_tree().create_timer(.6, false).timeout
 	perm.SetStackInvalidIndicators()
 	cursor.SetCursor(true, true)
 	perm.SetIndicators(true)
 	perm.SetInteractionPermissions(true)
+	roundManager.SetupDeskUI()
 	
 func _turn_devil() -> void:
 	await get_tree().create_timer(.6, false).timeout
@@ -109,4 +118,3 @@ func _turn_devil() -> void:
 		dialogue.HideText()
 		dealerFirstMessageShown = true
 	dealerAI.BeginDealerTurn()
-	

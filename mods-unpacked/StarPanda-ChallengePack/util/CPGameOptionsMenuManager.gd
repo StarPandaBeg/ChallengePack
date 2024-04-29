@@ -27,6 +27,16 @@ var button_return_config := {
 	"button_position": Vector2(439, 430),
 	"button_scale": Vector2(10.154, 2.807),
 }
+var button_start_config := {
+	"ui_root": "Camera/dialogue UI/menu ui",
+	"label_text": "start",
+	"label_name": "button_challengepack_start_game custom",
+	"button_name": "true button_challengepack_start_game custom",
+	"logic_name": "button class_challengepack_start_game custom",
+	"label_position": Vector2(0, 394),
+	"button_position": Vector2(439, 400),
+	"button_scale": Vector2(10.154, 2.807),
+}
 
 var button_mode_config := {
 	"ui_root": "Camera/dialogue UI/menu ui",
@@ -73,7 +83,10 @@ func show() -> void:
 	
 func hide() -> void:
 	_set_menu_visibility(false)
-	menu_manager.Return()
+	menu_manager.ResetButtons()
+	menu_manager.Buttons(true)
+	menu_manager.ReturnToLastScreen()
+	CPButtonUtil.setState(menu_manager.buttons[0], true);
 
 func _init(root: Node, real_start: ButtonClass):
 	name = "challengepack menu manager"
@@ -89,7 +102,7 @@ func _configure(root: Node) -> void:
 	_create_title(root)
 	_create_version_label(root)
 	_create_buttons(root)
-	_reinit_start_button(root)
+	# _reinit_start_button(root)
 	
 func _create_title(root: Node) -> void:
 	var label = CPButtonUtil.createButtonLabel()
@@ -119,11 +132,13 @@ func _create_version_label(root: Node) -> void:
 
 func _create_buttons(root: Node) -> void:
 	var btn_return_logic = CPButtonUtil.createButtonWithConfig(root, button_return_config)
+	var btn_start_logic = CPButtonUtil.createButtonWithConfig(root, button_start_config)
 	var btn_mode_logic = CPButtonUtil.createButtonWithConfig(root, button_mode_config)
 	var btn_items_logic = CPButtonUtil.createButtonWithConfig(root, button_items_config)
 	var btn_shuffle_logic = CPButtonUtil.createButtonWithConfig(root, button_shuffle_config)
 	var btn_turn_logic = CPButtonUtil.createButtonWithConfig(root, button_turn_config)
 	
+	btn_start_logic.connect("is_pressed", func(): _on_start_click())
 	btn_return_logic.connect("is_pressed", hide)
 	btn_mode_logic.connect("is_pressed", func(): _on_mode_button_click("challengepack_mode", totalGameModes))
 	btn_items_logic.connect("is_pressed", func(): _on_mode_button_click("challengepack_item", totalItemModes))
@@ -135,7 +150,12 @@ func _create_buttons(root: Node) -> void:
 	_register_button(btn_items_logic)
 	_register_button(btn_shuffle_logic)
 	_register_button(btn_turn_logic)
+	_register_button(btn_start_logic)
 	_update_labels()
+	
+func _on_start_click() -> void:
+	_set_menu_visibility(false)
+	menu_manager.Start()
 	
 func _reinit_start_button(root: Node) -> void:
 	real_start_button.ui.position = Vector2(0, 394)

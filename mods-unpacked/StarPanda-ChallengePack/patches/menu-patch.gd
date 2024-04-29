@@ -45,10 +45,11 @@ func _inject_custom_menu(root: Node) -> void:
 	CPButtonUtil.setState(menu_custom_start_button, true)
 	
 	menu_manager.buttons[0] = menu_custom_start_button
-	menu_manager.screen_main[4] = menu_custom_start_button.ui
+	# menu_manager.screen_main[4] = menu_custom_start_button.ui
 
 func _on_custom_start_click(root: Node) -> void:
 	manager.show()
+	CPButtonUtil.setState(menu_custom_start_button, false)
 	
 func _instantiate_custom_manager(root: Node) -> void:
 	var parent = root.get_node("standalone managers")

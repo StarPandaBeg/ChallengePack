@@ -11,6 +11,8 @@ var last_scene := ""
 
 func _init() -> void:
 	mod_dir_path = CPModConfig.get_root_path()
+	randomize()
+	add_extensions()
 	add_patches()
 	
 func add_patches() -> void:
@@ -27,12 +29,20 @@ func add_patches() -> void:
 		if !(patches.has(obj.getSceneName())):
 			patches[obj.getSceneName()] = []
 		patches[obj.getSceneName()].append(obj)
+		
+func add_extensions() -> void:
+	ModLoaderMod.install_script_extension(mod_dir_path+"/extensions/scripts/BurnerPhone.gd")
+	ModLoaderMod.install_script_extension(mod_dir_path+"/extensions/scripts/ShellExamine.gd")
+	ModLoaderMod.install_script_extension(mod_dir_path+"/extensions/scripts/ShellSpawner.gd")
+	ModLoaderMod.install_script_extension(mod_dir_path+"/extensions/scripts/ShellLoader.gd")
 
 func _ready() -> void:
 	ModLoaderLog.info("Mod Ready!", STPND_CHALLENGEPACK_LOG)
 	
 func _process(delta):
 	var scene := get_scene_root()
+	if (!scene):
+		return
 	if !(patches.has(scene.name)):
 		return
 		
@@ -47,4 +57,4 @@ func _process(delta):
 		patch.apply(scene, repeated)
 		
 func get_scene_root() -> Node:
-	return get_tree().get_root().get_child(2)
+	return get_tree().get_root().get_child(5)

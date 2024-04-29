@@ -1,14 +1,14 @@
 {
   "name": "ChallengePack",
   "namespace": "StarPanda",
-  "version_number": "1.3.0",
+  "version_number": "1.4.0",
   "description": "No mercy, now game become very dangerous! Test your luck dancing on the edge of life and death!",
   "website_url": "https://github.com/StarPandaBeg/ChallengePack",
   "dependencies": [],
   "extra": {
 	"godot": {
 	  "compatible_mod_loader_version": ["4.0.0"],
-	  "compatible_game_version": ["1.1.0"],
+	  "compatible_game_version": ["1.2.0"],
 	  "authors": ["StarPanda"],
 	  "tags": [],
 	  "description_rich": "",
