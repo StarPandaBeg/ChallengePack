@@ -33,11 +33,29 @@ func _spawn_protectors(root: Node):
 	parent.add_child(protectorObj)
 	ModLoaderLog.debug("Item covers instantiated", STPND_CHALLENGEPACK_LOG)
 	
+	_register_item_steal_listener(root)
+	
 func _register_death_listener(root: Node):
 	var deathManager = root.get_node("standalone managers/death manager")
 	deathManager.connect("cp_death", _on_deathmanager_death)
 	ModLoaderLog.debug("Death signal connected", STPND_CHALLENGEPACK_LOG)
 	
+func _register_item_steal_listener(root: Node):
+	var itemManager = root.get_node("standalone managers/item manager")
+	itemManager.connect("cp_steal_start", func(): _on_itemmanager_steal_start(root))
+	itemManager.connect("cp_steal_end", func(): _on_itemmanager_steal_end(root))
+	ModLoaderLog.debug("Item steal signal connected", STPND_CHALLENGEPACK_LOG)
+	
 func _on_deathmanager_death():
 	ModLoaderLog.debug("Player died. Need to reload main patch!", STPND_CHALLENGEPACK_LOG)
 	applied_main = false
+	
+func _on_itemmanager_steal_start(root: Node):
+	ModLoaderLog.debug("Steal started!", STPND_CHALLENGEPACK_LOG)
+	var protector = root.get_node("tabletop parent/main tabletop/Protectors")
+	protector.visible = false
+	
+func _on_itemmanager_steal_end(root: Node):
+	ModLoaderLog.debug("Steal ended!", STPND_CHALLENGEPACK_LOG)
+	var protector = root.get_node("tabletop parent/main tabletop/Protectors")
+	protector.visible = true

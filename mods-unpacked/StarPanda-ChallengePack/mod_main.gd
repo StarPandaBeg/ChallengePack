@@ -34,6 +34,7 @@ func add_patches() -> void:
 		
 func add_extensions() -> void:
 	ModLoaderMod.install_script_extension(mod_dir_path+"/extensions/scripts/DeathManager.gd")
+	ModLoaderMod.install_script_extension(mod_dir_path+"/extensions/scripts/ItemManager.gd")
 	# ModLoaderMod.install_script_extension(mod_dir_path+"/extensions/scripts/BurnerPhone.gd")
 	# ModLoaderMod.install_script_extension(mod_dir_path+"/extensions/scripts/ShellExamine.gd")
 	# ModLoaderMod.install_script_extension(mod_dir_path+"/extensions/scripts/ShellSpawner.gd")
