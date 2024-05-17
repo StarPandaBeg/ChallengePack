@@ -53,7 +53,7 @@ func _on_custom_start_click(root: Node) -> void:
 	
 func _instantiate_custom_manager(root: Node) -> void:
 	var parent = root.get_node("standalone managers")
-	var manager = CPGameOptionsMenuManager.new(root, menu_real_start_button)
+	var manager = CPGameOptionsMenuManager.new(root)
 	parent.add_child(manager)
 	self.manager = manager
 	
