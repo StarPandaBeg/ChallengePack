@@ -1,19 +1,24 @@
 extends "./patch.gd"
 
-const CPGameConfig = preload("../util/CPGameConfig.gd")
 const STPND_CHALLENGEPACK_LOG := "StarPanda-ChallengePack:MainPatch"
+const CPGameConfig = preload("../util/CPGameConfig.gd")
+
+var applied_main = false
 
 func _init():
 	scene_name = "main"
-	repeatable = false
-	
+	repeatable = true
+
 func _apply(root: Node):
-	var patched = !root.has_node("standalone managers/shell spawner")
-	if (patched):
+	if (applied_main):
 		return
+	ModLoaderLog.debug("Apply phase started", STPND_CHALLENGEPACK_LOG)
+	
+	_register_death_listener(root)
 	_spawn_protectors(root)
 	
-	ModLoaderLog.info("Applied main patch!", STPND_CHALLENGEPACK_LOG)
+	ModLoaderLog.debug("Apply phase finished", STPND_CHALLENGEPACK_LOG)
+	applied_main = true
 	return true
 	
 func _spawn_protectors(root: Node):
@@ -26,4 +31,13 @@ func _spawn_protectors(root: Node):
 	
 	var protectorObj = protector.instantiate()
 	parent.add_child(protectorObj)
+	ModLoaderLog.debug("Item covers instantiated", STPND_CHALLENGEPACK_LOG)
 	
+func _register_death_listener(root: Node):
+	var deathManager = root.get_node("standalone managers/death manager")
+	deathManager.connect("cp_death", _on_deathmanager_death)
+	ModLoaderLog.debug("Death signal connected", STPND_CHALLENGEPACK_LOG)
+	
+func _on_deathmanager_death():
+	ModLoaderLog.debug("Player died. Need to reload main patch!", STPND_CHALLENGEPACK_LOG)
+	applied_main = false
