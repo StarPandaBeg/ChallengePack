@@ -10,10 +10,12 @@ var patches := {}
 var last_scene := ""
 
 func _init() -> void:
+	ModLoaderLog.debug("Init phase started", STPND_CHALLENGEPACK_LOG)
 	mod_dir_path = CPModConfig.get_root_path()
 	randomize()
 	add_extensions()
 	add_patches()
+	ModLoaderLog.debug("Init phase finished", STPND_CHALLENGEPACK_LOG)
 	
 func add_patches() -> void:
 	patches_dir_path = mod_dir_path + "/patches"
@@ -31,6 +33,8 @@ func add_patches() -> void:
 		patches[obj.getSceneName()].append(obj)
 		
 func add_extensions() -> void:
+	ModLoaderMod.install_script_extension(mod_dir_path+"/extensions/scripts/DeathManager.gd")
+	ModLoaderMod.install_script_extension(mod_dir_path+"/extensions/scripts/ItemManager.gd")
 	ModLoaderMod.install_script_extension(mod_dir_path+"/extensions/scripts/BurnerPhone.gd")
 	ModLoaderMod.install_script_extension(mod_dir_path+"/extensions/scripts/ShellExamine.gd")
 	ModLoaderMod.install_script_extension(mod_dir_path+"/extensions/scripts/ShellSpawner.gd")
@@ -40,7 +44,7 @@ func _ready() -> void:
 	ModLoaderLog.info("Mod Ready!", STPND_CHALLENGEPACK_LOG)
 	
 func _process(delta):
-	var scene := get_scene_root()
+	var scene := get_scene_name()
 	if (!scene):
 		return
 	if !(patches.has(scene.name)):
@@ -56,5 +60,5 @@ func _process(delta):
 	for patch in patchArr:
 		patch.apply(scene, repeated)
 		
-func get_scene_root() -> Node:
-	return get_tree().get_root().get_child(5)
+func get_scene_name() -> Node:
+	return get_tree().current_scene;

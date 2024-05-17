@@ -12,7 +12,6 @@ var totalShuffleModes = len(CPGameConfig.ShuffleMode.keys())
 var totalTurnModes = len(CPGameConfig.TurnMode.keys())
 
 var menu_manager: MenuManager
-var real_start_button: ButtonClass
 var menu_items: Array[Control]
 var menu_buttons: Array[ButtonClass]
 var shown: bool
@@ -76,21 +75,16 @@ var button_turn_config := {
 }
 
 func show() -> void:
-	menu_manager.ResetButtons()
-	menu_manager.Buttons(false)
 	menu_manager.Show("e")
 	_set_menu_visibility(true)
 	
 func hide() -> void:
 	_set_menu_visibility(false)
+	menu_manager.Show("main")
 	menu_manager.ResetButtons()
-	menu_manager.Buttons(true)
-	menu_manager.ReturnToLastScreen()
-	CPButtonUtil.setState(menu_manager.buttons[0], true);
 
-func _init(root: Node, real_start: ButtonClass):
+func _init(root: Node):
 	name = "challengepack menu manager"
-	real_start_button = real_start
 	_configure(root)
 
 func _ready():
@@ -156,14 +150,6 @@ func _create_buttons(root: Node) -> void:
 func _on_start_click() -> void:
 	_set_menu_visibility(false)
 	menu_manager.Start()
-	
-func _reinit_start_button(root: Node) -> void:
-	real_start_button.ui.position = Vector2(0, 394)
-	real_start_button.ui_control.position = Vector2(439, 400)
-	
-	real_start_button.connect("is_pressed", func(): _set_menu_visibility(false))
-	menu_buttons.append(real_start_button)
-	menu_items.append(real_start_button.ui)
 	
 func _set_menu_visibility(state: bool) -> void:
 	for logic in menu_buttons:

@@ -6,41 +6,31 @@ var modePhrases := {
 	CPGameConfig.GameMode.QUANTITY: ["Some of them are live.", "Now this is a real game."],
 	CPGameConfig.GameMode.HIDDEN: ["You won't know their real number.", "Now this is a real game."]
 }
-var lastTurn := 1
-var rnd = RandomNumberGenerator.new()
 var dealerFirstMessageShown := false
+var rnd = RandomNumberGenerator.new()
+var lastTurn := 1
 
 func LoadShells():
-	ModLoaderLog.info("Running custom ShellLoader.LoadShells!", "StarPanda-ChallengePack:Main")
 	var current_mode = ProjectSettings.get_setting("challengepack_mode", 0)
-
-	if (current_mode == CPGameConfig.GameMode.DEFAULT):
-		await super()
-		_resolve_first_turn()
-		return
-
-	var phrases = modePhrases[current_mode]
-	var phrasesAmount = len(phrases)
-
+	
+	# ORIGINAL CODE
 	camera.BeginLerp("enemy")
 	if (!roundManager.shellLoadingSpedUp): await get_tree().create_timer(.8, false).timeout
 	await(DealerHandsGrabShotgun())
 	await get_tree().create_timer(.2, false).timeout
 	animator_shotgun.play("grab shotgun_pointing enemy")
 	await get_tree().create_timer(.45, false).timeout
-
-	if (roundManager.playerData.numberOfDialogueRead < phrasesAmount):
-		if (diaindex >= phrasesAmount):
-			diaindex = 0
-		dialogue.ShowText_ForDuration(phrases[diaindex], 3)
-		diaindex += 1
-		await get_tree().create_timer(3, false).timeout
-		roundManager.playerData.numberOfDialogueRead += 1
+	# END ORIGINAL CODE
 	
+	_cpIntroductionPhrases(current_mode)
+	
+	# ORIGINAL CODE
 	var numberOfShells = roundManager.roundArray[roundManager.currentRound].amountBlank + roundManager.roundArray[roundManager.currentRound].amountLive
+	# END ORIGINAL CODE
 	if (current_mode == CPGameConfig.GameMode.HIDDEN):
 		numberOfShells = 8
-	
+		
+	# ORIGINAL CODE
 	for i in range(numberOfShells):
 		speaker_loadShell.play()
 		animator_dealerHandRight.play("load single shell")
@@ -79,14 +69,42 @@ func LoadShells():
 	await get_tree().create_timer(.8, false).timeout
 	animator_shotgun.play("enemy put down shotgun")
 	DealerHandsDropShotgun()
+	# END ORIGINAL CODE
 	
-	_resolve_first_turn()
-	pass
+	_cpResolveNextTurn()
+	
+func _cpIntroductionPhrases(current_mode: int):
+	if (current_mode == CPGameConfig.GameMode.DEFAULT):
+		# ORIGINAL CODE (from LoadShells)
+		if (roundManager.playerData.numberOfDialogueRead < 3):	
+			if (diaindex == loadingDialogues.size()):
+				diaindex = 0
+			var stringshow
+			if (diaindex == 0): stringshow = tr("SHELL INSERT1")
+			if (diaindex == 1): stringshow = tr("SHELL INSERT2")
+			dialogue.ShowText_ForDuration(stringshow, 3)
+			diaindex += 1
+			await get_tree().create_timer(3, false).timeout
+			roundManager.playerData.numberOfDialogueRead += 1
+		# END ORIGINAL CODE
+		return
+		
+	var phrases = modePhrases[current_mode]
+	var phrasesAmount = phrases.size()
+	
+	# TODO: Replace 3 with actual phrase amount
+	if (roundManager.playerData.numberOfDialogueRead < 3):
+		if (diaindex == phrasesAmount):
+			diaindex = 0
+		dialogue.ShowText_ForDuration(phrases[diaindex], 3)
+		diaindex += 1
+		await get_tree().create_timer(3, false).timeout
+		roundManager.playerData.numberOfDialogueRead += 1
 
-func _resolve_first_turn() -> void:
+func _cpResolveNextTurn():
 	var turn_mode = ProjectSettings.get_setting("challengepack_turn", 0)
 	if (turn_mode == CPGameConfig.TurnMode.ALWAYS_FIRST):
-		await _turn_player()
+		await _cpTurnPlayer()
 		return
 	
 	var next_turn = 1 if (lastTurn == 0) else 0
@@ -94,12 +112,13 @@ func _resolve_first_turn() -> void:
 		next_turn = rnd.randi_range(0, 1)
 	
 	if (next_turn == 0):
-		await _turn_player()
+		await _cpTurnPlayer()
 	else:
-		await _turn_devil()
+		await _cpTurnDealer()
 	lastTurn = next_turn
-	
-func _turn_player() -> void:
+		
+func _cpTurnPlayer() -> void:
+	# ORIGINAL CODE (from LoadShells)
 	camera.BeginLerp("home")
 	#ALLOW INTERACTION
 	roundManager.playerCurrentTurnItemArray = []
@@ -109,8 +128,9 @@ func _turn_player() -> void:
 	perm.SetIndicators(true)
 	perm.SetInteractionPermissions(true)
 	roundManager.SetupDeskUI()
-	
-func _turn_devil() -> void:
+	# END ORIGINAL CODE
+
+func _cpTurnDealer() -> void:
 	await get_tree().create_timer(.6, false).timeout
 	if (!dealerFirstMessageShown):
 		dialogue.ShowText_Forever("I'll be the first")
