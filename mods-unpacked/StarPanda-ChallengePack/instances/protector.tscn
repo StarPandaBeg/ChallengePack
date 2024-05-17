@@ -7,11 +7,11 @@
 [node name="Protectors" type="Node3D"]
 
 [node name="Protector A" type="MeshInstance3D" parent="."]
-transform = Transform3D(-1.22392e-07, 0, 3, 0, 2, 0, -2.8, 0, -1.31134e-07, -4.198, -0.128, 5.254)
+transform = Transform3D(-1.22392e-07, 0, 3, 0, 2, 0, -2.8, 0, -1.31134e-07, -4.198, 0.1, 5.254)
 material_override = ExtResource("1_878go")
 mesh = ExtResource("2_nb5nn")
 
 [node name="Protector B" type="MeshInstance3D" parent="."]
-transform = Transform3D(-1.22392e-07, 0, 3, 0, 2, 0, -2.8, 0, -1.31134e-07, -4.198, -0.128, -5.254)
+transform = Transform3D(-1.22392e-07, 0, 3, 0, 2, 0, -2.8, 0, -1.31134e-07, -4.198, 0.1, -5.254)
 material_override = ExtResource("3_y12nr")
 mesh = ExtResource("2_nb5nn")
