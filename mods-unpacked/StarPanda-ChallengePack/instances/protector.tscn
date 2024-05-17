@@ -5,6 +5,7 @@
 [ext_resource type="Material" uid="uid://bbo78ki510rw2" path="res://mods-unpacked/StarPanda-ChallengePack/materials/mat_protector_b.tres" id="3_y12nr"]
 
 [node name="Protectors" type="Node3D"]
+transform = Transform3D(1.2, 0, 0, 0, 1.3, 0, 0, 0, 1, 0, 0, 0)
 
 [node name="Protector A" type="MeshInstance3D" parent="."]
 transform = Transform3D(-1.22392e-07, 0, 3, 0, 2, 0, -2.8, 0, -1.31134e-07, -4.198, 0.1, 5.254)
