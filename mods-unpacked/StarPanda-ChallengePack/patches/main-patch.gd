@@ -10,7 +10,7 @@ func _init():
 	repeatable = true
 
 func _apply(root: Node):
-	if (applied_main):
+	if (applied_main && applied):
 		return
 	ModLoaderLog.debug("Apply phase started", STPND_CHALLENGEPACK_LOG)
 	
