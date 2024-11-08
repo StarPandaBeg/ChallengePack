@@ -13,7 +13,7 @@
 
 ---
 
-> ⚠⚠ Add Steam Version Support! ⚠⚠
+> ⚠⚠ Not updated to Multiplayer version ⚠⚠
 
 <div align="center">
   <img src=".github/promo.png" alt="">
