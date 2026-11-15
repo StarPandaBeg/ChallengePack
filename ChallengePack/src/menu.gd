@@ -37,8 +37,8 @@ func setup(owner_port: Node, menu_manager: Node):
 	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	panel.add_child(center)
 	var column = VBoxContainer.new()
-	column.custom_minimum_size = Vector2(800, 0)
-	column.add_theme_constant_override("separation", 3)
+	column.custom_minimum_size = Vector2(880, 0)
+	column.add_theme_constant_override("separation", 6)
 	var font = load("res://fonts/fake receipt.otf")
 	if font != null:
 		column.theme = Theme.new()
@@ -49,13 +49,20 @@ func setup(owner_port: Node, menu_manager: Node):
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 28)
 	column.add_child(title)
+	var grid = GridContainer.new()
+	grid.columns = 2
+	grid.add_theme_constant_override("h_separation", 24)
+	grid.add_theme_constant_override("v_separation", 8)
+	column.add_child(grid)
 	for key in LABELS:
-		var button = make_button(column, "")
+		var button = make_button(grid, "")
+		button.custom_minimum_size = Vector2(428, 54)
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		button.pressed.connect(change.bind(key))
 		buttons[key] = button
 	status = Label.new()
 	status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	status.custom_minimum_size = Vector2(800, 30)
+	status.custom_minimum_size = Vector2(880, 24)
 	status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	status.add_theme_font_size_override("font_size", 18)
 	column.add_child(status)
@@ -63,14 +70,27 @@ func setup(owner_port: Node, menu_manager: Node):
 	start_button.pressed.connect(start)
 	return_button = make_button(column, "")
 	return_button.pressed.connect(close)
-	var navigation = []
-	for child in column.get_children():
-		if child is Button:
-			navigation.append(child)
+	var choices = buttons.values()
+	for i in range(choices.size()):
+		var button = choices[i]
+		var across = i + 1 if i % 2 == 0 else i - 1
+		var horizontal = choices[across] if across < choices.size() else button
+		button.focus_neighbor_left = button.get_path_to(horizontal)
+		button.focus_neighbor_right = button.get_path_to(horizontal)
+		button.focus_neighbor_top = button.get_path_to(choices[i - 2] if i >= 2 else return_button)
+		button.focus_neighbor_bottom = button.get_path_to(choices[i + 2] if i + 2 < choices.size() else start_button)
+	start_button.focus_neighbor_top = start_button.get_path_to(choices.back())
+	start_button.focus_neighbor_bottom = start_button.get_path_to(return_button)
+	return_button.focus_neighbor_top = return_button.get_path_to(start_button)
+	return_button.focus_neighbor_bottom = return_button.get_path_to(choices[0])
+	for button in [start_button, return_button]:
+		button.focus_neighbor_left = button.get_path_to(button)
+		button.focus_neighbor_right = button.get_path_to(button)
+	var navigation = choices + [start_button, return_button]
 	for i in range(navigation.size()):
 		var button = navigation[i]
-		button.focus_neighbor_top = button.get_path_to(navigation[(i - 1 + navigation.size()) % navigation.size()])
-		button.focus_neighbor_bottom = button.get_path_to(navigation[(i + 1) % navigation.size()])
+		button.focus_previous = button.get_path_to(navigation[(i - 1 + navigation.size()) % navigation.size()])
+		button.focus_next = button.get_path_to(navigation[(i + 1) % navigation.size()])
 	version = Label.new()
 	version.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	version.add_theme_font_size_override("font_size", 16)
@@ -103,7 +123,10 @@ func refresh():
 	for key in buttons:
 		var value_key = LABELS[key][1][port.settings.values[key]]
 		var value = port.localization.text(value_key) if value_key.begins_with("CP_") else tr(value_key)
-		buttons[key].text = port.localization.text(LABELS[key][0]) + ": " + value
+		var caption = port.localization.text(LABELS[key][0])
+		if key == "contract":
+			caption += " (%d%%)" % roundi(port.challenges.CONTRACT_CHANCE * 100)
+		buttons[key].text = caption + ":\n" + value
 	start_button.disabled = not port.compatible
 	status.text = "" if port.compatible else port.localization.text("CP_CANNOT_START", [port.compatibility_message()])
 

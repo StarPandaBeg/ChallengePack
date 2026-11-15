@@ -24,6 +24,7 @@ func run():
 				port.active.contract = selection
 				port.active.pocket = 2
 				var before = f.loader.dialogue.texts.size()
+				arm_contract()
 				await port.challenges.begin_round(f.rm)
 				var entry = port.challenges.state(f.rm)
 				if not has_items:
@@ -47,13 +48,15 @@ func run():
 	# No-item random selection must never return an item restriction.
 	port.active.contract = 1
 	for i in range(100):
-		check(port.challenges.select_contract(false) == 2)
+		check(port.challenges.select_contract(false) in [0, 2])
 	# The suspended fixed rule returns when the same manager enters an item round.
 	port.active.contract = 2
 	f.rm.roundArray[0].usingItems = false
+	arm_contract()
 	await port.challenges.begin_round(f.rm)
 	check(not port.challenges.item_breaks_contract(f.rm, "cigarettes"))
 	f.rm.roundArray[0].usingItems = true
+	arm_contract()
 	await port.challenges.begin_round(f.rm)
 	check(port.challenges.item_breaks_contract(f.rm, "cigarettes"))
 	port.challenges.state(f.rm).used = 2

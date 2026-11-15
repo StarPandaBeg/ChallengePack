@@ -92,6 +92,8 @@ func run():
 	f.items.set_process(false)
 	f.rm.roundArray[0].startingHealth = 4
 	var counter = child(f.root, stub("HealthCounter", {"UpdateDisplay": "calls += 1"}, "var calls = 0\n"))
+	counter.speaker_beep = child(f.root, AudioStreamPlayer3D.new())
+	counter.speaker_beep.stream = AudioStreamGenerator.new()
 	# Test health limits, saw independence, severed wires and no resurrection.
 	f.rm.currentShotgunDamage = 2
 	for player in [false, true]:
@@ -101,8 +103,10 @@ func run():
 			for cut in [false, true]:
 				f.rm.set(key, health)
 				f.rm.set(wire, cut)
+				counter.speaker_beep.stop()
 				port.heal_bullets.apply(f.rm, "player" if player else "dealer", counter)
 				check(f.rm.get(key) == (health + 1 if health > 0 and health < 4 and not cut else health), "Healing bypassed a limit")
+				check(counter.speaker_beep.playing == (health > 0 and health < 4 and not cut), "Healing sound did not match restored HP")
 		f.rm.set(wire, false)
 	# Player shot: real adapted Shoot and ejection; stub only presentation/final turn.
 	var eject = ejector(f)
@@ -122,6 +126,7 @@ func run():
 		f.spawner.sequenceArray.assign(["heal", "live"])
 		f.ai.sequenceArray_knownShell.assign([false, false])
 		var before = shooting.finishes.size()
+		counter.speaker_beep.stop()
 		await shooting.Shoot(target)
 		# Vanilla dispatches ShootingDealerEjection without awaiting its animation.
 		await create_timer(3, false).timeout
@@ -146,6 +151,7 @@ func run():
 		f.rm.health_opponent = 2
 		f.spawner.sequenceArray.assign(["heal", "live"])
 		f.ai.sequenceArray_knownShell.assign([false, false])
+		counter.speaker_beep.stop()
 		await ai.Shoot(target)
 		check(ai.finishes.back() == (target == "self"))
 		check(f.rm.health_player == (3 if target == "player" else 2))

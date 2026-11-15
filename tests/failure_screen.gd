@@ -42,6 +42,7 @@ func run():
 			current_scene = f.root
 			f.items.set_process(false)
 			f.rm.roundArray[0].usingItems = true
+			arm_contract()
 			await port.challenges.begin_round(f.rm)
 			f.rm.health_player = 3
 			f.spawner.sequenceArray.assign(["heal", "blank"])

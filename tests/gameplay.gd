@@ -25,6 +25,16 @@ func child(parent: Node, node: Node) -> Node:
 	parent.add_child(node)
 	return node
 
+func arm_contract():
+	# Use the production chance, with a deterministic successful roll in fixtures.
+	var probe = RandomNumberGenerator.new()
+	for candidate in range(100):
+		probe.seed = candidate
+		if probe.randf() < port.challenges.CONTRACT_CHANCE:
+			port.challenges.rng.seed = candidate
+			return
+	check(false, "Cannot find a successful contract roll")
+
 func animator(parent: Node, names: Array) -> AnimationPlayer:
 	var player = AnimationPlayer.new()
 	var library = AnimationLibrary.new()

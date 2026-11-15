@@ -31,6 +31,24 @@ func run():
 	await process_frame
 	check(port.options.buttons.size() == 9)
 	var viewport_rect = root.get_visible_rect()
+	check(port.options.buttons.items.position.x > port.options.buttons.shells.position.x, "Settings are not in two columns")
+	check(is_equal_approx(port.options.buttons.items.position.y, port.options.buttons.shells.position.y))
+	var saved_values = port.settings.snapshot()
+	for language in ["en", "ru"]:
+		TranslationServer.set_locale(language)
+		for key in port.options.buttons:
+			for value in range(port.Settings.LIMITS[key]):
+				port.settings.values[key] = value
+				port.options.refresh()
+				await process_frame
+				await process_frame
+				for button in port.options.buttons.values() + [port.options.start_button, port.options.return_button]:
+					check(viewport_rect.encloses(button.get_global_rect()), "Two-column menu overflows: " + button.text)
+	port.settings.values = saved_values
+	port.options.refresh()
+	check(port.options.buttons.shells.get_node(port.options.buttons.shells.focus_neighbor_right) == port.options.buttons.items)
+	check(port.options.buttons.shells.get_node(port.options.buttons.shells.focus_neighbor_bottom) == port.options.buttons.shuffle)
+	check(port.options.buttons.heal.get_node(port.options.buttons.heal.focus_neighbor_bottom) == port.options.start_button)
 	for button in port.options.buttons.values() + [port.options.start_button, port.options.return_button]:
 		check(viewport_rect.encloses(button.get_global_rect()), "Challenge menu extends beyond the viewport: %s %s in %s" % [button.text, button.get_global_rect(), viewport_rect])
 	var original_locale = TranslationServer.get_locale()
@@ -43,7 +61,7 @@ func run():
 	for button in port.options.buttons.values() + [port.options.start_button, port.options.return_button]:
 		check(viewport_rect.encloses(button.get_global_rect()), "Russian challenge menu extends beyond the viewport")
 	check(port.options.title.text == "настройка игры")
-	check(port.options.buttons.shells.text.begins_with("видимость патронов: "))
+	check(port.options.buttons.shells.text.begins_with("видимость патронов:\n"))
 	check(port.options.start_button.text == TranslationServer.translate("START"))
 	check(port.options.return_button.text == TranslationServer.translate("RETURN"))
 	check(port.options.version.text == "ChallengePack 2.0.0 / одиночная игра")

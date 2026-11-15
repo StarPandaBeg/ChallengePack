@@ -1,6 +1,7 @@
 extends RefCounted
 
 const CONTRACT_KEYS = ["CP_OFF", "CP_NO_HEALING", "CP_NO_SELF_SHOTS", "CP_NO_CUFFS"]
+const CONTRACT_CHANCE = 0.30
 var port: Node
 var managers = {}
 var current: WeakRef
@@ -28,6 +29,10 @@ func reset_pocket(manager: Node):
 
 func select_contract(has_items: bool = true) -> int:
 	var selection = mode("contract")
+	if selection == 0 or (not has_items and selection in [2, 4]):
+		return 0
+	if rng.randf() >= CONTRACT_CHANCE:
+		return 0
 	if not has_items:
 		return 2 if selection in [1, 3] else 0
 	return rng.randi_range(1, 3) if selection == 1 else maxi(0, selection - 1)

@@ -54,6 +54,8 @@ func apply(manager: Node, target: String, counter: Node):
 	if health > 0 and not wire_cut and health < maximum:
 		manager.set(health_key, mini(maximum, health + 1))
 		counter.UpdateDisplay()
+		if counter.speaker_beep != null:
+			counter.speaker_beep.play()
 
 func infer_shell(ai: Node) -> bool:
 	var sequence = ai.shellSpawner.sequenceArray

@@ -83,6 +83,7 @@ func run():
 					root.add_child(f.root)
 					f.items.set_process(false)
 					f.rm.roundArray[0].usingItems = true
+					arm_contract()
 					await port.challenges.begin_round(f.rm)
 					var entry = port.challenges.state(f.rm)
 					if contract == 1:
@@ -182,6 +183,7 @@ func run():
 	var f = fixture()
 	root.add_child(f.root)
 	f.items.set_process(false)
+	arm_contract()
 	await port.challenges.begin_round(f.rm)
 	var shooting = load("res://scripts/ShotgunShooting.gd").new()
 	shooting.roundManager = f.rm
