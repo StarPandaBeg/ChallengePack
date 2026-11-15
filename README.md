@@ -13,7 +13,7 @@
 
 ---
 
-> **ChallengePack 2.0.0** for **Buckshot Roulette 2.2.0.6 (Steam, Windows)**, Godot **4.1.1**. Single-player only; multiplayer and leaderboard uploads are disabled while installed.
+> **ChallengePack 2.1.0** for **Buckshot Roulette 2.2.0.6 (Steam, Windows)**, Godot **4.1.1**. Single-player only; multiplayer and leaderboard uploads are disabled while installed.
 
 <div align="center">
   <img src=".github/promo.png" alt="Challenge Pack">
@@ -80,7 +80,7 @@ Your choices are saved between launches. The two-column menu supports mouse, key
 
 ## Installation
 
-1. Download the **2.0.0** archive from [releases](https://github.com/StarPandaBeg/ChallengePack/releases), or build it from source using the instructions below.
+1. Download the **2.1.0** archive from [releases](https://github.com/StarPandaBeg/ChallengePack/releases), or build it from source using the instructions below.
 2. Open the folder containing `Buckshot Roulette.exe` through Steam: **Manage → Browse local files**, then open `Buckshot Roulette_windows`.
 3. Extract the entire `ChallengePack` folder next to the executable:
 
@@ -131,7 +131,7 @@ Run `build.bat` from the repository root, or double-click it in Explorer. To ski
 .\build.bat /q
 ```
 
-The script rebuilds `ChallengePack/src/assets/protectors.res` from the mesh and textures in `assets/protectors/`, then creates `dist/ChallengePack-2.0.0-win64.zip` and its SHA-256 checksum. It stops if either step fails. Only `install.bat` and `uninstall.bat` sit at the top of the installable mod folder; its scripts and resources are kept in `src/`. The archive contains the installable mod and documentation; Python and the Godot editor are not required to play.
+The script rebuilds `ChallengePack/src/assets/protectors.res` from the mesh and textures in `assets/protectors/`, then creates `dist/ChallengePack-2.1.0-win64.zip` and its SHA-256 checksum. It stops if either step fails. Only `install.bat` and `uninstall.bat` sit at the top of the installable mod folder; its scripts and resources are kept in `src/`. The archive contains the installable mod and documentation; Python and the Godot editor are not required to play.
 
 ### Localization
 
@@ -162,6 +162,8 @@ Compatibility hashes pin the supported game scripts. Update them with `python to
   <img src=".github/1.png" alt="Challenge configuration">
   <img src=".github/2.png" alt="Shell visibility challenge">
   <img src=".github/3.png" alt="Hidden items challenge">
+  <img src=".github/4.png" alt="Contract">
+  <img src=".github/5.png" alt="Healing bullets">
 </div>
 
 Menu layout may differ.

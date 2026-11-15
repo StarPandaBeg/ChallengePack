@@ -1,4 +1,4 @@
-# Validation — 2.0.0
+# Validation — 2.1.0
 
 Target: Buckshot Roulette **2.2.0.6**, Steam Windows, Godot **4.1.1**.
 
