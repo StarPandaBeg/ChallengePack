@@ -2,3 +2,4 @@
 dist/
 tests/.scratch/
 *.log
+__pycache__/

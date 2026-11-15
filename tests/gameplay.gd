@@ -18,7 +18,7 @@ func stub(name: String, methods: Dictionary, fields: String = "") -> Node:
 		for line in methods[method].split("\n"):
 			body += "\t" + line + "\n"
 	script.source_code = body
-	assert(script.reload() == OK)
+	check(script.reload() == OK)
 	return script.new()
 
 func child(parent: Node, node: Node) -> Node:
@@ -87,6 +87,10 @@ func fixture() -> Dictionary:
 	loader.shotgunHand_L = child(group, Node3D.new())
 	loader.shotgunHand_R = child(group, Node3D.new())
 	child(group, loader)
+	var recording = {"motions": 0}
+	loader.animator_dealerHandRight.animation_started.connect(func(name):
+		if name == "load single shell":
+			recording.motions += 1)
 	rm.shellSpawner = spawner
 	rm.shellLoader = loader
 	var items = load("res://scripts/ItemManager.gd").new()
@@ -99,13 +103,13 @@ func fixture() -> Dictionary:
 	items.controller = child(group, stub("ControllerManager", {}))
 	items.interaction = child(group, stub("ItemInteraction", {"EnablePermissions": "pass", "DisableShotgun": "pass", "DisablePermissions": "pass"}))
 	child(group, items)
-	return {"root": group, "rm": rm, "spawner": spawner, "loader": loader, "ai": ai, "perm": perm, "items": items, "table": table, "dialogue": dialogue}
+	return {"root": group, "rm": rm, "spawner": spawner, "loader": loader, "ai": ai, "perm": perm, "items": items, "table": table, "dialogue": dialogue, "recording": recording}
 
 func run():
 	directory = get_script().resource_path.get_base_dir().get_base_dir().path_join("ChallengePack")
 	port = load(directory.path_join("challengepack.gd")).new()
 	root.add_child(port)
-	assert(port.compatible)
+	check(port.compatible)
 	factory = port.factory
 	var translation = Translation.new()
 	translation.locale = "en"
@@ -122,52 +126,77 @@ func run():
 					var f = fixture()
 					root.add_child(f.root)
 					f.items.set_process(false)
+					# Cover both normal and accelerated loading, and main/endless state.
+					f.rm.shellLoadingSpedUp = shuffle == 0
+					f.rm.endless = items == 1
 					await f.spawner.MainShellRoutine()
-					assert(f.spawner.sequenceArray.count("live") == 2)
-					assert(f.spawner.sequenceArray.count("blank") == 3)
+					check(f.spawner.sequenceArray.count("live") == 2)
+					check(f.spawner.sequenceArray.count("blank") == 3)
 					var displayed = []
 					for shell in f.spawner.spawnedShellObjectArray:
 						var branch = shell.get_child(0)
 						displayed.append("live" if branch.isLive else "blank")
 						if shells == 1:
-							assert(branch.mesh.get_surface_override_material(1).albedo_color == branch.mat_blank.albedo_color)
+							check(branch.mesh.get_surface_override_material(1).albedo_color == branch.mat_blank.albedo_color)
 					if shuffle == 1:
-						assert(displayed == f.spawner.sequenceArray, "Reload shuffled the displayed order")
+						check(displayed == f.spawner.sequenceArray, "Reload shuffled the displayed order")
 					if shells != 0:
-						assert(f.rm.playerData.skippingShellDescription)
+						check(f.rm.playerData.skippingShellDescription)
+						check(not f.spawner.speaker_audioIndicator.playing)
 					if shells == 2:
-						assert(f.spawner.anim_compartment.current_animation == "")
-						assert(not f.spawner.speaker_audioIndicator.playing)
+						check(f.spawner.anim_compartment.current_animation == "")
+						check(not f.spawner.speaker_audioIndicator.playing)
 					var sequence = f.spawner.sequenceArray.duplicate()
 					var chosen = 0 if turn != 2 else -1
 					await f.loader.LoadShells()
-					assert(f.ai.dealer_calls + f.rm.player_calls == 1, "Must start exactly one turn")
+					check(f.recording.motions == (8 if shells == 2 else 5), "Incorrect number of loading gestures")
+					check(f.ai.dealer_calls + f.rm.player_calls == 1, "Must start exactly one turn")
 					if chosen == 0:
-						assert(f.rm.player_calls == 1)
-					assert(f.spawner.sequenceArray == sequence, "Presentation changed live shell data")
+						check(f.rm.player_calls == 1)
+					check(f.spawner.sequenceArray == sequence, "Presentation changed live shell data")
 					if turn == 1:
 						await f.loader.LoadShells()
-						assert(f.ai.dealer_calls == 1 and f.rm.player_calls == 1)
+						check(f.ai.dealer_calls == 1 and f.rm.player_calls == 1)
+					# The original information items must still read actual chamber data.
+					var examine = load("res://scripts/ShellExamine.gd").new()
+					examine.shellSpawner = f.spawner
+					examine.shellParent = Node3D.new()
+					examine.mesh = f.spawner.spawnedShellObjectArray[0].get_child(0).mesh
+					examine.mat_live = StandardMaterial3D.new()
+					examine.mat_blank = StandardMaterial3D.new()
+					examine.SetupShell()
+					check(examine.mesh.get_surface_override_material(1) == (examine.mat_live if sequence[0] == "live" else examine.mat_blank))
+					examine.shellParent.free()
+					examine.free()
 					if items == 1:
 						var cover = f.table.get_node("Protectors")
-						assert(cover.get_child_count() == 2 and cover.visible)
+						check(cover.get_child_count() == 2 and cover.visible)
 						await f.items.SetupItemSteal()
-						assert(not cover.visible)
+						check(not cover.visible)
 						f.items.RevertItemSteal()
-						assert(cover.visible)
+						check(cover.visible)
 						await f.items.SetupItemSteal()
 						await f.items.RevertItemSteal_Timeout()
-						assert(cover.visible)
+						check(cover.visible)
 					else:
-						assert(f.table.get_child_count() == 0)
+						check(f.table.get_child_count() == 0)
 					f.root.queue_free()
 					await process_frame
 					checks += 1
 					print("CP_MATRIX_STEP ", checks)
 	Engine.time_scale = 1
 	await process_frame
-	assert(port.states.is_empty() and port.covers.is_empty(), "Dead scene retained")
+	await process_frame
+	print("CP_CLEANUP states=", port.states.size(), " covers=", port.covers.size())
+	for id in port.states:
+		print("CP_RETAINED_STATE ", port.states[id].ref.get_ref())
+	check(port.states.is_empty() and port.covers.is_empty(), "Dead scene retained")
 	port.queue_free()
 	await process_frame
 	print("CP_GAMEPLAY_OK: %s combinations, real spawn/load methods, turn selection, theft/timeout, cleanup" % checks)
 	quit()
+
+func check(condition: bool, message: String = "Check failed"):
+	if not condition:
+		push_error(message)
+		quit(1)

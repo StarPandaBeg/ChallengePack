@@ -47,6 +47,8 @@ func _ready():
 	notice_label.add_theme_font_size_override("font_size", 21)
 	notice_label.add_theme_color_override("font_shadow_color", Color.BLACK)
 	layer.add_child(notice_label)
+	if OS.get_cmdline_args().has("+connect_lobby"):
+		online_notice()
 
 func on_node_added(node: Node):
 	if node.get_parent() == get_tree().root and node.scene_file_path.begins_with("res://multiplayer/"):

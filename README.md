@@ -1,84 +1,60 @@
-<br />
-<p align="center">
-   <a href="https://github.com/StarPandaBeg/ChallengePack">
-    <img src=".github/logo.png" alt="Logo" width="128" height="128" />
-   </a>
+# ChallengePack 2.0.0 — TEST BUILD
 
-   <h3 align="center">Challenge Pack - Mod for Buckshot Roulette</h3>
+Standalone single-player challenges for **Buckshot Roulette 2.2.0.6 (Steam, Windows), Godot 4.1.1**. No AGO061/BRMLNeo loader or replacement executable required.
 
-   <p align="center">
-    Now I keep even more secrets. <b>Shall we play?</b>
-   </p>
-</p>
+**Test build:** full games, visual/audio behavior and a physical controller still need manual acceptance. See [VALIDATION.md](VALIDATION.md). Other game versions and mods are not supported without testing.
 
----
+## Rules
 
-> ⚠⚠ Not updated to Multiplayer version ⚠⚠
+Single-player Start opens **game configuration**. Combine four settings:
 
-<div align="center">
-  <img src=".github/promo.png" alt="">
-</div>
-<br/>
+| Setting | Choices |
+| --- | --- |
+| Shell visibility | **DEFAULT:** vanilla. **QUANTITY:** count visible, shells look blank, composition and sequence sounds suppressed. **HIDDEN:** closed compartment, no count/composition hints, compartment sounds suppressed, always eight loading gestures. |
+| Items visibility | **DEFAULT:** vanilla. **HIDDEN:** two covers hide dealer items; disappear during adrenaline theft selection, return on completion/timeout. |
+| Shuffle bullets | **YES:** vanilla. **NO:** random display order is generated once and loaded in that order, fixing the old live-then-blank sequence. |
+| First turn | **ALWAYS FIRST:** player. **ROUND ROBIN:** player first, then alternating starters after each load. **RANDOM:** independently choose after each load. |
 
-<p align="center">
-Play a real game with the <b>devil</b>! No mercy, now game become really hard! Test your luck dancing on the edge of life and death! 
-</p>
-
-## Features
-
-Several new game modes, which provides more hardcore gameplay
-
-#### Shell Visibility:
-
-<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _Default_ - Bullets shown like in original game
-
-<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _Quantity_ - Only the number of bullets is known. Guess which of these bullets is loaded?
-
-<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _Hidden_ - Pure random - no information about bullets. Test your luck!
-
-#### Items Visibility:
-
-<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _Default_ - items visible like in original game
-
-<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _Hidden_ - Dealer can keep secrets - now his items are not visible. Enjoy!
-
-#### Shuffle Bullets:
-
-<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _Yes_ - bullets will be randomly loaded like in original game
-
-<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _No_ - Bullets will be loaded in the same order as they lay on the table
-
-#### First turn:
-
-<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _Always First_ - player always shoot first like in original game
-
-<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _Round Robin_ - after reloading, the one who didn't get the gun last time goes
-
-<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _Random_ - after reloading, the next player is chosen randomly
+Real shells, damage, AI and information items retain game rules. Magnifying glasses and burner phones can reveal information during play. Preferences persist in `user://challengepack.cfg`, normally `%APPDATA%\Godot\app_userdata\Buckshot Roulette\challengepack.cfg`; rules are frozen on Start. Defaults are vanilla rules. Mouse, keyboard and controller UI actions are supported; Escape/Back returns to the menu.
 
 ## Installation
 
-1. Download & Install AGO061 Mod Loader (https://github.com/AGO061/BuckshotRouletteModLoader)
-1. Download mod from [releases](https://github.com/StarPandaBeg/ChallengePack/releases/latest) page
-1. Put mod archive inside `/mods` folder (you should create it manually)
-1. Configure game before it starts
-1. Enjoy
+1. Use a clean **2.2.0.6** installation. Remove old loaders using their own instructions first; this installer does not remove them automatically.
+2. Extract the archive so `ChallengePack/` sits next to `Buckshot Roulette.exe`.
+3. Run `ChallengePack\install.bat`, then launch through Steam.
 
-## Screenshots
+Keep all scripts, adapters and `assets/protectors.res` together. Only the `ChallengePack` autoload entry in `override.cfg` is added. Reinstalling updates its absolute path without duplicates; rerun after moving the folder. Other entries survive, but mod interoperability is not guaranteed.
 
-<div align="center">
-  <img src=".github/1.png" alt="">
-  <img src=".github/2.png" alt="">
-  <img src=".github/3.png" alt="">
-</div>
+Unknown game scripts disable challenge Start with an error. Do not edit `compatibility.json` just to bypass the check. Readable script resources are required and were verified in the supplied Steam build.
 
-<br/>
+## Online, removal and logs
 
-# License
+Multiplayer from the menu, Steam invitations, lobby links and command-line lobby entry is blocked while installed. Both leaderboard upload methods are blocked. Achievements are not intentionally disabled. The guard is independently implemented against game managers; no OneShotMod code is redistributed.
 
-Distributed under the MIT License.  
-See `LICENSE` for more information.
+Run `ChallengePack\uninstall.bat`, then delete the folder to play online again. Only this mod's entry is removed; other mods remain. Preferences remain in user data; delete `challengepack.cfg` to reset them.
 
-# Disclaimer
+Find `[ChallengePack]` entries in `%APPDATA%\Godot\app_userdata\Buckshot Roulette\logs\godot.log`. Startup reports version, compatibility and attached managers. Include version, rules and errors in bug reports.
 
-This project was created from a spontaneous idea in just a few hours.. It may contain errors or inaccuracies. I would appreciate your feedback and suggestions for improvement. Thanks! 💗
+## Development
+
+`ChallengePack/` is the distribution. `mods-unpacked/` retains historical 1.4.2 code and source artwork, excluded from archives. `tools/` contains builders; `tests/` contains checks.
+
+From the parent workspace containing `game/`, `godot/` and this repo:
+
+```powershell
+python -m unittest discover -s ChallengePack/tests -p test_installer.py -v
+python ChallengePack/tools/run_godot.py --path game --script C:/absolute/path/ChallengePack/tests/probe.gd
+python ChallengePack/tools/run_godot.py --path game --script C:/absolute/path/ChallengePack/tests/settings_rules.gd
+python ChallengePack/tools/run_godot.py --path game --script C:/absolute/path/ChallengePack/tests/smoke.gd
+python ChallengePack/tools/run_godot.py --path game --script C:/absolute/path/ChallengePack/tests/gameplay.gd
+python ChallengePack/tools/run_godot.py --path ChallengePack/tools --script res://build_assets.gd
+python ChallengePack/tools/package.py
+```
+
+For installed-PCK tests, pass `--game-exe "D:/.../Buckshot Roulette.exe"` and omit `--path game`. This does not install the mod. Logs are captured in `tests/.scratch/`; runs time out automatically.
+
+Compatibility hashes pin normalized source. Run `tools/update_compatibility.py` only after reviewing/adapting to changes. Runtime subclasses preserve scene exports before `_ready()` and derive changed method bodies from installed resources, without distributing game source.
+
+## License
+
+MIT; see [LICENSE](LICENSE). Unofficial fan mod, not affiliated with the developer. Requires a legitimate game copy. No game code or game assets are distributed.
