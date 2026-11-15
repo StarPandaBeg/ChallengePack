@@ -1,4 +1,4 @@
-"""Create a self-contained TEST BUILD archive without game sources."""
+"""Create a self-contained release archive without game sources."""
 import hashlib
 import zipfile
 from pathlib import Path
@@ -6,7 +6,7 @@ from pathlib import Path
 root = Path(__file__).resolve().parents[1]
 dist = root / "dist"
 dist.mkdir(exist_ok=True)
-target = dist / "ChallengePack-2.0.0-test-win64.zip"
+target = dist / "ChallengePack-2.0.0-win64.zip"
 assets = root / "ChallengePack" / "assets" / "protectors.res"
 if not assets.is_file():
     raise SystemExit("Build assets first: see README.md")

@@ -1,10 +1,10 @@
 extends CanvasLayer
 
 const LABELS = {
-	"shells": ["shell visibility", ["DEFAULT", "QUANTITY", "HIDDEN"]],
-	"items": ["items visibility", ["DEFAULT", "HIDDEN"]],
-	"shuffle": ["shuffle bullets", ["YES", "NO"]],
-	"turn": ["first turn", ["ALWAYS FIRST", "ROUND ROBIN", "RANDOM"]]
+	"shells": ["CP_SHELL_VISIBILITY", ["CP_DEFAULT", "CP_QUANTITY", "CP_HIDDEN"]],
+	"items": ["CP_ITEM_VISIBILITY", ["CP_DEFAULT", "CP_HIDDEN"]],
+	"shuffle": ["CP_SHUFFLE", ["YES", "NO"]],
+	"turn": ["CP_FIRST_TURN", ["CP_ALWAYS_FIRST", "CP_ROUND_ROBIN", "CP_RANDOM"]]
 }
 var port: Node
 var manager: Node
@@ -12,6 +12,9 @@ var panel: Control
 var buttons = {}
 var start_button: Button
 var status: Label
+var title: Label
+var version: Label
+var return_button: Button
 var shown = false
 
 func setup(owner_port: Node, menu_manager: Node):
@@ -37,8 +40,7 @@ func setup(owner_port: Node, menu_manager: Node):
 		column.theme.default_font = font
 		column.theme.default_font_size = 26
 	center.add_child(column)
-	var title = Label.new()
-	title.text = "game configuration"
+	title = Label.new()
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 36)
 	column.add_child(title)
@@ -52,9 +54,10 @@ func setup(owner_port: Node, menu_manager: Node):
 	status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	status.add_theme_font_size_override("font_size", 18)
 	column.add_child(status)
-	start_button = make_button(column, "start")
+	start_button = make_button(column, "")
 	start_button.pressed.connect(start)
-	make_button(column, "return").pressed.connect(close)
+	return_button = make_button(column, "")
+	return_button.pressed.connect(close)
 	var navigation = []
 	for child in column.get_children():
 		if child is Button:
@@ -63,8 +66,7 @@ func setup(owner_port: Node, menu_manager: Node):
 		var button = navigation[i]
 		button.focus_neighbor_top = button.get_path_to(navigation[(i - 1 + navigation.size()) % navigation.size()])
 		button.focus_neighbor_bottom = button.get_path_to(navigation[(i + 1) % navigation.size()])
-	var version = Label.new()
-	version.text = "ChallengePack 2.0.0 — TEST BUILD / single-player only"
+	version = Label.new()
 	version.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	version.add_theme_font_size_override("font_size", 16)
 	column.add_child(version)
@@ -88,16 +90,27 @@ func play_click():
 		speaker.play()
 
 func refresh():
+	title.text = port.localization.text("CP_TITLE")
+	version.text = port.localization.text("CP_VERSION", [port.VERSION])
+	# Reuse vanilla translation keys for existing game actions.
+	start_button.text = tr("START")
+	return_button.text = tr("RETURN")
 	for key in buttons:
-		buttons[key].text = LABELS[key][0] + ": " + LABELS[key][1][port.settings.values[key]]
+		var value_key = LABELS[key][1][port.settings.values[key]]
+		var value = port.localization.text(value_key) if value_key.begins_with("CP_") else tr(value_key)
+		buttons[key].text = port.localization.text(LABELS[key][0]) + ": " + value
 	start_button.disabled = not port.compatible
-	status.text = "" if port.compatible else "Cannot start: " + port.compatibility_error
+	status.text = "" if port.compatible else port.localization.text("CP_CANNOT_START", [port.compatibility_message()])
+
+func _notification(what):
+	if what == NOTIFICATION_TRANSLATION_CHANGED and is_instance_valid(version) and port != null:
+		refresh()
 
 func change(key: String):
 	var result = port.settings.cycle(key)
 	refresh()
 	if result != OK:
-		status.text = "Could not save settings (error %s). Selection applies to this session." % result
+		status.text = port.localization.text("CP_SAVE_ERROR", [result])
 
 func open():
 	if shown:

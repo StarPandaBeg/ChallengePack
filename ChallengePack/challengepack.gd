@@ -5,13 +5,17 @@ const Factory = preload("patch_factory.gd")
 const Guard = preload("online_guard.gd")
 const Options = preload("menu.gd")
 const Rules = preload("rules.gd")
+const Localization = preload("localization.gd")
 const VERSION = "2.0.0"
 var settings = Settings.new()
 var factory = Factory.new()
 var guard = Guard.new()
+var localization = Localization.new()
 var active = Settings.DEFAULTS.duplicate()
 var compatible = false
 var compatibility_error = ""
+var compatibility_key = ""
+var compatibility_args = []
 var options: CanvasLayer
 var states = {} # WeakRefs: never retain a dead scene through a manager reference.
 var covers = {}
@@ -22,19 +26,32 @@ var returning_from_mp = false
 
 func _enter_tree():
 	mod_directory = get_script().resource_path.get_base_dir()
+	localization.setup(mod_directory)
 	settings.load_settings()
 	active = settings.snapshot()
 	compatible = factory.prepare(mod_directory)
 	compatibility_error = factory.error
+	compatibility_key = factory.error_key
+	compatibility_args = factory.error_args.duplicate()
 	if compatible and not load(mod_directory.path_join("assets/protectors.res")) is PackedScene:
 		compatible = false
-		compatibility_error = "Cannot load bundled item covers"
+		set_compatibility_error("CP_ERROR_COVERS")
 	if not guard.prepare():
 		compatible = false
-		compatibility_error = "Cannot initialize online protection"
+		set_compatibility_error("CP_ERROR_ONLINE")
 	get_tree().node_added.connect(on_node_added)
 	clear_invite()
-	print("[ChallengePack] %s TEST BUILD; compatibility: %s %s" % [VERSION, compatible, compatibility_error])
+	print("[ChallengePack] %s; compatibility: %s %s" % [VERSION, compatible, compatibility_error])
+
+func set_compatibility_error(key: String, arguments: Array = []):
+	compatibility_key = key
+	compatibility_args = arguments.duplicate()
+	compatibility_error = localization.text(key, arguments)
+
+func compatibility_message() -> String:
+	if compatibility_key.is_empty():
+		return compatibility_error
+	return localization.text(compatibility_key, compatibility_args)
 
 func _ready():
 	var layer = CanvasLayer.new()
@@ -111,10 +128,10 @@ func next_starter(loader: Node) -> int:
 func loading_phrase(loader: Node):
 	if loader.roundManager.playerData.numberOfDialogueRead >= 3:
 		return
-	var phrases = ["Some of them are live.", "Now this is a real game."]
+	var phrases = ["CP_SOME_LIVE", "CP_REAL_GAME"]
 	if active.shells == 2:
-		phrases[0] = "You won't know their real number."
-	loader.dialogue.ShowText_ForDuration(phrases[loader.diaindex % 2], 3)
+		phrases[0] = "CP_HIDDEN_COUNT"
+	loader.dialogue.ShowText_ForDuration(localization.text(phrases[loader.diaindex % 2]), 3)
 	loader.diaindex += 1
 	await get_tree().create_timer(3, false).timeout
 	loader.roundManager.playerData.numberOfDialogueRead += 1
@@ -123,7 +140,7 @@ func dealer_turn(loader: Node):
 	await get_tree().create_timer(0.6, false).timeout
 	var rules = state(loader)
 	if not rules.dealer_message_shown:
-		loader.dialogue.ShowText_Forever("I'll be the first")
+		loader.dialogue.ShowText_Forever(localization.text("CP_DEALER_FIRST"))
 		await get_tree().create_timer(1.9, false).timeout
 		loader.dialogue.HideText()
 		rules.dealer_message_shown = true
@@ -140,11 +157,11 @@ func items_ready(manager: Node):
 			table = table.get_parent()
 	var parent = table.get_node_or_null("tabletop parent/main tabletop")
 	if parent == null:
-		abort_challenge("Cannot find the tabletop for item covers")
+		abort_challenge("CP_ERROR_TABLE")
 		return
 	var packed = load(mod_directory.path_join("assets/protectors.res"))
 	if packed == null:
-		abort_challenge("Cannot load item covers")
+		abort_challenge("CP_ERROR_COVERS")
 		return
 	var cover = packed.instantiate()
 	parent.add_child(cover)
@@ -157,10 +174,10 @@ func set_covers(manager: Node, visible: bool):
 		if cover != null:
 			cover.visible = visible
 
-func abort_challenge(message: String):
+func abort_challenge(key: String):
 	compatible = false
-	compatibility_error = message
-	push_error("[ChallengePack] " + message)
+	set_compatibility_error(key)
+	push_error("[ChallengePack] " + compatibility_error)
 	get_tree().call_deferred("change_scene_to_file", "res://scenes/menu.tscn")
 
 func clear_invite():
@@ -189,7 +206,7 @@ func block_mp_scene(_scene: Node):
 
 func _process(_delta):
 	if notice_label != null:
-		notice_label.text = "ChallengePack: multiplayer and leaderboard uploads are disabled. Uninstall the mod to play online."
+		notice_label.text = localization.text("CP_ONLINE_DISABLED")
 		notice_label.visible = Time.get_ticks_msec() < notice_until
 	for id in states.keys():
 		if states[id].ref.get_ref() == null:

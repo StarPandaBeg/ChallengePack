@@ -22,6 +22,18 @@ func run():
 	check(port.options_open())
 	check(port.options.start_button.disabled == false)
 	check(port.options.buttons.shells.has_focus())
+	var original_locale = TranslationServer.get_locale()
+	TranslationServer.set_locale("en")
+	await process_frame
+	check(port.options.title.text == "game configuration")
+	TranslationServer.set_locale("ru")
+	await process_frame
+	check(port.options.title.text == "настройка игры")
+	check(port.options.buttons.shells.text.begins_with("видимость патронов: "))
+	check(port.options.start_button.text == TranslationServer.translate("START"))
+	check(port.options.return_button.text == TranslationServer.translate("RETURN"))
+	check(port.options.version.text == "ChallengePack 2.0.0 / одиночная игра")
+	TranslationServer.set_locale(original_locale)
 	port.close_options()
 	check(not port.options_open())
 	manager.StartMultiplayer()

@@ -13,7 +13,7 @@
 
 ---
 
-> **ChallengePack 2.0.0 — TEST BUILD** for **Buckshot Roulette 2.2.0.6 (Steam, Windows)**, Godot **4.1.1**. Single-player only; multiplayer and leaderboard uploads are disabled while installed.
+> **ChallengePack 2.0.0** for **Buckshot Roulette 2.2.0.6 (Steam, Windows)**, Godot **4.1.1**. Single-player only; multiplayer and leaderboard uploads are disabled while installed.
 
 <div align="center">
   <img src=".github/promo.png" alt="Challenge Pack">
@@ -60,7 +60,7 @@ Settings are saved between launches and applied when starting a game. Mouse, key
 
 ## Installation
 
-1. Download the **2.0.0 test build** archive from [releases](https://github.com/StarPandaBeg/ChallengePack/releases), or build it from source using the instructions below.
+1. Download the **2.0.0** archive from [releases](https://github.com/StarPandaBeg/ChallengePack/releases), or build it from source using the instructions below.
 2. Open the folder containing `Buckshot Roulette.exe` through Steam: **Manage → Browse local files**, then open `Buckshot Roulette_windows`.
 3. Extract the entire `ChallengePack` folder next to the executable:
 
@@ -111,7 +111,13 @@ python tools/run_godot.py --path tools --script res://build_assets.gd
 python tools/package.py
 ```
 
-The first command builds `ChallengePack/assets/protectors.res` from the mesh and textures in `assets/protectors/`. The second creates `dist/ChallengePack-2.0.0-test-win64.zip` and its SHA-256 checksum. The archive contains the installable mod and documentation; Python and the Godot editor are not required to play.
+The first command builds `ChallengePack/assets/protectors.res` from the mesh and textures in `assets/protectors/`. The second creates `dist/ChallengePack-2.0.0-win64.zip` and its SHA-256 checksum. The archive contains the installable mod and documentation; Python and the Godot editor are not required to play.
+
+### Localization
+
+Mod-specific text follows the language selected in the game. Russian is included; other languages fall back to English. Start, Return, Yes and No reuse the game's translations.
+
+Translation catalogs are UTF-8 JSON files in `ChallengePack/locales/`: `en.json` contains the base messages, and `ru.json` contains Russian translations. To add a language, copy the keys into `<language>.json` using its lowercase language code (for example, `de.json`). Keep `%s` placeholders in the same order. Missing or empty entries fall back to English. Regional locales such as `ru_RU` use their language catalog. Restart the game after editing a catalog; switching the game's language updates the menu automatically.
 
 ### Validation
 
@@ -120,7 +126,7 @@ Run the installer and engine checks from the repository root:
 ```powershell
 python -m unittest discover -s tests -p test_installer.py -v
 $repoPath = (Get-Location).Path
-foreach ($scenario in @('probe', 'settings_rules', 'smoke', 'gameplay')) {
+foreach ($scenario in @('probe', 'settings_rules', 'localization', 'smoke', 'gameplay')) {
     python tools/run_godot.py --path ../game --script "$repoPath/tests/$scenario.gd"
     if ($LASTEXITCODE -ne 0) { throw "Check failed: $scenario" }
 }
@@ -138,7 +144,7 @@ Compatibility hashes pin the supported game scripts. Update them with `python to
   <img src=".github/3.png" alt="Hidden items challenge">
 </div>
 
-Menu layout may differ in the test build.
+Menu layout may differ.
 
 <br/>
 
@@ -152,4 +158,4 @@ See [LICENSE](LICENSE) for more information.
 
 This is an unofficial fan modification, not affiliated with the game developer, and requires a legitimate copy of Buckshot Roulette. No game code or game assets are distributed.
 
-This is a **test build**: complete games, visual/audio behavior, physical controller input and real Steam invitations still require manual acceptance. It may contain errors or inaccuracies. Feedback and bug reports are welcome! 💗
+Complete games, visual/audio behavior, physical controller input and real Steam invitations still require manual acceptance; see [VALIDATION.md](VALIDATION.md). The mod may contain errors or inaccuracies. Feedback and bug reports are welcome! 💗

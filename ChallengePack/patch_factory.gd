@@ -4,39 +4,45 @@ extends RefCounted
 const TARGETS = ["ShellSpawner", "ShellLoader", "ItemManager", "MenuManager", "LeaderboardManager"]
 var scripts = {}
 var error = ""
+var error_key = ""
+var error_args = []
 var directory: String
 
 func prepare(mod_directory: String, check_version: bool = true) -> bool:
 	directory = mod_directory
 	scripts.clear()
 	error = ""
+	error_key = ""
+	error_args = []
 	var expected = JSON.parse_string(FileAccess.get_file_as_string(directory.path_join("compatibility.json")))
 	if not expected is Dictionary:
-		return fail("Missing compatibility manifest")
+		return fail("Missing compatibility manifest", "CP_ERROR_MANIFEST")
 	if check_version:
 		var globals = FileAccess.get_file_as_string("res://scripts/GlobalVariables.gd")
 		if not 'var currentVersion_nr = "v2.2.0"' in globals or not 'var currentVersion_hotfix = 6\n' in globals.replace("\r\n", "\n"):
-			return fail("This build requires Buckshot Roulette 2.2.0.6")
+			return fail("This mod requires Buckshot Roulette 2.2.0.6", "CP_ERROR_VERSION")
 	for name in TARGETS:
 		var path = "res://scripts/%s.gd" % name
 		var base = load(path)
 		if base == null or not base is GDScript or base.source_code.is_empty():
-			return fail("Game script source is unavailable: " + name)
+			return fail("Game script source is unavailable: " + name, "CP_ERROR_SOURCE", [name])
 		var source = base.source_code.replace("\r\n", "\n")
 		if source.sha256_text() != expected.get(name, ""):
-			return fail("Unsupported game script: " + name)
+			return fail("Unsupported game script: " + name, "CP_ERROR_SCRIPT", [name])
 		var body = make_body(name, source)
 		if not error.is_empty():
 			return false
 		var script = GDScript.new()
 		script.source_code = 'extends "%s"\nvar cp_port: Node\n' % path + body
 		if script.reload() != OK:
-			return fail("Cannot compile adapter: " + name)
+			return fail("Cannot compile adapter: " + name, "CP_ERROR_COMPILE", [name])
 		scripts[path] = script
 	return true
 
-func fail(message: String) -> bool:
+func fail(message: String, key: String = "CP_ERROR_DETAILS", arguments: Array = []) -> bool:
 	error = message
+	error_key = key
+	error_args = [message] if key == "CP_ERROR_DETAILS" else arguments
 	scripts.clear()
 	push_error("[ChallengePack] " + message)
 	return false
@@ -44,7 +50,7 @@ func fail(message: String) -> bool:
 func method(source: String, name: String) -> String:
 	var start = source.find("func " + name + "(")
 	if start < 0:
-		fail("Missing method: " + name)
+		fail("Missing method: " + name, "CP_ERROR_METHOD", [name])
 		return ""
 	var lines = source.substr(start).split("\n")
 	var result = lines[0] + "\n"
@@ -57,7 +63,7 @@ func method(source: String, name: String) -> String:
 
 func replace_once(source: String, before: String, after: String) -> String:
 	if source.count(before) != 1:
-		fail("Adapter anchor mismatch: " + before.strip_edges())
+		fail("Adapter anchor mismatch: " + before.strip_edges(), "CP_ERROR_ANCHOR", [before.strip_edges()])
 		return ""
 	return source.replace(before, after)
 
@@ -67,7 +73,7 @@ func make_body(name: String, source: String) -> String:
 		var first = body.find("\tif (roundManager.playerData.numberOfDialogueRead < 3):")
 		var last = body.find("\tvar numberOfShells =")
 		if first < 0 or last <= first:
-			fail("Missing loading dialogue anchors")
+			fail("Missing loading dialogue anchors", "CP_ERROR_DIALOGUE")
 			return ""
 		var original_dialogue = body.substr(first, last - first)
 		var conditional = "\tif cp_port.active.shells == 0:\n"
@@ -78,7 +84,7 @@ func make_body(name: String, source: String) -> String:
 		body = replace_once(body, "\tfor i in range(numberOfShells):", "\tif cp_port.active.shells == 2:\n\t\tnumberOfShells = 8\n\tfor i in range(numberOfShells):")
 		var ending = body.find('\tcamera.BeginLerp("home")')
 		if ending < 0:
-			fail("Missing first-turn anchor")
+			fail("Missing first-turn anchor", "CP_ERROR_FIRST_TURN")
 			return ""
 		var player_turn = body.substr(ending)
 		body = body.substr(0, ending) + "\tif cp_port.next_starter(self) == 1:\n\t\tawait cp_port.dealer_turn(self)\n\t\treturn\n" + player_turn
