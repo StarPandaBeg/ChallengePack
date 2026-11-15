@@ -41,6 +41,8 @@ func _initialize():
 		material.albedo_texture = ImageTexture.create_from_image(image)
 		cover.material_override = material
 		cover.transform = Transform3D(Vector3(0, 0, 3), Vector3(0, 2, 0), Vector3(-2.8, 0, 0), Vector3(-4.198, 0.1, 5.254 if i == 0 else -5.254))
+		# The tabletop's local +X points toward the player; align with the grid.
+		cover.position.x += 0.25
 		# Turn each cover in place so its opening faces the dealer.
 		cover.basis = Basis(Vector3.UP, PI) * cover.basis
 		parent.add_child(cover)
