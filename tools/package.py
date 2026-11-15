@@ -1,4 +1,4 @@
-"""Create a self-contained TEST BUILD archive without game or loader sources."""
+"""Create a self-contained TEST BUILD archive without game sources."""
 import hashlib
 import zipfile
 from pathlib import Path
@@ -16,6 +16,8 @@ with zipfile.ZipFile(target, "w", compression=zipfile.ZIP_DEFLATED) as archive:
             archive.write(path, path.relative_to(root).as_posix())
     for name in ("README.md", "LICENSE", "VALIDATION.md"):
         archive.write(root / name, name)
+    for path in sorted((root / ".github").glob("*.png")):
+        archive.write(path, path.relative_to(root).as_posix())
 digest = hashlib.sha256(target.read_bytes()).hexdigest()
 target.with_suffix(".sha256").write_text(f"{digest}  {target.name}\n", encoding="ascii")
 print(target)

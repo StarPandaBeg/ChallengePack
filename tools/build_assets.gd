@@ -2,7 +2,7 @@ extends SceneTree
 
 func _initialize():
 	var repo = ProjectSettings.globalize_path("res://").trim_suffix("/").get_base_dir()
-	var source = repo.path_join("mods-unpacked/StarPanda-ChallengePack/models")
+	var source = repo.path_join("assets/protectors")
 	var output = repo.path_join("ChallengePack/assets")
 	DirAccess.make_dir_recursive_absolute(output)
 	var vertices = []

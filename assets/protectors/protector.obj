@@ -1,6 +1,5 @@
 # Blender 4.0.2
 # www.blender.org
-mtllib protector.mtl
 o Куб
 v -1.000000 -0.030000 1.000000
 v -1.000000 0.030000 1.000000
