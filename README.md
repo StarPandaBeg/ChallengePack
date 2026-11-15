@@ -76,7 +76,7 @@ Combine nine independent settings in the standard game and Double or Nothing. Ne
 
 <img src=".github/icon_1.png" alt="*" width="16" height="16" /> _No / Yes_ - Replace one blank per charge with a green shell that heals its target by 1 HP. Shooting yourself keeps your turn — for both you and the dealer.
 
-Your choices are saved between launches. The two-column menu supports mouse, keyboard and controller navigation. English and Russian mod text is included.
+Your choices are saved between launches. The two-column menu supports mouse, keyboard and controller navigation. Hover over an option for a brief explanation. English and Russian mod text is included.
 
 ## Installation
 

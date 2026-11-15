@@ -68,5 +68,16 @@
   "CP_FAILURE_REASON": "Contract broken: %s",
   "CP_FAILURE_EXPLANATION": "The forbidden action was stopped. This run is over.",
   "CP_FAILURE_RETURN": "RETURN TO MAIN MENU",
-  "CP_FAILURE_MENU_ERROR": "Could not open the main menu (error %s). Try again."
+  "CP_FAILURE_MENU_ERROR": "Could not open the main menu (error %s). Try again.",
+  "CP_TIP_SHELLS": "Show shell types, only their count,\nor hide both before loading.",
+  "CP_TIP_ITEMS": "Hide the dealer’s items behind covers.\nReveal them when choosing an item to steal.",
+  "CP_TIP_SHUFFLE": "With No, load shells in the same order\nas they appear on the table.",
+  "CP_TIP_TURN": "Choose who starts after each reload:\nyou, alternating sides, or a random side.",
+  "CP_TIP_HEALTH": "Hide both health displays.\nKeep track of HP yourself.",
+  "CP_TIP_MIRROR": "After distribution, the dealer gets\na copy of your items, including leftovers.",
+  "CP_TIP_POCKET": "Limit your item uses per turn.\nAdrenaline and its stolen item count as one.",
+  "CP_TIP_CONTRACT": "30% chance of a restriction per charge.\nBreak it and lose the challenge.",
+  "CP_TIP_HEAL": "One blank becomes a green shell: +1 HP\nto its target. A self-shot keeps your turn.",
+  "CP_TIP_START": "Start a game with the selected rules.",
+  "CP_TIP_RETURN": "Return to the main menu.\nYour choices stay saved."
 }

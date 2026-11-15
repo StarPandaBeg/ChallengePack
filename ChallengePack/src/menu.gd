@@ -120,6 +120,8 @@ func refresh():
 	# Reuse vanilla translation keys for existing game actions.
 	start_button.text = tr("START")
 	return_button.text = tr("RETURN")
+	start_button.tooltip_text = port.localization.text("CP_TIP_START")
+	return_button.tooltip_text = port.localization.text("CP_TIP_RETURN")
 	for key in buttons:
 		var value_key = LABELS[key][1][port.settings.values[key]]
 		var value = port.localization.text(value_key) if value_key.begins_with("CP_") else tr(value_key)
@@ -127,6 +129,7 @@ func refresh():
 		if key == "contract":
 			caption += " (%d%%)" % roundi(port.challenges.CONTRACT_CHANCE * 100)
 		buttons[key].text = caption + ":\n" + value
+		buttons[key].tooltip_text = port.localization.text("CP_TIP_" + key.to_upper())
 	start_button.disabled = not port.compatible
 	status.text = "" if port.compatible else port.localization.text("CP_CANNOT_START", [port.compatibility_message()])
 
