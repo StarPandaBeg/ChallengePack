@@ -105,14 +105,13 @@ workspace/
     Godot_v4.1.1-stable_win64.exe
 ```
 
-Run from the repository root:
+Run `build.bat` from the repository root, or double-click it in Explorer. To skip the final pause:
 
 ```powershell
-python tools/run_godot.py --path tools --script res://build_assets.gd
-python tools/package.py
+.\build.bat /q
 ```
 
-The first command builds `ChallengePack/src/assets/protectors.res` from the mesh and textures in `assets/protectors/`. The second creates `dist/ChallengePack-2.0.0-win64.zip` and its SHA-256 checksum. Only `install.bat` and `uninstall.bat` sit at the top of the installable mod folder; its scripts and resources are kept in `src/`. The archive contains the installable mod and documentation; Python and the Godot editor are not required to play.
+The script rebuilds `ChallengePack/src/assets/protectors.res` from the mesh and textures in `assets/protectors/`, then creates `dist/ChallengePack-2.0.0-win64.zip` and its SHA-256 checksum. It stops if either step fails. Only `install.bat` and `uninstall.bat` sit at the top of the installable mod folder; its scripts and resources are kept in `src/`. The archive contains the installable mod and documentation; Python and the Godot editor are not required to play.
 
 ### Localization
 
