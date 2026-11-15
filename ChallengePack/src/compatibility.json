@@ -3,5 +3,13 @@
   "ShellLoader": "0fceb3cde1ee486d43034f4af5fd81735fb950e6a4dd880604c8b0866baa1f2d",
   "ItemManager": "91a107750631fca8cecdcceb9bc42d751148dc9ae4f8953205ad18c0f9b19c18",
   "MenuManager": "8a4e68fbc87540a3570d6c5ab8cc576a30b45e14620d9048681a305cd18c3aa4",
-  "LeaderboardManager": "a71dd77a4f254147de47d6c29e058fdb566743cce1302fbb5448ad488bf16dd6"
+  "LeaderboardManager": "a71dd77a4f254147de47d6c29e058fdb566743cce1302fbb5448ad488bf16dd6",
+  "HealthCounter": "04da43474c176d2cf93fcf09431ae311a222fdd76dd5c7247c36f162e617251e",
+  "RoundManager": "694318f10cd089b5d9abf1fcaf8df9e895dd8e560991b5212cea69126c5c3bee",
+  "ItemInteraction": "45f1fe95c0941eb09308db49d30542055a0b628842c4ccee073e946b8e29fc42",
+  "ShotgunShooting": "a012544896f90bca99637d13d07cdaa800e606a5e2b7e6072f0a648b4a44094b",
+  "DealerIntelligence": "f75bda6cc1b65c689ee412bcf5cc3e39578426302093110376f6f7003e03fb7a",
+  "ShellEjectManager": "3dd90e264ec43fb806bc4e9e5351c894f29c6bebee6dbaf590081f1596f4df95",
+  "ShellExamine": "4e75c5933489501db656c6f8d90d2afff7ee759f75fd3dcb971db47d4a5ee74f",
+  "BurnerPhone": "f3130a1a0a31621fb22b8fa49ca229742ae4d0009abc875a6f21ef952561fb8b"
 }

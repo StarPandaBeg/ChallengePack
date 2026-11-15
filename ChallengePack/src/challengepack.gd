@@ -6,11 +6,17 @@ const Guard = preload("online_guard.gd")
 const Options = preload("menu.gd")
 const Rules = preload("rules.gd")
 const Localization = preload("localization.gd")
+const Challenges = preload("challenges.gd")
+const ChallengeHUD = preload("challenge_hud.gd")
+const HealBullets = preload("heal_bullets.gd")
+const FailureScreen = preload("failure_screen.gd")
 const VERSION = "2.0.0"
 var settings = Settings.new()
 var factory = Factory.new()
 var guard = Guard.new()
 var localization = Localization.new()
+var challenges
+var heal_bullets
 var active = Settings.DEFAULTS.duplicate()
 var compatible = false
 var compatibility_error = ""
@@ -22,11 +28,17 @@ var covers = {}
 var mod_directory: String
 var notice_label: Label
 var notice_until = 0
+var notice_key = "CP_ONLINE_DISABLED"
+var notice_args = []
+var challenge_hud: PanelContainer
+var failure_screen: CanvasLayer
 var returning_from_mp = false
 
 func _enter_tree():
 	mod_directory = get_script().resource_path.get_base_dir()
 	localization.setup(mod_directory)
+	challenges = Challenges.new(self)
+	heal_bullets = HealBullets.new(self)
 	settings.load_settings()
 	active = settings.snapshot()
 	compatible = factory.prepare(mod_directory)
@@ -58,12 +70,17 @@ func _ready():
 	layer.layer = 120
 	add_child(layer)
 	notice_label = Label.new()
-	notice_label.position = Vector2(30, 25)
+	notice_label.position = Vector2(18, 82)
 	notice_label.size = Vector2(900, 80)
 	notice_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	notice_label.add_theme_font_size_override("font_size", 21)
 	notice_label.add_theme_color_override("font_shadow_color", Color.BLACK)
 	layer.add_child(notice_label)
+	challenge_hud = ChallengeHUD.new()
+	layer.add_child(challenge_hud)
+	failure_screen = FailureScreen.new()
+	add_child(failure_screen)
+	failure_screen.setup(self)
 	if OS.get_cmdline_args().has("+connect_lobby"):
 		online_notice()
 
@@ -91,6 +108,8 @@ func on_node_added(node: Node):
 		node.ready.connect(items_ready.bind(node), CONNECT_ONE_SHOT)
 	elif path == "res://scripts/ShellLoader.gd" and compatible:
 		states[node.get_instance_id()] = {"ref": weakref(node), "rules": Rules.new()}
+	elif path == "res://scripts/RoundManager.gd" and compatible:
+		challenges.track(node)
 
 func menu_ready(manager: Node):
 	returning_from_mp = false
@@ -194,8 +213,13 @@ func clear_invite():
 
 func online_notice():
 	clear_invite()
-	notice_until = Time.get_ticks_msec() + 7000
+	notify("CP_ONLINE_DISABLED")
 	print("[ChallengePack] multiplayer blocked")
+
+func notify(key: String, arguments: Array = [], seconds: float = 7):
+	notice_key = key
+	notice_args = arguments.duplicate()
+	notice_until = Time.get_ticks_msec() + int(seconds * 1000)
 
 func block_mp_scene(_scene: Node):
 	if returning_from_mp:
@@ -206,8 +230,11 @@ func block_mp_scene(_scene: Node):
 
 func _process(_delta):
 	if notice_label != null:
-		notice_label.text = localization.text("CP_ONLINE_DISABLED")
+		notice_label.text = localization.text(notice_key, notice_args)
 		notice_label.visible = Time.get_ticks_msec() < notice_until
+	if challenge_hud != null:
+		challenge_hud.refresh(challenges.hud_data(), localization)
+	challenges.prune()
 	for id in states.keys():
 		if states[id].ref.get_ref() == null:
 			states.erase(id)

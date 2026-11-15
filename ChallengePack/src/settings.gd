@@ -1,8 +1,8 @@
 extends RefCounted
 
 const PATH = "user://challengepack.cfg"
-const LIMITS = {"shells": 3, "items": 2, "shuffle": 2, "turn": 3}
-const DEFAULTS = {"shells": 0, "items": 0, "shuffle": 0, "turn": 0}
+const LIMITS = {"shells": 3, "items": 2, "shuffle": 2, "turn": 3, "health": 2, "mirror": 2, "pocket": 3, "contract": 5, "heal": 2}
+const DEFAULTS = {"shells": 0, "items": 0, "shuffle": 0, "turn": 0, "health": 0, "mirror": 0, "pocket": 0, "contract": 0, "heal": 0}
 var values = DEFAULTS.duplicate()
 
 func load_settings(path: String = PATH) -> void:
@@ -22,7 +22,7 @@ func cycle(key: String, path: String = PATH) -> Error:
 func save_settings(path: String = PATH) -> Error:
 	var cfg = ConfigFile.new()
 	for key in LIMITS:
-		cfg.set_value("rules", key, values[key])
+		cfg.set_value("rules", key, values.get(key, 0))
 	return cfg.save(path)
 
 func snapshot() -> Dictionary:

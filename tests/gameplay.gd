@@ -58,6 +58,8 @@ func fixture() -> Dictionary:
 	var ai = child(group, stub("DealerIntelligence", {"BeginDealerTurn": "dealer_calls += 1", "Speaker_HandCrack": "pass"}, "var dealer_calls = 0\n"))
 	var perm = child(group, stub("PermissionManager", {"SetStackInvalidIndicators": "pass", "SetIndicators": "pass", "SetInteractionPermissions": "interaction_enabled = state"}, "var interaction_enabled = false\n"))
 	var cursor = child(group, stub("CursorManager", {"SetCursor": "pass"}))
+	rm.perm = perm
+	rm.cursor = cursor
 	var spawner = load("res://scripts/ShellSpawner.gd").new()
 	spawner.roundManager = rm
 	spawner.camera = camera
@@ -106,6 +108,11 @@ func fixture() -> Dictionary:
 	return {"root": group, "rm": rm, "spawner": spawner, "loader": loader, "ai": ai, "perm": perm, "items": items, "table": table, "dialogue": dialogue, "recording": recording}
 
 func run():
+	# Keep fixtures isolated from a mod already installed beside the game.
+	var installed = root.get_node_or_null("ChallengePack")
+	if installed != null:
+		root.remove_child(installed)
+		installed.free()
 	directory = get_script().resource_path.get_base_dir().get_base_dir().path_join("ChallengePack/src")
 	port = load(directory.path_join("challengepack.gd")).new()
 	root.add_child(port)

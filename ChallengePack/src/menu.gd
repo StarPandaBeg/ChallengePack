@@ -4,7 +4,12 @@ const LABELS = {
 	"shells": ["CP_SHELL_VISIBILITY", ["CP_DEFAULT", "CP_QUANTITY", "CP_HIDDEN"]],
 	"items": ["CP_ITEM_VISIBILITY", ["CP_DEFAULT", "CP_HIDDEN"]],
 	"shuffle": ["CP_SHUFFLE", ["YES", "NO"]],
-	"turn": ["CP_FIRST_TURN", ["CP_ALWAYS_FIRST", "CP_ROUND_ROBIN", "CP_RANDOM"]]
+	"turn": ["CP_FIRST_TURN", ["CP_ALWAYS_FIRST", "CP_ROUND_ROBIN", "CP_RANDOM"]],
+	"health": ["CP_HEALTH_VISIBILITY", ["CP_DEFAULT", "CP_HIDDEN"]],
+	"mirror": ["CP_MIRROR_ITEMS", ["NO", "YES"]],
+	"pocket": ["CP_LIMITED_POCKET", ["CP_UNLIMITED", "CP_ONE_ITEM", "CP_TWO_ITEMS"]],
+	"contract": ["CP_ROUND_CONTRACT", ["CP_OFF", "CP_RANDOM", "CP_NO_HEALING", "CP_NO_SELF_SHOTS", "CP_NO_CUFFS"]],
+	"heal": ["CP_HEAL_BULLETS", ["NO", "YES"]]
 }
 var port: Node
 var manager: Node
@@ -32,17 +37,17 @@ func setup(owner_port: Node, menu_manager: Node):
 	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	panel.add_child(center)
 	var column = VBoxContainer.new()
-	column.custom_minimum_size = Vector2(660, 0)
-	column.add_theme_constant_override("separation", 10)
+	column.custom_minimum_size = Vector2(800, 0)
+	column.add_theme_constant_override("separation", 3)
 	var font = load("res://fonts/fake receipt.otf")
 	if font != null:
 		column.theme = Theme.new()
 		column.theme.default_font = font
-		column.theme.default_font_size = 26
+		column.theme.default_font_size = 20
 	center.add_child(column)
 	title = Label.new()
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_font_size_override("font_size", 36)
+	title.add_theme_font_size_override("font_size", 28)
 	column.add_child(title)
 	for key in LABELS:
 		var button = make_button(column, "")
@@ -50,7 +55,7 @@ func setup(owner_port: Node, menu_manager: Node):
 		buttons[key] = button
 	status = Label.new()
 	status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	status.custom_minimum_size = Vector2(660, 50)
+	status.custom_minimum_size = Vector2(800, 30)
 	status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	status.add_theme_font_size_override("font_size", 18)
 	column.add_child(status)
@@ -77,7 +82,7 @@ func make_button(column: Control, text: String) -> Button:
 	var button = Button.new()
 	button.text = text
 	button.flat = true
-	button.custom_minimum_size.y = 35
+	button.custom_minimum_size.y = 30
 	button.focus_mode = Control.FOCUS_ALL
 	column.add_child(button)
 	button.mouse_entered.connect(button.grab_focus)

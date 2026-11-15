@@ -4,6 +4,11 @@ func _initialize():
 	call_deferred("run")
 
 func run():
+	# Keep fixtures isolated from a mod already installed beside the game.
+	var installed = root.get_node_or_null("ChallengePack")
+	if installed != null:
+		root.remove_child(installed)
+		installed.free()
 	var directory = get_script().resource_path.get_base_dir().get_base_dir().path_join("ChallengePack/src")
 	var original_locale = TranslationServer.get_locale()
 	var original_start = TranslationServer.translate("START")

@@ -7,6 +7,11 @@ func _initialize():
 	call_deferred("run")
 
 func run():
+	# Keep fixtures isolated from a mod already installed beside the game.
+	var installed = root.get_node_or_null("ChallengePack")
+	if installed != null:
+		root.remove_child(installed)
+		installed.free()
 	directory = get_script().resource_path.get_base_dir().get_base_dir().path_join("ChallengePack/src")
 	port = load(directory.path_join("challengepack.gd")).new()
 	port.name = "ChallengePack"
@@ -22,12 +27,21 @@ func run():
 	check(port.options_open())
 	check(port.options.start_button.disabled == false)
 	check(port.options.buttons.shells.has_focus())
+	await process_frame
+	await process_frame
+	check(port.options.buttons.size() == 9)
+	var viewport_rect = root.get_visible_rect()
+	for button in port.options.buttons.values() + [port.options.start_button, port.options.return_button]:
+		check(viewport_rect.encloses(button.get_global_rect()), "Challenge menu extends beyond the viewport: %s %s in %s" % [button.text, button.get_global_rect(), viewport_rect])
 	var original_locale = TranslationServer.get_locale()
 	TranslationServer.set_locale("en")
 	await process_frame
 	check(port.options.title.text == "game configuration")
 	TranslationServer.set_locale("ru")
 	await process_frame
+	await process_frame
+	for button in port.options.buttons.values() + [port.options.start_button, port.options.return_button]:
+		check(viewport_rect.encloses(button.get_global_rect()), "Russian challenge menu extends beyond the viewport")
 	check(port.options.title.text == "настройка игры")
 	check(port.options.buttons.shells.text.begins_with("видимость патронов: "))
 	check(port.options.start_button.text == TranslationServer.translate("START"))

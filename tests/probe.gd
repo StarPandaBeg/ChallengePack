@@ -4,6 +4,11 @@ func _initialize():
 	call_deferred("run")
 
 func run():
+	# Keep fixtures isolated from a mod already installed beside the game.
+	var installed = root.get_node_or_null("ChallengePack")
+	if installed != null:
+		root.remove_child(installed)
+		installed.free()
 	var directory = get_script().resource_path.get_base_dir().get_base_dir().path_join("ChallengePack/src")
 	print("CP_SOURCE: ", "extracted project" if FileAccess.file_exists("res://gdre_export.log") else "embedded game pack")
 	for file in ["challengepack.gd", "menu.gd", "settings.gd", "online_guard.gd", "rules.gd"]:

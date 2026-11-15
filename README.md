@@ -26,7 +26,7 @@ Play a real game with the <b>devil</b>! No mercy, now the game becomes really ha
 
 ## Features
 
-Combine four independent settings for more challenging gameplay in the standard game and Double or Nothing.
+Combine nine independent settings for more challenging gameplay in the standard game and Double or Nothing. All new rules are disabled by default; saved configurations keep their existing choices.
 
 #### Shell Visibility:
 
@@ -55,6 +55,26 @@ Combine four independent settings for more challenging gameplay in the standard 
 <img src=".github/icon_1.png" alt="*" width="16" height="16" /> _Round Robin_ - The player starts the first load, then the player and dealer alternate starting after each reload.
 
 <img src=".github/icon_1.png" alt="*" width="16" height="16" /> _Random_ - The starting player is chosen independently after each reload.
+
+#### Unknown Health:
+
+<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _Default / Hidden_ - Hide both health displays and the dealer's one-health warning. Actual health, damage, healing and the final showdown mechanics remain unchanged: keep count yourself!
+
+#### Mirrored Items:
+
+<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _No / Yes_ - After each item distribution, replace the dealer's inventory with a copy of the player's complete placed inventory, including leftovers. Both sides start with the same types and quantities, up to eight items; their choices during play can make the inventories diverge again.
+
+#### Limited Pocket:
+
+<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _Unlimited / 1 Item / 2 Items_ - Limit the player's item uses per turn. Adrenaline and its stolen item count as one use, including when theft times out. At the limit, items stay on the table and the player can still shoot. Each new playable turn, including another turn after shooting a blank at yourself, resets the limit. Dealer item use is unchanged. Remaining uses are shown on screen.
+
+#### Round Contract:
+
+<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _Off / Random / No Healing Items / No Self Shots / No Handcuffs_ - Before each charge, the dealer announces a restriction for the player. Random chooses one of the three restrictions anew each round. In rounds without items it only selects No Self Shots; fixed healing/handcuff restrictions pause until a round with items. Healing items means both cigarettes and expired medicine; shooting yourself is forbidden even with a blank. Restrictions also apply to stolen items. Attempting a forbidden action stops the run before the item or shot is consumed, pauses gameplay and opens a failure screen naming the broken contract. Return to the main menu with the focused button or Escape/Back. A small indicator at the top left shows only the rule (or its paused status) and remaining pocket uses when items are enabled; the dealer is not bound by it.
+
+#### Heal Bullets:
+
+<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _No / Yes_ - Replace one randomly chosen blank shell in each charge with a green healing shell, without changing the charge size or live-shell count. It restores 1 HP to the target, up to the usual health cap; it cannot revive anyone or restore a cut defibrillator. Shooting yourself with it keeps your turn, for both the player and dealer. Shooting the opponent passes the turn. Handsaws do not increase healing; inverters leave healing shells unchanged, and beer ejects them without healing. Magnifying glasses and phones identify them correctly. Quantity/Hidden modes still conceal their initial identity. The No Healing Items contract only forbids healing items; No Self Shots also forbids healing self-shots.
 
 Settings are saved between launches and applied when starting a game. Mouse, keyboard and controller UI navigation are supported; Escape/Back returns to the main menu. Magnifying glasses and burner phones still reveal information according to the game's rules.
 
@@ -126,7 +146,7 @@ Run the installer and engine checks from the repository root:
 ```powershell
 python -m unittest discover -s tests -p test_installer.py -v
 $repoPath = (Get-Location).Path
-foreach ($scenario in @('probe', 'settings_rules', 'localization', 'smoke', 'gameplay')) {
+foreach ($scenario in @('probe', 'settings_rules', 'localization', 'smoke', 'gameplay', 'challenges', 'contract_hud', 'heal_bullets', 'failure_screen')) {
     python tools/run_godot.py --path ../game --script "$repoPath/tests/$scenario.gd"
     if ($LASTEXITCODE -ne 0) { throw "Check failed: $scenario" }
 }

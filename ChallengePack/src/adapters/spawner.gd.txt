@@ -3,6 +3,7 @@ func SpawnShells(numberOfShells: int, numberOfLives: int, numberOfBlanks: int, s
 	# Without reload shuffling, randomize the display once, then keep that order.
 	var shuffle_display = shufflingArray if cp_port.active.shuffle == 0 else true
 	super(numberOfShells, numberOfLives, numberOfBlanks, shuffle_display)
+	cp_port.heal_bullets.seed_charge(self)
 	if cp_port.active.shells != 0:
 		roundManager.playerData.skippingShellDescription = true
 	if cp_port.active.shells == 1:
@@ -17,4 +18,7 @@ func PlayLatchSound():
 func PlayAudioIndicators():
 	# The indicator rhythm itself encodes the live/blank sequence.
 	if cp_port.active.shells == 0:
-		await super()
+		if seq.has("heal"):
+			await cp_port.heal_bullets.audio_indicators(self)
+		else:
+			await super()
