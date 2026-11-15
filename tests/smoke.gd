@@ -7,7 +7,7 @@ func _initialize():
 	call_deferred("run")
 
 func run():
-	directory = get_script().resource_path.get_base_dir().get_base_dir().path_join("ChallengePack")
+	directory = get_script().resource_path.get_base_dir().get_base_dir().path_join("ChallengePack/src")
 	port = load(directory.path_join("challengepack.gd")).new()
 	port.name = "ChallengePack"
 	root.add_child(port)

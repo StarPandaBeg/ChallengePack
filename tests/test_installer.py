@@ -15,12 +15,15 @@ class InstallerTests(unittest.TestCase):
         self.temp = Path(tempfile.mkdtemp(prefix="game_", dir=SCRATCH))
         self.game = self.temp / "Игра с пробелами"
         self.mod = self.game / "ChallengePack"
-        self.mod.mkdir(parents=True)
+        self.src = self.mod / "src"
+        self.src.mkdir(parents=True)
         self.exe = self.game / "Buckshot Roulette.exe"
         self.exe.touch()
         self.cfg = self.game / "override.cfg"
-        shutil.copyfile(ROOT / "ChallengePack" / "modcfg.ps1", self.mod / "modcfg.ps1")
-        (self.mod / "challengepack.gd").touch()
+        shutil.copyfile(ROOT / "ChallengePack" / "src" / "modcfg.ps1", self.src / "modcfg.ps1")
+        for name in ("install.bat", "uninstall.bat"):
+            shutil.copyfile(ROOT / "ChallengePack" / name, self.mod / name)
+        (self.src / "challengepack.gd").touch()
 
     def tearDown(self):
         assert self.temp.resolve().is_relative_to(SCRATCH.resolve())
@@ -29,13 +32,14 @@ class InstallerTests(unittest.TestCase):
     def run_installer(self, action, success=True):
         process = subprocess.run(
             ["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File",
-             str(self.mod / "modcfg.ps1"), "-Action", action], capture_output=True)
+             str(self.src / "modcfg.ps1"), "-Action", action], capture_output=True)
         self.assertEqual(process.returncode == 0, success, process.stderr.decode(errors="replace"))
 
     def test_clean_install_idempotence_uninstall(self):
         self.run_installer("install")
         first = self.cfg.read_bytes()
         self.assertIn("Игра с пробелами", first.decode("utf-8"))
+        self.assertIn("/ChallengePack/src/challengepack.gd", first.decode("utf-8"))
         self.run_installer("install")
         self.assertEqual(first, self.cfg.read_bytes())
         self.run_installer("uninstall")
@@ -74,8 +78,17 @@ class InstallerTests(unittest.TestCase):
         self.assertFalse(self.cfg.exists())
 
     def test_missing_script_does_not_change_config(self):
-        (self.mod / "challengepack.gd").unlink()
+        (self.src / "challengepack.gd").unlink()
         self.run_installer("install", success=False)
+        self.assertFalse(self.cfg.exists())
+
+    def test_batch_entrypoints_delegate_to_src(self):
+        for name in ("install.bat", "uninstall.bat"):
+            process = subprocess.run(
+                ["cmd.exe", "/d", "/c", str(self.mod / name), "/q"], capture_output=True)
+            self.assertEqual(process.returncode, 0, process.stderr.decode(errors="replace"))
+            if name == "install.bat":
+                self.assertIn("/src/challengepack.gd", self.cfg.read_text(encoding="utf-8"))
         self.assertFalse(self.cfg.exists())
 
 

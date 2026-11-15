@@ -4,7 +4,7 @@ func _initialize():
 	call_deferred("run")
 
 func run():
-	var directory = get_script().resource_path.get_base_dir().get_base_dir().path_join("ChallengePack")
+	var directory = get_script().resource_path.get_base_dir().get_base_dir().path_join("ChallengePack/src")
 	var original_locale = TranslationServer.get_locale()
 	var original_start = TranslationServer.translate("START")
 	var localization = load(directory.path_join("localization.gd")).new()

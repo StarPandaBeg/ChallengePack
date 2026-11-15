@@ -106,7 +106,7 @@ func fixture() -> Dictionary:
 	return {"root": group, "rm": rm, "spawner": spawner, "loader": loader, "ai": ai, "perm": perm, "items": items, "table": table, "dialogue": dialogue, "recording": recording}
 
 func run():
-	directory = get_script().resource_path.get_base_dir().get_base_dir().path_join("ChallengePack")
+	directory = get_script().resource_path.get_base_dir().get_base_dir().path_join("ChallengePack/src")
 	port = load(directory.path_join("challengepack.gd")).new()
 	root.add_child(port)
 	check(port.compatible)

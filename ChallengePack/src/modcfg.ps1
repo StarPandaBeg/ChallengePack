@@ -2,7 +2,8 @@ param([Parameter(Mandatory = $true)][ValidateSet('install', 'uninstall')][string
 $ErrorActionPreference = 'Stop'
 
 try {
-    $gameDir = Split-Path -Parent $PSScriptRoot
+    $modDir = Split-Path -Parent $PSScriptRoot
+    $gameDir = Split-Path -Parent $modDir
     $cfgPath = Join-Path $gameDir 'override.cfg'
     if (-not (Test-Path -LiteralPath (Join-Path $gameDir 'Buckshot Roulette.exe') -PathType Leaf)) {
         throw 'Place the ChallengePack folder next to Buckshot Roulette.exe first.'

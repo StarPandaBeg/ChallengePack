@@ -10,6 +10,6 @@ manifest = {
     name: hashlib.sha256((GAME / "scripts" / f"{name}.gd").read_text(encoding="utf-8").encode()).hexdigest()
     for name in TARGETS
 }
-(ROOT / "ChallengePack" / "compatibility.json").write_text(
+(ROOT / "ChallengePack" / "src" / "compatibility.json").write_text(
     json.dumps(manifest, indent=2) + "\n", encoding="utf-8"
 )

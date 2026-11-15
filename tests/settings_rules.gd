@@ -4,7 +4,7 @@ func _initialize():
 	call_deferred("run")
 
 func run():
-	var directory = get_script().resource_path.get_base_dir().get_base_dir().path_join("ChallengePack")
+	var directory = get_script().resource_path.get_base_dir().get_base_dir().path_join("ChallengePack/src")
 	var settings_script = load(directory.path_join("settings.gd"))
 	var settings = settings_script.new()
 	var test_path = ProjectSettings.globalize_path("res://../ChallengePack/tests/.scratch/settings.cfg")

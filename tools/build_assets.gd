@@ -3,7 +3,7 @@ extends SceneTree
 func _initialize():
 	var repo = ProjectSettings.globalize_path("res://").trim_suffix("/").get_base_dir()
 	var source = repo.path_join("assets/protectors")
-	var output = repo.path_join("ChallengePack/assets")
+	var output = repo.path_join("ChallengePack/src/assets")
 	DirAccess.make_dir_recursive_absolute(output)
 	var vertices = []
 	var normals = []

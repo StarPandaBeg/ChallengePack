@@ -7,7 +7,7 @@ root = Path(__file__).resolve().parents[1]
 dist = root / "dist"
 dist.mkdir(exist_ok=True)
 target = dist / "ChallengePack-2.0.0-win64.zip"
-assets = root / "ChallengePack" / "assets" / "protectors.res"
+assets = root / "ChallengePack" / "src" / "assets" / "protectors.res"
 if not assets.is_file():
     raise SystemExit("Build assets first: see README.md")
 with zipfile.ZipFile(target, "w", compression=zipfile.ZIP_DEFLATED) as archive:

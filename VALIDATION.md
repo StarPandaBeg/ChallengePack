@@ -4,7 +4,7 @@ Target: Buckshot Roulette **2.2.0.6**, Steam Windows, Godot **4.1.1**.
 
 ## Automated checks
 
-- Six isolated PowerShell installer scenarios: install/uninstall, idempotence, duplicate entries, other sections/mods, missing executable/script, Unicode/spaced paths.
+- Seven isolated installer scenarios: install/uninstall, idempotence, duplicate entries, other sections/mods, missing executable/script, Unicode/spaced paths and batch entrypoints calling the helper in `src/`.
 - Adapter compilation, preserved exports and typed references, against extracted sources and installed Steam PCK.
 - Persistent settings, invalid values, independent snapshots, cyclic choices, alternating/random starters, atomic failure on changed adapter anchors.
 - Real menu configuration/focus/open/close, multiplayer button block and scene recreation, against extracted scene and installed PCK.

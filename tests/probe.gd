@@ -4,7 +4,7 @@ func _initialize():
 	call_deferred("run")
 
 func run():
-	var directory = get_script().resource_path.get_base_dir().get_base_dir().path_join("ChallengePack")
+	var directory = get_script().resource_path.get_base_dir().get_base_dir().path_join("ChallengePack/src")
 	print("CP_SOURCE: ", "extracted project" if FileAccess.file_exists("res://gdre_export.log") else "embedded game pack")
 	for file in ["challengepack.gd", "menu.gd", "settings.gd", "online_guard.gd", "rules.gd"]:
 		var loaded = load(directory.path_join(file))

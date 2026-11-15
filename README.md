@@ -68,11 +68,12 @@ Settings are saved between launches and applied when starting a game. Mouse, key
    Buckshot Roulette_windows/
      Buckshot Roulette.exe
      ChallengePack/
-       challengepack.gd
        install.bat
        uninstall.bat
-       modcfg.ps1
-       ...other scripts and assets...
+       src/
+         challengepack.gd
+         modcfg.ps1
+         ...other scripts and assets...
    ```
 
 4. Run `ChallengePack\install.bat`.
@@ -111,13 +112,13 @@ python tools/run_godot.py --path tools --script res://build_assets.gd
 python tools/package.py
 ```
 
-The first command builds `ChallengePack/assets/protectors.res` from the mesh and textures in `assets/protectors/`. The second creates `dist/ChallengePack-2.0.0-win64.zip` and its SHA-256 checksum. The archive contains the installable mod and documentation; Python and the Godot editor are not required to play.
+The first command builds `ChallengePack/src/assets/protectors.res` from the mesh and textures in `assets/protectors/`. The second creates `dist/ChallengePack-2.0.0-win64.zip` and its SHA-256 checksum. Only `install.bat` and `uninstall.bat` sit at the top of the installable mod folder; its scripts and resources are kept in `src/`. The archive contains the installable mod and documentation; Python and the Godot editor are not required to play.
 
 ### Localization
 
 Mod-specific text follows the language selected in the game. Russian is included; other languages fall back to English. Start, Return, Yes and No reuse the game's translations.
 
-Translation catalogs are UTF-8 JSON files in `ChallengePack/locales/`: `en.json` contains the base messages, and `ru.json` contains Russian translations. To add a language, copy the keys into `<language>.json` using its lowercase language code (for example, `de.json`). Keep `%s` placeholders in the same order. Missing or empty entries fall back to English. Regional locales such as `ru_RU` use their language catalog. Restart the game after editing a catalog; switching the game's language updates the menu automatically.
+Translation catalogs are UTF-8 JSON files in `ChallengePack/src/locales/`: `en.json` contains the base messages, and `ru.json` contains Russian translations. To add a language, copy the keys into `<language>.json` using its lowercase language code (for example, `de.json`). Keep `%s` placeholders in the same order. Missing or empty entries fall back to English. Regional locales such as `ru_RU` use their language catalog. Restart the game after editing a catalog; switching the game's language updates the menu automatically.
 
 ### Validation
 
