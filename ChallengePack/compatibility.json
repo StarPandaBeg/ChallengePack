@@ -1,0 +1,7 @@
+{
+  "ShellSpawner": "3831575fdfcbd30cea2158d2ca40ad88293f4771eec297f8356b2b491bf78f3c",
+  "ShellLoader": "0fceb3cde1ee486d43034f4af5fd81735fb950e6a4dd880604c8b0866baa1f2d",
+  "ItemManager": "91a107750631fca8cecdcceb9bc42d751148dc9ae4f8953205ad18c0f9b19c18",
+  "MenuManager": "8a4e68fbc87540a3570d6c5ab8cc576a30b45e14620d9048681a305cd18c3aa4",
+  "LeaderboardManager": "a71dd77a4f254147de47d6c29e058fdb566743cce1302fbb5448ad488bf16dd6"
+}

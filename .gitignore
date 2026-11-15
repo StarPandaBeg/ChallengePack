@@ -1,0 +1,4 @@
+.godot/
+dist/
+tests/.scratch/
+*.log

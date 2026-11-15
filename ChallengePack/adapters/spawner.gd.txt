@@ -1,0 +1,20 @@
+
+func SpawnShells(numberOfShells: int, numberOfLives: int, numberOfBlanks: int, shufflingArray: bool):
+	# Without reload shuffling, randomize the display once, then keep that order.
+	var shuffle_display = shufflingArray if cp_port.active.shuffle == 0 else true
+	super(numberOfShells, numberOfLives, numberOfBlanks, shuffle_display)
+	if cp_port.active.shells != 0:
+		roundManager.playerData.skippingShellDescription = true
+	if cp_port.active.shells == 1:
+		for shell in spawnedShellObjectArray:
+			var branch = shell.get_child(0)
+			branch.mesh.set_surface_override_material(1, branch.mat_blank.duplicate())
+
+func PlayLatchSound():
+	if cp_port.active.shells != 2:
+		super()
+
+func PlayAudioIndicators():
+	# The indicator rhythm itself encodes the live/blank sequence.
+	if cp_port.active.shells == 0:
+		await super()
