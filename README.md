@@ -26,57 +26,57 @@ Play a real game with the <b>devil</b>! No mercy, now the game becomes really ha
 
 ## Features
 
-Combine nine independent settings for more challenging gameplay in the standard game and Double or Nothing. All new rules are disabled by default; saved configurations keep their existing choices.
+Combine nine independent settings in the standard game and Double or Nothing. New rules are off by default.
 
 #### Shell Visibility:
 
-<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _Default_ - Shells are shown as in the original game.
+<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _Default_ - Show shells as in the original game.
 
-<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _Quantity_ - Only the total number of shells is visible. All displayed shells look blank, and composition and sequence sounds are suppressed. Guess which shells are live!
+<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _Quantity_ - See how many shells there are, but not their types.
 
-<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _Hidden_ - No initial information about the number or types of shells. The compartment stays closed and the dealer always performs eight loading gestures. Test your luck!
+<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _Hidden_ - Keep both shell count and types a mystery.
 
 #### Items Visibility:
 
-<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _Default_ - Items are visible as in the original game.
+<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _Default_ - Keep the dealer’s items visible.
 
-<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _Hidden_ - The dealer can keep secrets: two covers hide his items. Covers temporarily disappear when choosing an item to steal with adrenaline, then return after selection or timeout.
+<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _Hidden_ - Hide the dealer’s items behind covers; reveal them when stealing.
 
 #### Shuffle Bullets:
 
-<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _Yes_ - Shells are shuffled using the original game's rules.
+<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _Yes_ - Use the original game’s shuffling rules.
 
-<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _No_ - A random arrangement is generated once, then shells are loaded in the same order as they lie on the table.
+<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _No_ - Load shells in the same order as they appear on the table.
 
 #### First turn:
 
-<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _Always First_ - The player always starts after loading, as in the original game.
+<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _Always First_ - The player starts every charge.
 
-<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _Round Robin_ - The player starts the first load, then the player and dealer alternate starting after each reload.
+<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _Round Robin_ - Take turns starting after each reload, beginning with the player.
 
-<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _Random_ - The starting player is chosen independently after each reload.
+<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _Random_ - Choose who starts randomly after each reload.
 
 #### Unknown Health:
 
-<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _Default / Hidden_ - Hide both health displays and the dealer's one-health warning. Actual health, damage, healing and the final showdown mechanics remain unchanged: keep count yourself!
+<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _Default / Hidden_ - Hide both health displays and keep count yourself!
 
 #### Mirrored Items:
 
-<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _No / Yes_ - After each item distribution, replace the dealer's inventory with a copy of the player's complete placed inventory, including leftovers. Both sides start with the same types and quantities, up to eight items; their choices during play can make the inventories diverge again.
+<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _No / Yes_ - Give the dealer a copy of your inventory after each item distribution.
 
 #### Limited Pocket:
 
-<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _Unlimited / 1 Item / 2 Items_ - Limit the player's item uses per turn. Adrenaline and its stolen item count as one use, including when theft times out. At the limit, items stay on the table and the player can still shoot. Each new playable turn, including another turn after shooting a blank at yourself, resets the limit. Dealer item use is unchanged. Remaining uses are shown on screen.
+<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _Unlimited / 1 Item / 2 Items_ - Limit your item uses per turn. Adrenaline and the stolen item count as one use.
 
 #### Round Contract:
 
-<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _Off / Random / No Healing Items / No Self Shots / No Handcuffs_ - Each charge has an independent 30% chance of a contract, for both Random and fixed restrictions. The dealer announces a restriction only when it activates; it expires with that charge. Random chooses one of the three restrictions when a contract occurs. In rounds without items it only selects No Self Shots; fixed healing/handcuff restrictions pause until a round with items. Healing items means both cigarettes and expired medicine; shooting yourself is forbidden even with a blank. Restrictions also apply to stolen items. Attempting a forbidden action stops the run before the item or shot is consumed, pauses gameplay and opens a failure screen naming the broken contract. Return to the main menu with the focused button or Escape/Back. A small indicator at the top left shows only the rule (or its paused status) and remaining pocket uses when items are enabled; the dealer is not bound by it.
+<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _Off / Random / No Healing Items / No Self Shots / No Handcuffs_ - Each charge has a 30% chance of a restriction for the player. Break it and lose the challenge. Item restrictions pause in rounds without items.
 
 #### Heal Bullets:
 
-<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _No / Yes_ - Replace one randomly chosen blank shell in each charge with a green healing shell, without changing the charge size or live-shell count. It restores 1 HP to the target with the normal healing sound when HP actually increases, up to the usual health cap; it cannot revive anyone or restore a cut defibrillator. Shooting yourself with it keeps your turn, for both the player and dealer. Shooting the opponent passes the turn. Handsaws do not increase healing; inverters leave healing shells unchanged, and beer ejects them without healing. Magnifying glasses and phones identify them correctly. Quantity/Hidden modes still conceal their initial identity. The No Healing Items contract only forbids healing items; No Self Shots also forbids healing self-shots.
+<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _No / Yes_ - Replace one blank per charge with a green shell that heals its target by 1 HP. Shooting yourself keeps your turn — for both you and the dealer.
 
-Settings are saved between launches and applied when starting a game. The configuration menu uses two columns, with arrow/D-pad navigation between rows and columns. Mouse, keyboard and controller UI navigation are supported; Escape/Back returns to the main menu. Magnifying glasses and burner phones still reveal information according to the game's rules.
+Your choices are saved between launches. The two-column menu supports mouse, keyboard and controller navigation. English and Russian mod text is included.
 
 ## Installation
 
