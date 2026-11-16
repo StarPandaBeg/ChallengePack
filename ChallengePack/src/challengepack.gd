@@ -13,6 +13,10 @@ const FailureScreen = preload("failure_screen.gd")
 const Protectors = preload("protectors.gd")
 const WhatsNew = preload("whats_new.gd")
 const ContractEffects = preload("contract_effects.gd")
+const MultiplayerSession = preload("multiplayer/session.gd")
+const MultiplayerFactory = preload("multiplayer/factory.gd")
+var mp
+var mp_factory = MultiplayerFactory.new()
 const VERSION = "2.1.0"
 var settings = Settings.new()
 var factory = Factory.new()
@@ -54,11 +58,18 @@ func _enter_tree():
 	if compatible and not load(mod_directory.path_join("assets/protectors.res")) is PackedScene:
 		compatible = false
 		set_compatibility_error("CP_ERROR_COVERS")
-	if not guard.prepare():
+	mp = MultiplayerSession.new()
+	mp.setup(self)
+	mp.compatible = mp_factory.prepare(mod_directory)
+	mp.error = mp_factory.error
+	mp.fingerprint = mp_factory.fingerprint
+	add_child(mp)
+	print("[ChallengePack] multiplayer compatibility: ", mp.compatible, " ", mp.error)
+	if not guard.prepare(mp.compatible):
 		compatible = false
 		set_compatibility_error("CP_ERROR_ONLINE")
 	get_tree().node_added.connect(on_node_added)
-	clear_invite()
+	if not mp.compatible: clear_invite()
 	print("[ChallengePack] %s; compatibility: %s %s" % [VERSION, compatible, compatibility_error])
 
 func set_compatibility_error(key: String, arguments: Array = []):
@@ -91,21 +102,22 @@ func _ready():
 	contract_effects = ContractEffects.new()
 	add_child(contract_effects)
 	contract_effects.setup(self)
-	if OS.get_cmdline_args().has("+connect_lobby"):
+	if not mp.compatible and OS.get_cmdline_args().has("+connect_lobby"):
 		online_notice()
 
 func on_node_added(node: Node):
-	if node.get_parent() == get_tree().root and node.scene_file_path.begins_with("res://multiplayer/"):
+	if not mp.compatible and node.get_parent() == get_tree().root and node.scene_file_path.begins_with("res://multiplayer/"):
 		block_mp_scene(node)
 	var script = node.get_script()
 	if script == null or node.has_meta("challengepack_hooked"):
 		return
 	var path: String = script.resource_path
-	if returning_from_mp and path.begins_with("res://multiplayer/"):
+	if not mp.compatible and returning_from_mp and path.begins_with("res://multiplayer/"):
 		# Do not permit networking _ready handlers in an unexpected MP scene.
 		node.set_script(null)
 		return
-	var replacement = guard.scripts.get(path)
+	var replacement = mp_factory.scripts.get(path) if mp.compatible else null
+	if replacement == null: replacement = guard.scripts.get(path)
 	if replacement == null and compatible:
 		replacement = factory.scripts.get(path)
 	if replacement != null:

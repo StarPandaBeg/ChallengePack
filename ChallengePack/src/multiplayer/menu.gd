@@ -1,0 +1,236 @@
+extends CanvasLayer
+
+const Labels = preload("../menu.gd").LABELS
+var session: Node
+var panel: PanelContainer
+var editor: PanelContainer
+var grid: GridContainer
+var status: Label
+var hud: Label
+var ready_button: Button
+var open_button: Button
+var first_player: OptionButton
+var checks = {}
+var choices = {}
+var chance: HSlider
+var chance_label: Label
+var shown = false
+
+func text(key: String, args: Array = []) -> String:
+	return session.port.localization.text(key, args)
+
+func setup(owner_session: Node):
+	session = owner_session
+	layer = 112
+	open_button = Button.new()
+	open_button.position = Vector2(18, 16)
+	open_button.text = "ChallengePack"
+	open_button.pressed.connect(toggle)
+	add_child(open_button)
+	hud = Label.new()
+	hud.position = Vector2(18, 54)
+	hud.add_theme_font_size_override("font_size", 15)
+	add_child(hud)
+	panel = PanelContainer.new()
+	panel.position = Vector2(80, 55)
+	panel.custom_minimum_size = Vector2(850, 0)
+	var style = StyleBoxFlat.new()
+	style.bg_color = Color(0.025, 0.025, 0.025, 0.99)
+	style.set_content_margin_all(16)
+	panel.add_theme_stylebox_override("panel", style)
+	add_child(panel)
+	var column = VBoxContainer.new()
+	panel.add_child(column)
+	var title = Label.new()
+	title.text = "ChallengePack " + session.port.VERSION
+	column.add_child(title)
+	var scroll = ScrollContainer.new()
+	scroll.custom_minimum_size = Vector2(820, 285)
+	scroll.follow_focus = true
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	column.add_child(scroll)
+	grid = GridContainer.new()
+	grid.columns = 2
+	scroll.add_child(grid)
+	for key in Labels:
+		var button = Button.new()
+		button.custom_minimum_size = Vector2(400, 48)
+		button.add_theme_font_size_override("font_size", 17)
+		button.pressed.connect(cycle.bind(key))
+		grid.add_child(button)
+		choices[key] = button
+	first_player = OptionButton.new()
+	first_player.custom_minimum_size.x = 400
+	first_player.item_selected.connect(select_player)
+	grid.add_child(first_player)
+	var edit = Button.new()
+	edit.text = text("CP_EDIT_CONTRACTS")
+	edit.pressed.connect(open_editor)
+	column.add_child(edit)
+	status = Label.new()
+	status.custom_minimum_size = Vector2(800, 0)
+	status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	status.add_theme_font_size_override("font_size", 15)
+	column.add_child(status)
+	ready_button = Button.new()
+	ready_button.pressed.connect(session.ready_toggle)
+	column.add_child(ready_button)
+	var close = Button.new()
+	close.text = text("CP_DONE")
+	close.pressed.connect(toggle)
+	column.add_child(close)
+	build_editor()
+	panel.hide()
+	refresh()
+
+func build_editor():
+	editor = PanelContainer.new()
+	editor.position = Vector2(80, 55)
+	editor.custom_minimum_size.x = 850
+	editor.add_theme_stylebox_override("panel", panel.get_theme_stylebox("panel").duplicate())
+	add_child(editor)
+	var col = VBoxContainer.new()
+	editor.add_child(col)
+	var scroll = ScrollContainer.new()
+	scroll.custom_minimum_size = Vector2(820, 280)
+	scroll.follow_focus = true
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	col.add_child(scroll)
+	var entries = GridContainer.new()
+	entries.columns = 2
+	scroll.add_child(entries)
+	for id in session.rules.Catalog.ALL_IDS:
+		var check = CheckBox.new()
+		check.custom_minimum_size = Vector2(400, 34)
+		check.add_theme_font_size_override("font_size", 17)
+		check.toggled.connect(select_contract.bind(id))
+		entries.add_child(check)
+		checks[id] = check
+	var actions = HBoxContainer.new()
+	col.add_child(actions)
+	for all in [true, false]:
+		var button = Button.new()
+		button.text = text("CP_SELECT_ALL" if all else "CP_SELECT_NONE")
+		button.pressed.connect(select_all.bind(all))
+		actions.add_child(button)
+	chance_label = Label.new()
+	col.add_child(chance_label)
+	chance = HSlider.new()
+	chance.max_value = 100
+	chance.step = 1
+	chance.value_changed.connect(set_chance)
+	col.add_child(chance)
+	var close = Button.new()
+	close.text = text("CP_DONE")
+	close.pressed.connect(func(): editor.hide(); panel.show(); choices.contract.grab_focus())
+	col.add_child(close)
+	editor.hide()
+
+func contract_text(id: int, detail: bool = false) -> String:
+	var C = session.rules.Catalog.Contract
+	if id == C.NO_CUFFS: return text("CP_MP_NO_JAMMER_DETAIL" if detail else "CP_MP_NO_JAMMER")
+	if id == C.NO_INSURANCE: return text("CP_MP_INSURANCE_DETAIL" if detail else "CP_NO_INSURANCE")
+	if id == C.TWO_FOR_ONE and detail: return text("CP_MP_DOUBLE_DETAIL")
+	if id == C.LEAKY_GUN and detail: return text("CP_MP_LEAKY_DETAIL")
+	return text(session.rules.Catalog.CATALOG[id].detail if detail else session.rules.Catalog.contract_key(id))
+
+func refresh():
+	if session == null or not is_instance_valid(status): return
+	var values = session.rules.settings
+	var editable = session.host() and not session.in_game and not session.loading
+	for key in choices:
+		var options = Labels[key][1]
+		if key == "turn": options = ["CP_DEFAULT", "CP_MP_FIXED_FIRST", "CP_ROUND_ROBIN", "CP_RANDOM"]
+		var value_key = options[values[key]]
+		choices[key].text = text(Labels[key][0]) + ":\n" + (text(value_key) if value_key.begins_with("CP_") else tr(value_key))
+		choices[key].tooltip_text = text("CP_MP_TIP_" + key.to_upper())
+		choices[key].disabled = not editable
+	first_player.clear()
+	first_player.add_item(text("CP_MP_HOST"))
+	first_player.set_item_metadata(0, 0)
+	for member in GlobalSteam.LOBBY_MEMBERS:
+		first_player.add_item(member.steam_name)
+		var index = first_player.item_count - 1
+		first_player.set_item_metadata(index, member.steam_id)
+		if member.steam_id == values.first_player: first_player.select(index)
+	first_player.disabled = not editable or values.turn != 1
+	var lines = []
+	for member in GlobalSteam.LOBBY_MEMBERS:
+		var peer = session.peers.get(member.steam_id, {})
+		lines.append(member.steam_name + ": " + text("CP_MP_READY" if peer.get("ready", false) else ("CP_MP_VERIFIED" if peer.get("verified", false) else "CP_MP_CHECKING")))
+	status.text = "\n".join(lines)
+	ready_button.text = text("CP_MP_READY_TOGGLE")
+	ready_button.disabled = session.in_game or session.loading or session.session.is_empty()
+	for id in checks:
+		checks[id].text = contract_text(id)
+		checks[id].tooltip_text = contract_text(id, true)
+		checks[id].set_pressed_no_signal(id in values.contract_pool)
+		checks[id].disabled = not editable
+	chance.editable = editable
+	chance.set_value_no_signal(values.contract_chance)
+	chance_label.text = text("CP_CONTRACT_CHANCE", [values.contract_chance])
+	var contracts = []
+	if session.in_game and is_instance_valid(session.game):
+		for p in session.game.instance_handler.instance_property_array:
+			var entry = session.rules.state(p.socket_number)
+			if entry.contract == 0: continue
+			var name = contract_text(entry.contract)
+			if entry.contract == session.rules.Catalog.Contract.NO_INSURANCE:
+				if 2 in entry.history: name = text("CP_MP_NO_JAMMER")
+				if 3 in entry.history: name = text("CP_NO_HINTS") + " (" + text("CP_MP_GLASS") + ")"
+			contracts.append(("> " if p.is_active else "") + p.user_name + ": " + name)
+	hud.text = "\n".join(contracts)
+	if session.host() and is_instance_valid(session.lobby_ui) and not session.in_game:
+		session.lobby_ui.ui_button_start_game.visible = session.can_start()
+
+func cycle(key: String):
+	var values = session.rules.settings.duplicate(true)
+	values[key] = (values[key] + 1) % session.rules.LIMITS[key]
+	session.change_settings(values)
+	refresh()
+
+func select_player(index: int):
+	var values = session.rules.settings.duplicate(true)
+	values.first_player = first_player.get_item_metadata(index)
+	session.change_settings(values)
+
+func select_contract(pressed: bool, id: int):
+	var values = session.rules.settings.duplicate(true)
+	if pressed and not id in values.contract_pool: values.contract_pool.append(id)
+	if not pressed: values.contract_pool.erase(id)
+	values.contract_pool.sort()
+	session.change_settings(values)
+	refresh()
+
+func select_all(all: bool):
+	var values = session.rules.settings.duplicate(true)
+	values.contract_pool = session.rules.Catalog.ALL_IDS.duplicate() if all else []
+	session.change_settings(values)
+	refresh()
+
+func set_chance(value: float):
+	var values = session.rules.settings.duplicate(true)
+	values.contract_chance = roundi(value)
+	session.change_settings(values)
+	refresh()
+
+func open_editor():
+	panel.hide()
+	editor.show()
+	checks.values()[0].grab_focus()
+
+func toggle():
+	shown = not shown
+	editor.hide()
+	panel.visible = shown
+	if shown: choices.shells.grab_focus()
+	else: open_button.grab_focus()
+
+func _input(event):
+	if shown and (event.is_action_pressed("ui_cancel") or event.is_action_pressed("exit game")):
+		if editor.visible:
+			editor.hide()
+			panel.show()
+			choices.contract.grab_focus()
+		else: toggle()
+		get_viewport().set_input_as_handled()

@@ -186,7 +186,7 @@ func make_body(name: String, source: String) -> String:
 		coin = replace_once(coin, 'var c_live = shellSpawner.sequenceArray.count("live")', 'var c_live = shellSpawner.sequenceArray.count("live") + shellSpawner.sequenceArray.count("lethal")')
 		return choice + shoot + coin + '\nfunc FigureOutShell():\n\treturn cp_port.heal_bullets.infer_shell(self)\n'
 	if name == "MenuManager":
-		return "\nfunc Start():\n\tcp_port.open_options(self)\n\nfunc cp_start_game():\n\tawait super.Start()\n\nfunc StartMultiplayer():\n\tcp_port.online_notice()\n\nfunc _input(event):\n\tif cp_port.options_open():\n\t\tif event.is_action_pressed(\"ui_cancel\") or event.is_action_pressed(\"exit game\"):\n\t\t\tcp_port.close_options()\n\t\t\tget_viewport().set_input_as_handled()\n\t\treturn\n\tsuper(event)\n"
+		return "\nfunc Start():\n\tcp_port.open_options(self)\n\nfunc cp_start_game():\n\tawait super.Start()\n\nfunc StartMultiplayer():\n\tif cp_port.mp != null and cp_port.mp.compatible:\n\t\tsuper()\n\telse:\n\t\tcp_port.online_notice()\n\nfunc _input(event):\n\tif cp_port.options_open():\n\t\tif event.is_action_pressed(\"ui_cancel\") or event.is_action_pressed(\"exit game\"):\n\t\t\tcp_port.close_options()\n\t\t\tget_viewport().set_input_as_handled()\n\t\treturn\n\tsuper(event)\n"
 	if name == "LeaderboardManager":
 		return "\nfunc UploadScore(_rounds, _visible, _initial):\n\tprint(\"[ChallengePack] leaderboard upload blocked\")\n\nfunc UploadScore_Deprecated(_rounds, _visible, _initial):\n\tprint(\"[ChallengePack] leaderboard upload blocked\")\n"
 	return ""
