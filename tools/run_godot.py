@@ -7,6 +7,13 @@ from pathlib import Path
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 repo = Path(__file__).resolve().parents[1]
 exe = repo.parent / "godot" / "Godot_v4.1.1-stable_win64.exe"
+timeout = 90
+if "--timeout" in sys.argv:
+    index = sys.argv.index("--timeout")
+    timeout = float(sys.argv[index + 1])
+    if timeout <= 0:
+        raise SystemExit("--timeout must be positive")
+    del sys.argv[index:index + 2]
 if "--game-exe" in sys.argv:
     index = sys.argv.index("--game-exe")
     exe = Path(sys.argv[index + 1])
@@ -17,7 +24,7 @@ with log.open("wb") as stream:
     process = subprocess.Popen([str(exe), "--headless", *sys.argv[1:]],
                                stdout=stream, stderr=subprocess.STDOUT)
     try:
-        code = process.wait(timeout=90)
+        code = process.wait(timeout=timeout)
     except subprocess.TimeoutExpired:
         process.kill()
         process.wait()

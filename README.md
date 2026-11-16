@@ -13,7 +13,7 @@
 
 ---
 
-> **ChallengePack 2.1.0** for **Buckshot Roulette 2.2.0.6 (Steam, Windows)**. Single-player only; multiplayer and leaderboard uploads are disabled while installed.
+> **ChallengePack 2.1.0** for **Buckshot Roulette 2.2.0.6 (Steam, Windows)**. Standard game, Double or Nothing and experimental multiplayer for **2–4 players**. Modified single-player scores are not uploaded to leaderboards.
 
 <div align="center">
   <img src=".github/promo.png" alt="Challenge Pack">
@@ -78,6 +78,21 @@ Combine nine independent settings in the standard game and Double or Nothing. Ne
 
 Your choices are saved between launches. The compact two-column menu includes tooltips and supports mouse, keyboard and controller. English and Russian are included, with a What's New screen to introduce the challenges.
 
+## Multiplayer
+
+Everyone needs the **same ChallengePack build**. Create a lobby, open **ChallengePack**, choose the rules and have every player press **Ready**. Only the host can edit settings; changes reset readiness. Solo and multiplayer preferences are saved separately.
+
+All nine modes are available, with a few multiplayer twists:
+
+- Contracts are personal and visible to everyone. Breaking one eliminates its owner until the next round; the others keep playing.
+- Jammer restrictions replace handcuff restrictions. Double shots affect the contract owner's shots; Leaky Shotgun redirects a self-shot at a random living rival.
+- Mirrored items give all living players matching fresh inventories, respecting the table's item limits.
+- Choose a fixed starting player, rotate the first turn, leave it random or keep the original rules. When stealing behind covers, choose whose inventory to reveal.
+
+Use the **ChallengePack** button or **F8** to view rules during play. Ordinary lobbies are hidden while the mod is installed. If the host leaves, the match ends; returning to the lobby lets you start again.
+
+Network behavior has automated checks, but full matches across separate Steam accounts still need manual testing. See [VALIDATION.md](VALIDATION.md#multiplayer-acceptance).
+
 ## Installation
 
 1. Download the **2.1.0** archive from [releases](https://github.com/StarPandaBeg/ChallengePack/releases), or [build it from source](#building-from-source).
@@ -94,7 +109,7 @@ Your choices are saved between launches. The compact two-column menu includes to
    ```
 
 4. Run `ChallengePack\install.bat`.
-5. Launch the game through Steam, select the single-player Start button, configure your challenge, and enjoy!
+5. Launch the game through Steam, choose single-player Start to configure a solo challenge, or enter multiplayer to create a modded lobby.
 
 No separate mod loader is required. Keep the entire mod folder together. If upgrading from an old loader-based version, use a clean game installation first.
 
@@ -102,7 +117,7 @@ Only **2.2.0.6** is supported. The mod checks compatibility at startup; compatib
 
 ### Uninstallation
 
-Run `ChallengePack\uninstall.bat`, then delete the mod folder. Other mods and configuration entries remain installed. Uninstall ChallengePack to play online again.
+Run `ChallengePack\uninstall.bat`, then delete the mod folder. Other mods and configuration entries remain installed. Uninstall ChallengePack to join ordinary, unmodded lobbies.
 
 ### Troubleshooting
 

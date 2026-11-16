@@ -7,7 +7,7 @@ Target: Buckshot Roulette **2.2.0.6**, Steam Windows, Godot **4.1.1**.
 - Seven isolated installer scenarios: install/uninstall, idempotence, duplicate entries, other sections/mods, missing executable/script, Unicode/spaced paths and batch entrypoints calling the helper in `src/`.
 - Adapter compilation, preserved exports and typed references, against extracted sources and installed Steam PCK.
 - Persistent settings, invalid values, independent snapshots, cyclic choices, alternating/random starters, atomic failure on changed adapter anchors.
-- Real menu configuration/focus/open/close, multiplayer button block and scene recreation, against extracted scene and installed PCK.
+- Real menu configuration/focus/open/close, fail-closed multiplayer compatibility and scene recreation, against extracted scene and installed PCK.
 - Russian and English catalogs, regional locale matching, placeholders, English fallback and live menu updates when switching game language; vanilla action translations are reused.
 - Gameplay matrix: 36 combinations using real adapted spawning/loading methods with controlled camera/dialogue/AI dependencies. Checks composition, displayed/loading order, exactly one starter, alternation, covers, theft/timeout, gestures, magnifying-glass data and cleanup. Normal/accelerated loading and normal/endless manager states are represented.
 - Extended challenges: 168 combinations of health visibility, mirrored items, pocket limits and contracts. Real dealer distribution is checked with leftovers, duplicates, exact amount counters, full tables and consecutive copies. Health values remain unchanged; adrenaline shares its pocket slot; real round/player-turn methods reset limits; forbidden shooting opens a failure screen before damage and returns to the menu after confirmation. Tests isolate their fixtures from a mod already installed in the game directory.
@@ -42,11 +42,44 @@ Headless runs may emit unsupported cursor/mouse and dummy-renderer `mesh_get_sur
 - Exercise phone, magnifying glass, inverter, beer and other information-changing actions in real play.
 - Check hidden health through bootup, healing, flickering digits, defibrillation and final-showdown wire cuts. Play contracts and pocket limits through actual item animations, theft timeouts, blank self-shots and cuffs; inspect the failure screen (including physical controller input), nine-option menu and compact top-left HUD at 960×540 with both languages and controller input.
 - Visually inspect green shells and their higher-pitched blank indicator in Default, then initial concealment in Quantity/Hidden. Play healing/black shots with cuffs, sawed-off barrels and last-shell reloads in both game modes; verify turn continuation and health updates during real animations.
-- Try real Steam invitations/lobby links and verify no lobby creation/join; confirm an actual Double or Nothing ending does not upload a score.
+- Try real Steam invitations/lobby links and verify that only compatible modded lobbies can be joined; confirm an actual Double or Nothing ending does not upload a score.
 
 - Manually check both shotgun contracts at normal speed with and without items, on the last shell, with cuffs and during normal/Double or Nothing games. Confirm the selected target reverses only for the player, saw boosts never stack, green shells heal up to the round maximum, and the next charge restores ordinary behavior.
 
 The matrix does not mean 36 manually completed games.
+
+## Multiplayer acceptance
+
+**Implemented for 2–4 players; real multi-account Steam matches are not yet verified.** Local transport fixtures and four instantiated players do not establish network playability. Keep multiplayer marked experimental until the checks below pass.
+
+Automated coverage added:
+
+- Independent multiplayer preferences, strict settings validation, all 2,304 public setting combinations for each of 2/3/4 players, itemless eligibility, twelve contracts, allowed/forbidden owned and stolen items, both jammer/glass orders, random target reversal and table-wide mirror limits.
+- In-memory handshake and rule synchronization, readiness invalidation, guest preference isolation, session/revision checks, sender-to-seat binding, replay rejection, invalid/dead targets and forged inventory slots. This transport sends no Steam packets.
+- Actual lobby and game scenes: English/Russian bounds for nine settings and twelve contract checkboxes, four player instances, typed manager links, mirrored inventories, protector creation, import-free resources, redacted hidden charge and snapshot round trip.
+- Actual first/third-person animation tracks: doubled green healing, preserved self-shot turn and pocket count, exactly one shell consumed, black-shell death, contract execution and unchanged charge during punishment.
+- All multiplayer adapters compile against extracted sources and the installed Steam game resources. The extracted release archive also passes `release_probe.gd` through the Steam executable without editor import. Runtime compilation and anchor checks are atomic; score upload remains blocked independently.
+
+Required real-network checks:
+
+1. Install the archive on 2, 3 and 4 separate Steam clients with the supported game version. Check create/search/join, ID paste, invitations and lobby links. Reject missing mods and mismatched fingerprints; check the 10-second handshake timeout.
+2. Have every player confirm rules, then change either ChallengePack or vanilla match settings. Readiness must reset. Verify guest controls stay read-only and guests keep their own saved preferences.
+3. Finish representative matches with every mode, all twelve contracts, every shell type and all multiplayer items. Check last shells, timeouts, stealing, direction reversal, skipped turns, simultaneous deaths and round wins.
+4. Inspect hidden shells/items/health during intro, loading, free look, controller selection, theft cancellation/timeout, item use and spectating. Check each cover's placement from every seat at normal speed.
+5. Introduce latency/disconnection. Verify phase acknowledgments, no duplicate effects, resynchronization and timeout exit. A guest leaving must not reset the surviving match's session. Host departure ends the match; host change in a lobby requires renewed confirmation.
+6. Confirm public personal-contract HUDs, own-player marking, beep/bomb, fatal penalty and spectating until the next round. Green healing and target reversal must follow the actual target on every screen.
+7. Repeat menu return/start, install/uninstall and ordinary solo/Double or Nothing runs. Removing the mod restores access to vanilla lobbies.
+
+Run the multiplayer checks with the same runner as the single-player fixtures:
+
+```powershell
+foreach ($scenario in @('multiplayer', 'multiplayer_protocol', 'multiplayer_scene')) {
+    python tools/run_godot.py --path ../game --script "$((Get-Location).Path)/tests/$scenario.gd"
+    if ($LASTEXITCODE -ne 0) { throw "Check failed: $scenario" }
+}
+```
+
+Pass `--game-exe "D:/.../Buckshot Roulette.exe"` instead of `--path ../game` to use installed Steam resources. These checks do not create or join Steam lobbies. Repeated real-room cinematic fixtures may need `--timeout 240`; the runner defaults to 90 seconds.
 
 ## Developer reference
 
@@ -54,7 +87,7 @@ The matrix does not mean 36 manually completed games.
 
 Look for `[ChallengePack]` in `%APPDATA%\Godot\app_userdata\Buckshot Roulette\logs\godot.log`. The log reports the mod version, compatibility result and attached managers. Include the game version, selected settings and relevant errors in bug reports.
 
-Preferences remain in `%APPDATA%\Godot\app_userdata\Buckshot Roulette\challengepack.cfg`; delete that file to reset them.
+Solo preferences remain in `%APPDATA%\Godot\app_userdata\Buckshot Roulette\challengepack.cfg`; multiplayer preferences use `challengepack_multiplayer.cfg` beside it. Delete the relevant file to reset that mode’s preferences.
 
 ### Building from source
 

@@ -1,5 +1,6 @@
 """Create a self-contained release archive without game sources."""
 import hashlib
+import re
 import zipfile
 from pathlib import Path
 
@@ -13,7 +14,13 @@ if not assets.is_file():
 with zipfile.ZipFile(target, "w", compression=zipfile.ZIP_DEFLATED) as archive:
     for path in sorted((root / "ChallengePack").rglob("*")):
         if path.is_file():
-            archive.write(path, path.relative_to(root).as_posix())
+            name = path.relative_to(root).as_posix()
+            data = path.read_bytes()
+            if name == "ChallengePack/src/whats_new.gd":
+                # Preserve local previews; a release must show news only once.
+                data = re.sub(rb"(?m)^(const FORCE_SHOW\s*=\s*)[01](\r?)$",
+                              rb"\g<1>0\g<2>", data, count=1)
+            archive.writestr(name, data)
     for name in ("README.md", "LICENSE", "VALIDATION.md"):
         archive.write(root / name, name)
     for path in sorted((root / ".github").glob("*.png")):
