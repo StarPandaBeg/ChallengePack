@@ -99,8 +99,7 @@ func target(socket: int, selected: int, alive: Array) -> int:
 	others.erase(socket)
 	return socket if others.is_empty() else others[rng.randi_range(0, others.size() - 1)]
 
-func shot(socket: int, selected: int, alive: Array, shell: String, saw: bool, hp: int, maximum: int) -> Dictionary:
-	var actual = target(socket, selected, alive)
+func shot_effect(socket: int, actual: int, shell: String, saw: bool, hp: int, maximum: int) -> Dictionary:
 	var strength = 2 if saw or state(socket).contract == Catalog.Contract.TWO_FOR_ONE else 1
 	var after = hp
 	if shell == "heal": after = mini(maximum, hp + strength)

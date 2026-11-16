@@ -44,6 +44,7 @@ func run():
 					rules.state(socket).history = []
 					var banned = R.ITEM_NAMES[item] in R.Catalog.CATALOG[id].items
 					check((rules.item_result(socket, item, false) == "contract") == banned, "Item restriction " + str(id))
+					check((rules.item_result(socket, item, true) == "contract") == banned, "Stolen item restriction " + str(id))
 			rules.begin_charge(alive, false)
 			check((rules.state(0).contract != 0) == (not R.Catalog.CATALOG[id].requires_items), "Itemless eligibility")
 		var C = R.Catalog.Contract
@@ -63,6 +64,33 @@ func run():
 		for socket in alive: check(rules.starter(alive, 0, "CW", 0, 0) == socket, "Round robin")
 		var items = rules.mirror_pool([{"id": 3, "enabled": true, "per_player": 1, "global_max": 1}, {"id": 2, "enabled": true, "per_player": 2, "global_max": 8}], count, 8)
 		check(not 3 in items and items.size() == 2, "Mirror limits")
+	# Every public setting combination is valid and generates a coherent charge.
+	var combinations = 1
+	for key in R.LIMITS: combinations *= R.LIMITS[key]
+	for count in [2, 3, 4]:
+		for code in combinations:
+			var value = code
+			for key in R.LIMITS:
+				rules.settings[key] = value % R.LIMITS[key]
+				value = int(value / R.LIMITS[key])
+			check(R.validate(rules.settings), "Valid settings matrix")
+			var sequence = rules.sequences(["live", "blank", "blank"])
+			if rules.settings.shuffle == 1: check(sequence.visible == sequence.loaded, "Matrix preserves layout")
+			rules.begin_charge(range(count), false)
+			for socket in range(count):
+				check(rules.state(socket).contract in [0, R.Catalog.Contract.NO_SELF_SHOTS, R.Catalog.Contract.TWO_FOR_ONE, R.Catalog.Contract.LEAKY_GUN], "Matrix itemless contracts")
+	for doubled in [false, true]:
+		for saw in [false, true]:
+			rules.state(0).contract = R.Catalog.Contract.TWO_FOR_ONE if doubled else 0
+			for hp in [1, 2, 4]:
+				for target in [0, 1]:
+					for shell in ["live", "blank", "heal", "lethal"]:
+						var effect = rules.shot_effect(0, target, shell, saw, hp, 4)
+						var strength = 2 if doubled or saw else 1
+						check(effect.strength == strength, "Saw never stacks with contract")
+						if shell == "heal": check(effect.health == mini(4, hp + strength), "Healing and HP cap")
+						if shell == "lethal": check(effect.health == 0, "Black instant kill")
+						check(effect.keep_turn == (target == 0 and shell in ["blank", "heal"]), "Actual target determines extra turn")
 	var settings = load(directory.path_join("multiplayer/settings.gd")).new()
 	settings.values.turn = 3
 	check(settings.save_settings("user://cp_mp_test.cfg") == OK, "Save MP preferences")

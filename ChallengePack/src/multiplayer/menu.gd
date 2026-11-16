@@ -20,6 +20,7 @@ var target_ids = []
 var bomb: TextureRect
 var blocked_raycast: WeakRef
 var raycast_state = false
+var member_signature = ""
 
 func text(key: String, args: Array = []) -> String:
 	return session.port.localization.text(key, args)
@@ -34,12 +35,17 @@ func setup(owner_session: Node):
 	add_child(open_button)
 	hud = Label.new()
 	hud.position = Vector2(18, 54)
+	hud.custom_minimum_size.x = 310
+	hud.size.x = 310
+	hud.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	hud.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hud.add_theme_font_size_override("font_size", 15)
 	add_child(hud)
 	bomb = TextureRect.new()
 	bomb.texture = ImageTexture.create_from_image(Image.load_from_file(session.port.mod_directory.path_join("assets/contracts/c4.png")))
 	bomb.position = Vector2(298, 54)
-	bomb.size = Vector2(40, 40)
+	bomb.size = Vector2(20, 20)
+	bomb.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	bomb.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	bomb.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	add_child(bomb)
@@ -49,6 +55,9 @@ func setup(owner_session: Node):
 	panel = PanelContainer.new()
 	panel.position = Vector2(80, 55)
 	panel.custom_minimum_size = Vector2(850, 0)
+	panel.theme = Theme.new()
+	panel.theme.default_font_size = 17
+	panel.theme.default_font = load("res://fonts/fake receipt.otf")
 	var style = StyleBoxFlat.new()
 	style.bg_color = Color(0.025, 0.025, 0.025, 0.99)
 	style.set_content_margin_all(16)
@@ -102,6 +111,7 @@ func build_editor():
 	editor = PanelContainer.new()
 	editor.position = Vector2(80, 55)
 	editor.custom_minimum_size.x = 850
+	editor.theme = panel.theme
 	editor.add_theme_stylebox_override("panel", panel.get_theme_stylebox("panel").duplicate())
 	add_child(editor)
 	var col = VBoxContainer.new()
@@ -160,14 +170,17 @@ func refresh():
 		choices[key].text = text(Labels[key][0]) + ":\n" + (text(value_key) if value_key.begins_with("CP_") else tr(value_key))
 		choices[key].tooltip_text = text("CP_MP_TIP_" + key.to_upper())
 		choices[key].disabled = not editable
-	first_player.clear()
-	first_player.add_item(text("CP_MP_HOST"))
-	first_player.set_item_metadata(0, 0)
-	for member in GlobalSteam.LOBBY_MEMBERS:
-		first_player.add_item(member.steam_name)
-		var index = first_player.item_count - 1
-		first_player.set_item_metadata(index, member.steam_id)
-		if member.steam_id == values.first_player: first_player.select(index)
+	var signature = str(GlobalSteam.LOBBY_MEMBERS) + TranslationServer.get_locale()
+	if member_signature != signature:
+		member_signature = signature
+		first_player.clear()
+		first_player.add_item(text("CP_MP_HOST"))
+		first_player.set_item_metadata(0, 0)
+		for member in GlobalSteam.LOBBY_MEMBERS:
+			first_player.add_item(member.steam_name)
+			first_player.set_item_metadata(first_player.item_count - 1, member.steam_id)
+	for index in first_player.item_count:
+		if first_player.get_item_metadata(index) == values.first_player: first_player.select(index)
 	first_player.disabled = not editable or values.turn != 1
 	var lines = []
 	for member in GlobalSteam.LOBBY_MEMBERS:
@@ -193,9 +206,13 @@ func refresh():
 			var name = contract_text(entry.contract)
 			if entry.contract == session.rules.Catalog.Contract.NO_INSURANCE:
 				if 2 in entry.history: name = text("CP_MP_NO_JAMMER")
-				if 3 in entry.history: name = text("CP_NO_HINTS") + " (" + text("CP_MP_GLASS") + ")"
+				if 3 in entry.history: name = text("CP_MP_NO_GLASS")
+			if entry.failed: name += " / " + text("CP_MP_FAILED")
 			contracts.append(("> " if p.is_active else "") + p.user_name + ": " + name)
-	hud.text = "\n".join(contracts)
+	hud.text = "\n".join(contracts) + ("\n" if not contracts.is_empty() else "")
+	hud.reset_size()
+	bomb.position = Vector2(308, hud.position.y + maxf(0, hud.size.y - 20))
+	theft_targets.position.y = hud.position.y + hud.size.y + 12
 	bomb.visible = not contracts.is_empty()
 	var local = null
 	if session.in_game and is_instance_valid(session.game):
@@ -276,6 +293,10 @@ func toggle():
 		blocked_raycast = null
 
 func _input(event):
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_F8:
+		toggle()
+		get_viewport().set_input_as_handled()
+		return
 	if shown and (event.is_action_pressed("ui_cancel") or event.is_action_pressed("exit game")):
 		if editor.visible:
 			editor.hide()

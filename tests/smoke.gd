@@ -86,13 +86,22 @@ func run():
 	TranslationServer.set_locale(original_locale)
 	port.close_options()
 	check(not port.options_open())
+	port.mp.compatible = false # Unsupported multiplayer must still fail closed.
 	manager.StartMultiplayer()
 	check(current_scene == scene)
 	check(port.notice_until > Time.get_ticks_msec())
-	var lobby = scene.get_node("standalone managers/mp_lobby manager")
+	var guard = port.Guard.new()
+	check(guard.prepare())
+	var lobby = guard.scripts[guard.LOBBY].new()
+	lobby.cp_port = port
 	lobby.join_lobby(123)
 	lobby.CreateLobby()
-	scene.get_node("standalone managers/mp_command line checker").JoinGameOutsideLobby(123)
+	lobby.free()
+	var command = guard.scripts[guard.COMMAND].new()
+	command.cp_port = port
+	command.JoinGameOutsideLobby(123)
+	command.free()
+	port.mp.compatible = true
 	check(current_scene == scene)
 	var board = port.guard.scripts[port.guard.BOARD].new()
 	board.cp_port = port

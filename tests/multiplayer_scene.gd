@@ -84,10 +84,41 @@ func run():
 	var before = port.mp.snapshot()
 	port.mp.apply_snapshot(before)
 	check(port.mp.snapshot() == before, "Snapshot round trip")
+	# Run actual first/third person animations and their method tracks, not stubs.
+	var actor = handler.instance_property_array[0]
+	game.MAIN_active_current_turn_socket = 0
+	game.MAIN_active_round_index = 0
+	actor.has_turn = true
+	actor.health_current = 1
+	actor.health_counter.prev_health = 1
+	port.mp.rules.state(0).contract = port.mp.rules.Catalog.Contract.TWO_FOR_ONE
+	port.mp.rules.state(0).used = 2
+	port.mp.rules.last_actor = 0
+	game.MAIN_active_sequence_dict.sequence_in_shotgun = ["heal", "blank", "live"]
+	port.mp.resolve_shot(null, {"sent_from_socket": 0, "socket_to_shoot": 0})
+	await create_timer(4.4).timeout
+	check(actor.health_current == 3, "Actual green shot heals twice")
+	check(actor.has_turn, "Actual healing self-shot preserves turn")
+	check(port.mp.rules.state(0).used == 2, "Extra turn preserves pocket usage")
+	check(game.MAIN_active_sequence_dict.sequence_in_shotgun == ["blank", "live"], "One shell consumed")
+	var rival = handler.instance_property_array[1]
+	rival.health_current = 3
+	game.MAIN_active_sequence_dict.sequence_in_shotgun = ["lethal", "blank", "live"]
+	port.mp.resolve_shot(null, {"sent_from_socket": 0, "socket_to_shoot": 1})
+	await create_timer(4.4).timeout
+	check(rival.health_current == 0, "Actual black shot kills immediately")
+	check(game.MAIN_active_sequence_dict.sequence_in_shotgun == ["blank", "live"], "Black shot consumes once")
+	var remaining = game.MAIN_active_sequence_dict.sequence_in_shotgun.duplicate()
+	port.mp.punish(2)
+	await create_timer(5.5).timeout
+	check(handler.instance_property_array[2].health_current == 0, "Contract penalty kills violator")
+	check(game.MAIN_active_sequence_dict.sequence_in_shotgun == remaining, "Contract penalty preserves charge")
 	for p in handler.instance_property_array:
 		p.health_counter.speaker_increase_health.stop()
 	current_scene.queue_free()
 	await process_frame
+	await process_frame
+	check(not is_instance_valid(port.mp.ui) and not is_instance_valid(port.mp.game), "Network UI and managers cleared on exit")
 	port.queue_free()
 	await process_frame
 	print("CP_MULTIPLAYER_SCENE: failures=", failures)

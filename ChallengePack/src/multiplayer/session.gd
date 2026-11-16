@@ -2,8 +2,10 @@ extends Node
 
 const Rules = preload("rules.gd")
 const Settings = preload("settings.gd")
+const Effects = preload("../contract_effects.gd")
 const PROTOCOL = 1
 const TIMEOUT = 10000
+const REQUESTS = {10: "pickup shotgun request", 12: "shoot user request", 15: "look at user request", 17: "grab item request", 19: "place item request", 22: "interact with item request", 24: "secondary item interaction request"}
 var port: Node
 var settings = Settings.new()
 var rules = Rules.new()
@@ -24,6 +26,8 @@ var loading = false
 var scene_ready = {}
 var request_counter = 0
 var event_counter = 0
+var custom_counter = 0
+var received_custom = {}
 var received_events = {}
 var received_actions = {}
 var sender = 0
@@ -34,6 +38,8 @@ var barrier_deadline = 0
 var mirror = []
 var mirror_offsets = {}
 var pending_shots = {}
+var applied_outcomes = {}
+var completed_actions = {}
 var last_tick = 0
 var snapshot_deadline = 0
 var last_digest = ""
@@ -51,6 +57,7 @@ var expected_stock_digest = ""
 
 func setup(parent_port: Node):
 	port = parent_port
+	process_priority = 100 # Apply concealment after the game's ordinary updates.
 	settings.load_settings()
 	rules.settings = settings.values.duplicate(true)
 
@@ -67,7 +74,8 @@ func identity() -> Dictionary:
 	return {"mod": port.VERSION, "protocol": PROTOCOL, "game": "2.2.0.6", "fingerprint": fingerprint}
 
 func message(alias: String, payload: Dictionary = {}) -> Dictionary:
-	return {"packet category": "ChallengePack", "packet alias": alias, "cp_protocol": PROTOCOL, "session": session, "revision": revision, "data": payload}
+	custom_counter += 1
+	return {"packet category": "ChallengePack", "packet alias": alias, "cp_protocol": PROTOCOL, "session": session, "revision": revision, "charge": rules.charge, "turn": rules.turn, "phase": "game" if in_game else "lobby", "cp_message": custom_counter, "data": payload}
 
 func send(alias: String, payload: Dictionary = {}, target: int = 0):
 	if is_instance_valid(packets): packets.send_p2p_packet(target, message(alias, payload))
@@ -90,6 +98,7 @@ func fail(reason: String):
 
 func _process(_delta):
 	if not compatible or not is_instance_valid(packets): return
+	if in_game and is_instance_valid(game): presentation()
 	var now = Time.get_ticks_msec()
 	if now - last_tick < 200: return
 	last_tick = now
@@ -145,7 +154,6 @@ func _process(_delta):
 	if not host() and peers.has(GlobalSteam.HOST_ID) and not peers[GlobalSteam.HOST_ID].verified and now > peers[GlobalSteam.HOST_ID].deadline:
 		fail(port.localization.text("CP_MP_MISMATCH"))
 	if is_instance_valid(ui): ui.refresh()
-	if in_game and is_instance_valid(game): presentation()
 
 func receive_native(manager: Node, data: Dictionary, remote: int):
 	if not remote in ids(): return
@@ -158,19 +166,31 @@ func receive_native(manager: Node, data: Dictionary, remote: int):
 		if not valid_action(data, remote): return
 	elif remote != GlobalSteam.HOST_ID:
 		# Only vanilla version negotiation is accepted from an unverified guest.
-		if data.get("packet alias") != "check version": return
+		if category != "MP_LobbyManager" or data.get("packet alias") != "check version" or data.get("packet_id") != 32 or not data.get("version") is String: return
+	# Several original dispatchers depend on Dictionary insertion order. Never
+	# let a request route through its unrelated first/second arbitrary fields.
+	var canonical = {"packet category": category, "packet alias": data.get("packet alias", ""), "sent_from": "host" if remote == GlobalSteam.HOST_ID else "client", "packet_id": data.get("packet_id", 0)}
+	for key in data:
+		if not canonical.has(key): canonical[key] = data[key]
 	sender = remote
 	manager.temp_id = remote
-	manager.PipeData(data)
+	manager.PipeData(canonical)
 	sender = 0
 
 func receive(data: Dictionary, remote: int):
 	if data.get("cp_protocol") != PROTOCOL or not data.get("data") is Dictionary: return
+	if data.get("phase") != ("game" if in_game else "lobby"): return
+	var number = data.get("cp_message", 0)
+	if typeof(number) != TYPE_INT or number <= 0: return
+	var receipt = "%s:%s:%s" % [data.get("session", ""), remote, number]
+	if received_custom.has(receipt): return
+	received_custom[receipt] = true
 	var alias = data.get("packet alias", "")
 	var body: Dictionary = data.data
 	if alias == "hello":
+		if in_game: return
 		if body != identity():
-			if host(): packets.lobby.KickPlayerInLobby(remote)
+			if host(): reject_peer(remote)
 			else: fail(port.localization.text("CP_MP_MISMATCH"))
 			return
 		if not host() and remote != GlobalSteam.HOST_ID: return
@@ -195,6 +215,8 @@ func receive(data: Dictionary, remote: int):
 		send("settings_ack", {}, remote)
 		return
 	if data.get("session") != session or data.get("revision") != revision: return
+	if in_game and alias in ["failure", "continue", "digest", "snapshot", "mirror", "contracts"]:
+		if data.get("charge", -1) < rules.charge or data.get("turn", -1) < rules.turn: return
 	if host():
 		if not peers.has(remote) or not peers[remote].verified: return
 		match alias:
@@ -202,7 +224,7 @@ func receive(data: Dictionary, remote: int):
 			"ready": peers[remote].ready = body.get("ready", false) == true and body.get("vanilla") == vanilla_digest()
 			"scene_ready": scene_ready[remote] = true
 			"stage_ready":
-				if body.get("identity") != identity() or body.get("rules") != rules.settings: return
+				if body.get("identity") != identity() or body.get("rules") != rules.settings or body.get("vanilla") != vanilla_digest(): return
 				var token = body.get("token", "")
 				if not stages.has(token): stages[token] = {}
 				stages[token][remote] = true
@@ -220,7 +242,7 @@ func receive(data: Dictionary, remote: int):
 				send("barrier_ack", {"token": barrier}, remote)
 			"snapshot": apply_snapshot(body)
 			"stage_release": released[body.get("token", "")] = true
-			"continue": continue_turn(body.get("socket", -1))
+			"continue": continue_turn(body.get("socket", -1), body.get("shot", false))
 			"reject": restore_permissions(body.get("socket", -1))
 			"failure": execute_failure(body)
 			"contracts": apply_contracts(body)
@@ -228,6 +250,8 @@ func receive(data: Dictionary, remote: int):
 			"digest":
 				if body.get("digest") != public_digest():
 					snapshot_deadline = Time.get_ticks_msec() + TIMEOUT
+					for p in game.instance_handler.instance_property_array:
+						if p.is_active: p.permissions.SetMainPermission(false)
 					send("snapshot_request", {}, remote)
 
 func change_settings(values: Dictionary):
@@ -256,10 +280,17 @@ func send_settings(target: int = 0):
 	send("settings", {"identity": identity(), "rules": rules.settings, "members": members, "vanilla": vanilla_digest()}, target)
 
 func can_start() -> bool:
-	if not compatible or blocked or not host() or members.size() < 2: return false
+	if not compatible or blocked or in_game or loading or not host() or members.size() < 2: return false
+	if stock_digest != vanilla_digest(): return false
 	for id in members:
 		if not peers.has(id) or not peers[id].verified or not peers[id].ready: return false
 	return true
+
+func reject_peer(id: int):
+	if peers.has(id):
+		peers[id].verified = false
+		peers[id].ready = false
+	if is_instance_valid(packets) and is_instance_valid(packets.lobby): packets.lobby.KickPlayerInLobby(id)
 
 func can_join(id: int) -> bool:
 	return Steam.getLobbyData(id, "challengepack") == port.VERSION and Steam.getLobbyData(id, "cp_protocol") == str(PROTOCOL) and Steam.getLobbyData(id, "cp_fingerprint") == fingerprint
@@ -288,6 +319,7 @@ func direct_request(manager: Node, data: Dictionary):
 
 func valid_action(data: Dictionary, remote: int) -> bool:
 	if blocked or snapshot_deadline > 0: return false
+	if typeof(data.get("packet_id")) != TYPE_INT or data.get("packet alias") != REQUESTS.get(data.get("packet_id"), ""): return false
 	if data.get("cp_session") != session or data.get("cp_revision") != revision or data.get("cp_charge") != rules.charge or data.get("cp_turn") != rules.turn: return false
 	var n = data.get("cp_action", 0)
 	if typeof(n) != TYPE_INT or n <= received_actions.get(remote, 0): return false
@@ -397,6 +429,7 @@ func apply_contracts(data: Dictionary):
 func register_packets(manager: Node):
 	epoch += 1
 	packets = manager
+	manager.tree_exiting.connect(scene_exiting.bind(weakref(manager)), CONNECT_ONE_SHOT)
 	game = manager.game_state
 	lobby_ui = manager.lobby_ui
 	in_game = is_instance_valid(game)
@@ -407,8 +440,11 @@ func register_packets(manager: Node):
 	stages.clear()
 	released.clear()
 	received_events.clear()
+	received_custom.clear()
 	received_actions.clear()
 	pending_shots.clear()
+	applied_outcomes.clear()
+	completed_actions.clear()
 	covers.clear()
 	hidden.clear()
 	rules.reset()
@@ -417,6 +453,23 @@ func register_packets(manager: Node):
 	add_child(ui)
 	ui.setup(self)
 	print("[ChallengePack MP] packet manager connected; gameplay=", in_game)
+
+func scene_exiting(reference: WeakRef):
+	if reference.get_ref() != packets: return
+	epoch += 1
+	game = null
+	packets = null
+	lobby_ui = null
+	in_game = false
+	loading = false
+	busy = false
+	if is_instance_valid(ui): ui.queue_free()
+	ui = null
+	stages.clear()
+	released.clear()
+	covers.clear()
+	hidden.clear()
+	pending_shots.clear()
 
 func before_pipe(_manager: Node, data: Dictionary) -> bool:
 	if data.get("packet category") == "ChallengePack": return false
@@ -428,11 +481,12 @@ func before_pipe(_manager: Node, data: Dictionary) -> bool:
 	return not blocked
 
 func stage(token: String) -> bool:
+	var captured_epoch = epoch
 	var deadline = Time.get_ticks_msec() + TIMEOUT
 	if host():
 		if not stages.has(token): stages[token] = {}
 		stages[token][GlobalSteam.STEAM_ID] = true
-		while is_instance_valid(game) and not blocked:
+		while is_instance_valid(game) and not blocked and captured_epoch == epoch:
 			var complete = true
 			for id in ids():
 				if not stages[token].has(id): complete = false
@@ -443,13 +497,17 @@ func stage(token: String) -> bool:
 			await get_tree().process_frame
 		send("stage_release", {"token": token})
 	else:
-		send("stage_ready", {"token": token, "identity": identity(), "rules": rules.settings}, GlobalSteam.HOST_ID)
-		while not released.has(token) and not blocked:
+		send("stage_ready", {"token": token, "identity": identity(), "rules": rules.settings, "vanilla": vanilla_digest()}, GlobalSteam.HOST_ID)
+		var retry_at = Time.get_ticks_msec() + 500
+		while not released.has(token) and not blocked and captured_epoch == epoch:
+			if Time.get_ticks_msec() >= retry_at:
+				send("stage_ready", {"token": token, "identity": identity(), "rules": rules.settings, "vanilla": vanilla_digest()}, GlobalSteam.HOST_ID)
+				retry_at = Time.get_ticks_msec() + 500
 			if Time.get_ticks_msec() > deadline:
 				fail(port.localization.text("CP_MP_TIMEOUT"))
 				return false
 			await get_tree().process_frame
-	return not blocked and is_instance_valid(game)
+	return not blocked and is_instance_valid(game) and captured_epoch == epoch
 
 func apply_mirror(items: Array):
 	if not is_instance_valid(game): return
@@ -487,7 +545,7 @@ func execute_failure(data: Dictionary):
 		user.permissions.SetMainPermission(false)
 		user.has_turn = false
 	var cue = AudioStreamPlayer.new()
-	cue.stream = load(port.mod_directory.path_join("assets/contracts/breach.wav"))
+	cue.stream = Effects.load_pcm(port.mod_directory.path_join("assets/contracts/breach.wav"))
 	add_child(cue)
 	cue.play()
 	await get_tree().create_timer(1.0, false).timeout
@@ -498,7 +556,6 @@ func execute_failure(data: Dictionary):
 	p.shotgun.SetShotgunVisible_Local(p.is_active)
 	var packet = {"shooter_socket_self": socket, "shooter_socket_target": socket, "shooter_shell": "lethal", "shooter_sequence_length_after_eject": data.get("left", 1), "shooter_socket_target_direction": "self", "barrel_sawed_off": false, "sent_from_socket": socket, "ending_turn_after_shot": true, "cp_strength": p.health_current, "cp_health": 0, "cp_penalty": true, "cp_event": -data.get("event", 1)}
 	p.shotgun.ReceivePacket_Shoot(packet)
-	notice("CP_MP_CONTRACT_FAILED", [p.user_name])
 	cue.queue_free()
 
 func presentation():
@@ -518,6 +575,8 @@ func presentation():
 			if is_instance_valid(item):
 				if not hidden.has(item.get_instance_id()): hidden[item.get_instance_id()] = item.visible
 				item.visible = hidden[item.get_instance_id()] if reveal else false
+				if item.get_child_count() > 1 and local.is_stealing_item:
+					item.get_child(1).interactionAllowed = reveal and local.has_turn
 	for p in game.instance_handler.instance_property_array:
 		var held = p.item_interaction.active_item_parent
 		if is_instance_valid(held): held.visible = true
@@ -571,7 +630,7 @@ func announce_contracts():
 		if rules.players[s].contract != 0: any = true
 	if any:
 		var sound = AudioStreamPlayer.new()
-		sound.stream = load(port.mod_directory.path_join("assets/contracts/armed.wav"))
+		sound.stream = Effects.load_pcm(port.mod_directory.path_join("assets/contracts/armed.wav"))
 		add_child(sound)
 		sound.finished.connect(sound.queue_free)
 		sound.play()
@@ -600,6 +659,7 @@ func mirror_item(_property: Node, _incrementing: bool):
 
 func verify(_verifier: Node, data: Dictionary) -> Dictionary:
 	if blocked or not data.has("packet_id") or not data.has("sent_from_socket"): return {}
+	if data.get("packet alias") != REQUESTS.get(data.packet_id, ""): return {}
 	var p = property_for(data.sent_from_socket)
 	if p == null or p.user_id != sender or p.health_current <= 0: return {}
 	var active = game.MAIN_active_current_turn_socket == p.socket_number and p.has_turn
@@ -615,6 +675,7 @@ func verify(_verifier: Node, data: Dictionary) -> Dictionary:
 				return {}
 		15:
 			if not active or not p.is_holding_shotgun: return {}
+			if not data.get("direction_to_look") in ["self", "forward", "left", "right"]: return {}
 		17:
 			if busy or not p.is_grabbing_items or p.is_holding_item_to_place: return {}
 		19:
@@ -643,6 +704,8 @@ func verify(_verifier: Node, data: Dictionary) -> Dictionary:
 		24:
 			var target = property_for(data.get("item_selected_socket_number", -1))
 			if not active or not p.is_viewing_jammer or data.get("item_id") != 3 or target == null or target == p or target.health_current <= 0 or target.is_jammed: return {}
+			data["has_exit_animation"] = true
+			data["item_selected_local_grid_index"] = 0
 		_:
 			return {}
 	return data.duplicate(true)
@@ -660,16 +723,15 @@ func broadcast_native(data: Dictionary):
 
 func resolve_shot(_verifier: Node, data: Dictionary):
 	var socket = data.sent_from_socket
+	game.StopTimeoutForSocket("turn", socket)
 	var actual = rules.target(socket, data.socket_to_shoot, alive())
 	var p = property_for(actual)
 	var shell = game.MAIN_active_sequence_dict.sequence_in_shotgun[0]
-	var strength = 2 if game.MAIN_barrel_sawed_off or rules.state(socket).contract == Rules.Catalog.Contract.TWO_FOR_ONE else 1
-	var hp = p.health_current
-	if shell == "heal": hp = mini(p.health_on_round_start, hp + strength)
-	if shell == "live": hp = maxi(0, hp - strength)
-	if shell == "lethal": hp = 0
+	var effect = rules.shot_effect(socket, actual, shell, game.MAIN_barrel_sawed_off, p.health_current, p.health_on_round_start)
+	var strength = effect.strength
+	var hp = effect.health
 	var left = game.MAIN_active_sequence_dict.sequence_in_shotgun.size() - 1
-	var ending = not (actual == socket and shell in ["blank", "heal"]) or left == 0 or p.user_id in game.MAIN_active_user_id_exceeded_secondary_timeout_array
+	var ending = not effect.keep_turn or left == 0 or property_for(socket).user_id in game.MAIN_active_user_id_exceeded_secondary_timeout_array
 	busy = true
 	broadcast_native({"packet category": "MP_UserInstanceProperties", "packet alias": "shoot user", "sent_from": "host", "packet_id": 13, "shooter_socket_self": socket, "shooter_socket_target": actual, "shooter_shell": shell, "shooter_sequence_length_after_eject": left, "shooter_socket_target_direction": game.round_manager.GetDirection(socket, actual), "barrel_sawed_off": game.MAIN_barrel_sawed_off, "sent_from_socket": socket, "ending_turn_after_shot": ending, "cp_selected_target": data.socket_to_shoot, "cp_strength": strength, "cp_health": hp})
 
@@ -695,9 +757,18 @@ func apply_heal(shoot: Node):
 	var packet = pending_shots[shoot.properties.socket_number]
 	var target = property_for(packet.shooter_socket_target)
 	if target == null: return
+	target.health_counter.healing_health = packet.cp_health > target.health_current
 	target.health_current = packet.cp_health
-	target.health_counter.healing_health = true
 	target.health_counter.UpdateDisplay()
+
+func claim_outcome(shoot: Node) -> bool:
+	var socket = shoot.properties.socket_number
+	var packet = pending_shots.get(socket, {})
+	if packet.get("shooter_socket_self", -1) != socket: return false
+	var token = "%s:%s:%s" % [rules.charge, socket, packet.get("cp_event", 0)]
+	if applied_outcomes.has(token): return false
+	applied_outcomes[token] = true
+	return true
 
 
 
@@ -718,12 +789,13 @@ func shell_material(branch: Node, type: String, examining: bool):
 	if examining: mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	branch.shell.set_surface_override_material(1, mat)
 
-func continue_turn(socket: int):
+func continue_turn(socket: int, after_shot: bool = false):
 	var p = property_for(socket)
 	if p == null or p.health_current <= 0: return
 	p.has_turn = true
 	p.is_interacting_with_item = false
 	p.is_on_secondary_interaction = false
+	if after_shot: game.BeginTimeoutForSocket("turn", game.MAIN_timeout_duration_turn, socket)
 	if p.is_active:
 		p.FreeLookCameraForUser_Enable()
 		p.permissions.SetMainPermission(true)
@@ -732,9 +804,13 @@ func continue_turn(socket: int):
 		p.cursor.SetCursor(true, true)
 
 func finish_shot(shoot: Node, packet: Dictionary):
+	var token = "shot-%s" % packet.get("cp_event", 0)
+	if completed_actions.has(token): return
+	completed_actions[token] = true
 	var captured_epoch = epoch
-	if not await stage("shot-%s" % packet.get("cp_event", 0)): return
+	if not await stage(token): return
 	if captured_epoch != epoch or not is_instance_valid(shoot): return
+	if packet.get("cp_penalty", false): notice("CP_MP_CONTRACT_FAILED", [shoot.properties.user_name])
 	busy = false
 	if not host(): return
 	var socket = packet.shooter_socket_self
@@ -746,12 +822,15 @@ func finish_shot(shoot: Node, packet: Dictionary):
 		var empty = not packet.get("cp_penalty", false) and packet.shooter_sequence_length_after_eject == 0
 		game.round_manager.UserEndTurn_Packet(socket, hand_over, empty, winner)
 	else:
-		send("continue", {"socket": socket})
-		continue_turn(socket)
+		send("continue", {"socket": socket, "shot": true})
+		continue_turn(socket, true)
 
 func finish_item(interaction: Node, packet: Dictionary):
+	var token = "item-%s" % packet.get("cp_event", 0)
+	if completed_actions.has(token): return
+	completed_actions[token] = true
 	var captured_epoch = epoch
-	if not await stage("item-%s" % packet.get("cp_event", 0)): return
+	if not await stage(token): return
 	if captured_epoch != epoch or not is_instance_valid(interaction): return
 	var p = interaction.properties
 	p.is_interacting_with_item = false

@@ -147,6 +147,7 @@ func menu_ready(manager: Node):
 		if button.is_connected("is_pressed", manager.Start):
 			button.disconnect("is_pressed", manager.Start)
 		button.connect("is_pressed", func(): open_options(manager))
+	if not mp.compatible:
 		var multiplayer = manager.buttons[22]
 		if multiplayer.is_connected("is_pressed", manager.StartMultiplayer):
 			multiplayer.disconnect("is_pressed", manager.StartMultiplayer)
@@ -267,7 +268,10 @@ func clear_invite():
 
 func online_notice():
 	clear_invite()
-	notify("CP_ONLINE_DISABLED")
+	if mp != null and not mp.error.is_empty():
+		notify("CP_MP_UNAVAILABLE", [mp.error])
+	else:
+		notify("CP_ONLINE_DISABLED")
 	print("[ChallengePack] multiplayer blocked")
 
 func notify(key: String, arguments: Array = [], seconds: float = 7):

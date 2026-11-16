@@ -1,6 +1,7 @@
 extends RefCounted
 
 const Extractor = preload("../patch_factory.gd")
+const Effects = preload("../contract_effects.gd")
 const PATHS = {
 	"packets": "res://multiplayer/scripts/MP_PacketManager.gd",
 	"lobby": "res://multiplayer/scripts/MP_LobbyManager.gd",
@@ -16,7 +17,12 @@ const PATHS = {
 	"loader": "res://multiplayer/scripts/global scripts/MP_ShellLoader.gd",
 	"health": "res://multiplayer/scripts/user scripts/MP_HealthCounter.gd",
 	"phone": "res://multiplayer/scripts/user scripts/MP_BurnerPhone.gd",
-	"lobby_ui": "res://multiplayer/scripts/global scripts/MP_LobbyUI.gd"
+	"lobby_ui": "res://multiplayer/scripts/global scripts/MP_LobbyUI.gd",
+	"item_manager": "res://multiplayer/scripts/user scripts/MP_ItemManager.gd",
+	"permissions": "res://multiplayer/scripts/user scripts/MP_UserPermissions.gd",
+	"properties": "res://multiplayer/scripts/user scripts/MP_UserInstanceProperties.gd",
+	"death": "res://multiplayer/scripts/user scripts/MP_DeathManager.gd",
+	"intermediary": "res://multiplayer/scripts/global scripts/MP_InteractionIntermediary.gd"
 }
 var scripts = {}
 var error = ""
@@ -26,11 +32,19 @@ var extract = Extractor.new()
 func prepare(directory: String) -> bool:
 	scripts.clear()
 	error = ""
+	extract.error = ""
 	var expected = JSON.parse_string(FileAccess.get_file_as_string(directory.path_join("multiplayer/compatibility.json")))
 	if not expected is Dictionary: return fail("Missing multiplayer compatibility manifest")
 	var globals = FileAccess.get_file_as_string("res://scripts/GlobalVariables.gd").replace("\r\n", "\n")
 	if not 'var currentVersion_nr = "v2.2.0"' in globals or not 'var currentVersion_hotfix = 6\n' in globals:
 		return fail("Multiplayer requires Buckshot Roulette 2.2.0.6")
+	if not load(directory.path_join("assets/protectors.res")) is PackedScene:
+		return fail("Missing multiplayer protector resource")
+	if Image.load_from_file(directory.path_join("assets/contracts/c4.png")) == null:
+		return fail("Missing contract HUD image")
+	for name in ["armed.wav", "breach.wav"]:
+		if Effects.load_pcm(directory.path_join("assets/contracts/" + name)) == null:
+			return fail("Missing contract audio: " + name)
 	var proof = ""
 	for key in PATHS:
 		var path = PATHS[key]
@@ -46,7 +60,7 @@ func prepare(directory: String) -> bool:
 		if script.reload() != OK: return fail("Cannot compile multiplayer adapter: " + key)
 		scripts[path] = script
 		proof += source.sha256_text() + body.sha256_text()
-	for file in ["rules.gd", "session.gd", "settings.gd", "menu.gd"]:
+	for file in ["rules.gd", "session.gd", "settings.gd", "menu.gd", "../challenges.gd", "../heal_bullets.gd", "../contract_effects.gd", "../challengepack.gd", "../patch_factory.gd", "../online_guard.gd"]:
 		proof += FileAccess.get_file_as_string(directory.path_join("multiplayer/" + file)).replace("\r\n", "\n").sha256_text()
 	fingerprint = proof.sha256_text()
 	return true
@@ -91,6 +105,7 @@ func make_body(key: String, source: String) -> String:
 			load_routine = replace(load_routine, '\tanimator_shell_sequence_machine.play("move up")', '\tif cp_port.mp.rules.settings.shells != 2:\n\t\tanimator_shell_sequence_machine.play("move up")')
 			load_routine = replace(load_routine, '\tspeaker_sequence_machine.play()\n\tawait', '\tif cp_port.mp.rules.settings.shells != 2: speaker_sequence_machine.play()\n\tawait')
 			load_routine = replace(load_routine, '\tspeaker_sequence_machine.play()\n\tanimator', '\tif cp_port.mp.rules.settings.shells != 2: speaker_sequence_machine.play()\n\tanimator')
+			load_routine = replace(load_routine, '\tanimator_shell_sequence_machine.play_backwards("move up")', '\tif cp_port.mp.rules.settings.shells != 2:\n\t\tanimator_shell_sequence_machine.play_backwards("move up")')
 			load_routine = replace(load_routine, '\tPassTurn(game_state.MAIN_active_first_turn_socket)', '\tif not await cp_port.mp.stage("load-%s" % cp_port.mp.rules.charge): return\n\tPassTurn(game_state.MAIN_active_first_turn_socket)')
 			var begin = method(source, "BeginItemGrabbingForSockets")
 			begin = replace(begin, '\tif socket_number_array == []:', '\tif cp_port.mp.rules.settings.mirror == 1:\n\t\tsocket_number_array = cp_port.mp.prepare_mirror(self)\n\tif socket_number_array == []:')
@@ -101,11 +116,12 @@ func make_body(key: String, source: String) -> String:
 			return "\nfunc VerifyPacket(data):\n\treturn cp_port.mp.verify(self, data)\n\nfunc PacketSort(data: Dictionary):\n\tif data.get(\"packet alias\") == \"shoot user request\":\n\t\tcp_port.mp.resolve_shot(self, data)\n\telif data.get(\"packet alias\") == \"interact with item request\":\n\t\tcp_port.mp.resolve_item(self, data)\n\telse:\n\t\tsuper(data)\n"
 		"shoot":
 			var receive = method(source, "ReceivePacket_Shoot")
+			receive = replace(receive, '\tproperties.is_on_secondary_interaction = false', '\tintermediary.game_state.StopTimeoutForSocket("turn", packet_dictionary.shooter_socket_self)\n\tproperties.is_on_secondary_interaction = false')
 			receive = replace(receive, '\tvar sent_from =', '\tactive_shooter_shotgun_damage = packet_dictionary.get("cp_strength", active_shooter_shotgun_damage)\n\tcp_port.mp.pending_shots[properties.socket_number] = packet_dictionary.duplicate(true)\n\tvar sent_from =')
 			var outcome = method(source, "ShootingOutcome")
+			outcome = replace(outcome, '\tawait get_tree().create_timer(.1, false).timeout', '\tif not cp_port.mp.claim_outcome(self): return\n\tawait get_tree().create_timer(.1, false).timeout')
 			outcome = outcome.replace('current_shell == "live"', 'current_shell in ["live", "lethal"]')
 			outcome = outcome.replace('current_shell == "blank"', 'current_shell in ["blank", "heal"]')
-			outcome = replace(outcome, '\telse: PlaySound_BlankFire()', '\telif current_shell == "heal": properties.health_counter.speaker_increase_health.play()\n\telse: PlaySound_BlankFire()')
 			outcome = replace(outcome, '\t\t\t\tinstance.health_current -= active_shooter_shotgun_damage', '\t\t\t\tinstance.health_current = cp_port.mp.pending_shots[properties.socket_number].cp_health')
 			outcome = replace(outcome, '\tRemoveFirstShellFromSequence()', '\tif current_shell == "heal": cp_port.mp.apply_heal(self)\n\tif not cp_port.mp.pending_shots[properties.socket_number].get("cp_penalty", false):\n\t\tRemoveFirstShellFromSequence()')
 			var ending = "\nfunc CheckIfEndingTurn(packet_dictionary: Dictionary):\n\tawait cp_port.mp.finish_shot(self, packet_dictionary)\n"
@@ -135,16 +151,14 @@ func make_body(key: String, source: String) -> String:
 func guard_async(body: String) -> String:
 	var lines = body.split("\n")
 	var result = ""
-	var asynchronous = false
 	for line in lines:
 		if line.begins_with("func "):
-			asynchronous = false
 			result += line + "\n"
 			# Async adapters capture their originating scene and charge.
-			result += "\tvar cp_epoch = cp_port.mp.epoch\n"
+			result += "\tvar cp_epoch = cp_port.mp.epoch\n\tvar cp_charge = cp_port.mp.rules.charge\n"
 			continue
 		result += line + "\n"
 		if line.strip_edges().begins_with("await ") or line.strip_edges().begins_with("await("):
 			var indentation = line.substr(0, line.length() - line.lstrip("\t").length())
-			result += indentation + "if cp_epoch != cp_port.mp.epoch or cp_port.mp.blocked: return\n"
+			result += indentation + "if cp_epoch != cp_port.mp.epoch or cp_charge != cp_port.mp.rules.charge or cp_port.mp.blocked: return\n"
 	return result
