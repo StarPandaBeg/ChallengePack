@@ -76,7 +76,7 @@ Combine nine independent settings in the standard game and Double or Nothing. Ne
 
 <img src=".github/icon_1.png" alt="*" width="16" height="16" /> _No / Yes_ - Green shells heal their target; shooting yourself keeps your turn. Invert one to create a black instant-kill shell.
 
-Your choices are saved between launches. The compact two-column menu includes tooltips and supports mouse, keyboard and controller. English and Russian are included, with a What's New screen to introduce the challenges.
+Your choices are saved between launches. The compact two-column menu includes tooltips and supports mouse, keyboard and controller. English, Russian and Polish are included, with a What's New screen to introduce the challenges.
 
 ## Multiplayer
 

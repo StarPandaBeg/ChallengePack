@@ -30,13 +30,24 @@ func run():
 		check(english[key].count("%s") == russian.get(key, "").count("%s"), "Placeholder mismatch: " + key)
 	TranslationServer.set_locale("ru_RU")
 	check(localization.text("CP_TITLE") == "настройка игры")
+	TranslationServer.set_locale("pl")
+	check(localization.text("CP_TITLE") == "ustawienia gry")
+	check(localization.text("CP_CONTRACT_CHANCE", [30]) == "Szansa przy ładowaniu: 30%")
+	var polish = localization.catalogs.pl
+	check(english.size() == polish.size(), "Polish catalog differs in size")
+	for key in english:
+		check(polish.has(key), "Missing Polish key: " + key)
+		check(english[key].count("%s") == polish.get(key, "").count("%s"), "Polish placeholder mismatch: " + key)
+	TranslationServer.set_locale("pl_PL")
+	check(localization.text("CP_TITLE") == "ustawienia gry", "Polish regional locale not matched")
+	TranslationServer.set_locale("ru_RU")
 	localization.catalogs.ru.erase("CP_REAL_GAME")
 	check(localization.text("CP_REAL_GAME") == english.CP_REAL_GAME, "Missing entry did not fall back")
 	TranslationServer.set_locale("de")
 	check(localization.text("CP_TITLE") == english.CP_TITLE, "Unsupported language did not fall back")
 	check(localization.text("CP_UNKNOWN") == "CP_UNKNOWN", "Unknown key must remain diagnosable")
 	TranslationServer.set_locale(original_locale)
-	print("CP_LOCALIZATION_OK: Russian, regions, formatting, catalog coverage, fallback, vanilla isolation")
+	print("CP_LOCALIZATION_OK: Russian, Polish, regions, formatting, catalog coverage, fallback, vanilla isolation")
 	quit()
 
 func check(condition: bool, message: String = "Check failed"):

@@ -35,7 +35,7 @@ func run():
 	check(port.options.buttons.items.global_position.x > port.options.buttons.shells.global_position.x, "Settings are not in two columns")
 	check(is_equal_approx(port.options.buttons.items.global_position.y, port.options.buttons.shells.global_position.y))
 	var saved_values = port.settings.snapshot()
-	for language in ["en", "ru"]:
+	for language in ["en", "ru", "pl"]:
 		TranslationServer.set_locale(language)
 		for key in port.options.buttons:
 			var arguments = [port.settings.values.contract_chance] if key == "contract" else []
@@ -54,7 +54,7 @@ func run():
 					check(viewport_rect.encloses(button.get_global_rect()), "Two-column menu overflows: " + button.text)
 	port.settings.values = saved_values
 	var previous_chance = port.settings.values.contract_chance
-	for language in ["en", "ru"]:
+	for language in ["en", "ru", "pl"]:
 		TranslationServer.set_locale(language)
 		for chance in [0, 30, 100]:
 			port.settings.values.contract_chance = chance

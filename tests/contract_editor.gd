@@ -125,7 +125,7 @@ func run():
 	check(editor.shown and editor.checks[1].has_focus(), "Modal did not open with checkbox focus")
 	menu.start()
 	check(editor.shown and menu.shown, "Start escaped the modal")
-	for language in ["en", "ru"]:
+	for language in ["en", "ru", "pl"]:
 		TranslationServer.set_locale(language)
 		await process_frame
 		await process_frame

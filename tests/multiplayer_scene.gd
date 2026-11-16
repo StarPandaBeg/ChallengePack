@@ -32,7 +32,7 @@ func run():
 	port.mp.set_process(false) # Never create/join real lobbies from a fixture.
 	check(port.mp.ui.open_button.get_parent() == port.mp.lobby_ui.ui_parent_lobby_home, "Entry follows native lobby visibility")
 	check(port.mp.ui.ready_button.get_parent() == port.mp.lobby_ui.ui_parent_lobby_home, "Ready is a lobby action, outside the settings submenu")
-	for language in ["en", "ru"]:
+	for language in ["en", "ru", "pl"]:
 		TranslationServer.set_locale(language)
 		port.mp.ui.toggle()
 		port.mp.ui.refresh()

@@ -43,7 +43,7 @@ func run():
 	manager.Start()
 	check(not port.options_open(), "Start opened settings behind news")
 	check(news.cards.size() == 9, "Missing challenge cards")
-	for locale in ["en", "ru"]:
+	for locale in ["en", "ru", "pl"]:
 		TranslationServer.set_locale(locale)
 		news.refresh()
 		await process_frame
