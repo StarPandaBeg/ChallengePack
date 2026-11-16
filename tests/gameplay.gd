@@ -30,7 +30,7 @@ func arm_contract():
 	var probe = RandomNumberGenerator.new()
 	for candidate in range(100):
 		probe.seed = candidate
-		if probe.randf() < port.challenges.CONTRACT_CHANCE:
+		if probe.randf() < port.challenges.activation_chance:
 			port.challenges.rng.seed = candidate
 			return
 	check(false, "Cannot find a successful contract roll")

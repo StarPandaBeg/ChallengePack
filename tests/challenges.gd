@@ -77,7 +77,7 @@ func run():
 	for hidden in range(2):
 		for mirror in range(2):
 			for pocket in range(3):
-				for contract in range(5):
+				for contract in range(port.Settings.LIMITS.contract):
 					port.active = port.Settings.DEFAULTS.duplicate()
 					port.active.merge({"health": hidden, "mirror": mirror, "pocket": pocket, "contract": contract}, true)
 					var f = fixture()
@@ -88,20 +88,21 @@ func run():
 					await port.challenges.begin_round(f.rm)
 					var entry = port.challenges.state(f.rm)
 					if contract == 1:
-						check(entry.contract in [1, 2, 3])
+						check(entry.contract in port.challenges.CATALOG and entry.contract != 0)
 					else:
 						check(entry.contract == maxi(0, contract - 1))
 					check(port.challenges.item_breaks_contract(f.rm, "cigarettes") == (entry.contract == 1))
 					check(port.challenges.item_breaks_contract(f.rm, "expired medicine") == (entry.contract == 1))
 					check(port.challenges.item_breaks_contract(f.rm, "handcuffs") == (entry.contract == 3))
-					check(not port.challenges.item_breaks_contract(f.rm, "beer"))
+					check(port.challenges.item_breaks_contract(f.rm, "beer") == (entry.contract in [5, 8]))
 					var interaction = f.items.interaction
 					interaction.roundManager = f.rm
+					var pocket_probe = "handsaw" if entry.contract == 4 else "magnifying glass"
 					for i in range(3):
-						check(port.challenges.allow_pickup(interaction, "magnifying glass") == (pocket == 0 or i < pocket))
+						check(port.challenges.allow_pickup(interaction, pocket_probe) == (pocket == 0 or i < pocket))
 					var used = entry.used
 					interaction.stealing = true
-					check(port.challenges.allow_pickup(interaction, "magnifying glass"))
+					check(port.challenges.allow_pickup(interaction, pocket_probe))
 					check(entry.used == used, "Stolen item consumed another pocket slot")
 					interaction.stealing = false
 					port.challenges.reset_pocket(f.rm)

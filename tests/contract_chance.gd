@@ -17,8 +17,10 @@ func run():
 	root.add_child(port)
 	check(port.compatible, port.compatibility_error)
 	factory = port.factory
+	# Exercise release probability even when the developer forces local contracts.
+	port.challenges.activation_chance = 0.30
 	for has_items in [false, true]:
-		for selection in range(5):
+		for selection in range(port.Settings.LIMITS.contract):
 			port.active.contract = selection
 			port.challenges.rng.seed = 82371
 			var active_count = 0
@@ -27,14 +29,17 @@ func run():
 				var contract = port.challenges.select_contract(has_items)
 				if contract != 0:
 					active_count += 1
-					seen[contract] = true
-					check(contract in [1, 2, 3])
+					seen[contract] = seen.get(contract, 0) + 1
+					check(contract in range(1, 11))
 					check(has_items or contract == 2, "No-item round received an item restriction")
 					check(selection == 1 or contract == selection - 1, "Fixed restriction changed its type")
 			var eligible = selection != 0 and (has_items or selection in [1, 3])
 			if eligible:
 				check(active_count > 1000 and active_count < 1400, "Contract frequency is outside 25–35%: " + str(active_count))
-				check(seen.size() == (3 if selection == 1 and has_items else 1))
+				check(seen.size() == (10 if selection == 1 and has_items else 1))
+				if selection == 1 and has_items:
+					for count in seen.values():
+						check(count > 70 and count < 180, "Random contract weighting is uneven")
 			else:
 				check(active_count == 0)
 	Engine.time_scale = 100
@@ -51,7 +56,7 @@ func run():
 	var probe = RandomNumberGenerator.new()
 	for candidate in range(100):
 		probe.seed = candidate
-		if probe.randf() >= port.challenges.CONTRACT_CHANCE:
+		if probe.randf() >= port.challenges.activation_chance:
 			port.challenges.rng.seed = candidate
 			break
 	var dialogue_count = f.dialogue.texts.size()
@@ -65,5 +70,5 @@ func run():
 	port.queue_free()
 	Engine.time_scale = 1
 	await process_frame
-	print("CP_CONTRACT_CHANCE: %s failures; 40000 rolls, random/fixed modes, no-item filtering, expiry and silent rounds" % failures)
+	print("CP_CONTRACT_CHANCE: %s failures; 96000 rolls at 30%%, ten equally weighted contracts, fixed modes, no-item filtering, expiry and silent rounds" % failures)
 	quit(1 if failures else 0)

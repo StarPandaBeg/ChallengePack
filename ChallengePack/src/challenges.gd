@@ -1,11 +1,45 @@
 extends RefCounted
 
-const CONTRACT_KEYS = ["CP_OFF", "CP_NO_HEALING", "CP_NO_SELF_SHOTS", "CP_NO_CUFFS"]
+enum Contract { NONE, NO_HEALING, NO_SELF_SHOTS, NO_CUFFS, NO_HINTS, UNTOUCHABLE_CHARGE, FAIR_CALIBER, NO_STEALING, DRY_LAW, NO_INVERSION, NO_INSURANCE }
+# IDs and setting values are append-only: old saved choices keep their meaning.
+const SETTING_COUNT = Contract.NO_INSURANCE + 2
+const CATALOG = {
+	Contract.NONE: {"key": "CP_OFF", "hud": "CP_OFF", "detail": "CP_TIP_CONTRACT", "items": [], "requires_items": false},
+	Contract.NO_HEALING: {"key": "CP_NO_HEALING", "hud": "CP_HUD_NO_HEALING", "detail": "CP_HUD_HEALING_DETAIL", "items": ["cigarettes", "expired medicine"], "requires_items": true},
+	Contract.NO_SELF_SHOTS: {"key": "CP_NO_SELF_SHOTS", "hud": "CP_HUD_NO_SELF_SHOTS", "detail": "CP_HUD_SELF_DETAIL", "items": [], "requires_items": false},
+	Contract.NO_CUFFS: {"key": "CP_NO_CUFFS", "hud": "CP_HUD_NO_CUFFS", "detail": "CP_HUD_CUFFS_DETAIL", "items": ["handcuffs"], "requires_items": true},
+	Contract.NO_HINTS: {"key": "CP_NO_HINTS", "hud": "CP_HUD_NO_HINTS", "detail": "CP_DETAIL_NO_HINTS", "items": ["magnifying glass", "burner phone"], "requires_items": true},
+	Contract.UNTOUCHABLE_CHARGE: {"key": "CP_UNTOUCHABLE_CHARGE", "hud": "CP_HUD_UNTOUCHABLE_CHARGE", "detail": "CP_DETAIL_UNTOUCHABLE_CHARGE", "items": ["beer", "inverter"], "requires_items": true},
+	Contract.FAIR_CALIBER: {"key": "CP_FAIR_CALIBER", "hud": "CP_HUD_FAIR_CALIBER", "detail": "CP_DETAIL_FAIR_CALIBER", "items": ["handsaw"], "requires_items": true},
+	Contract.NO_STEALING: {"key": "CP_NO_STEALING", "hud": "CP_HUD_NO_STEALING", "detail": "CP_DETAIL_NO_STEALING", "items": ["adrenaline"], "requires_items": true},
+	Contract.DRY_LAW: {"key": "CP_DRY_LAW", "hud": "CP_HUD_DRY_LAW", "detail": "CP_DETAIL_DRY_LAW", "items": ["beer"], "requires_items": true},
+	Contract.NO_INVERSION: {"key": "CP_NO_INVERSION", "hud": "CP_HUD_NO_INVERSION", "detail": "CP_DETAIL_NO_INVERSION", "items": ["inverter"], "requires_items": true},
+	Contract.NO_INSURANCE: {"key": "CP_NO_INSURANCE", "hud": "CP_HUD_NO_INSURANCE", "detail": "CP_DETAIL_NO_INSURANCE", "items": [], "requires_items": true}
+}
 const CONTRACT_CHANCE = 0.30
+var activation_chance = CONTRACT_CHANCE
 var port: Node
 var managers = {}
 var current: WeakRef
 var rng = RandomNumberGenerator.new()
+
+static func menu_keys() -> Array:
+	var result = ["CP_OFF", "CP_RANDOM"]
+	for id in CATALOG:
+		if id != Contract.NONE:
+			result.append(CATALOG[id].key)
+	return result
+
+static func contract_key(id: int) -> String:
+	return CATALOG[id].key
+
+static func hud_key(id: int, used_items: Array = []) -> String:
+	if id == Contract.NO_INSURANCE:
+		if "magnifying glass" in used_items:
+			return "CP_HUD_INSURANCE_NO_CUFFS"
+		if "handcuffs" in used_items:
+			return "CP_HUD_INSURANCE_NO_GLASS"
+	return CATALOG[id].hud
 
 func _init(owner_port: Node):
 	port = owner_port
@@ -17,7 +51,7 @@ func mode(key: String) -> int:
 func state(manager: Node) -> Dictionary:
 	var id = manager.get_instance_id()
 	if not managers.has(id):
-		managers[id] = {"ref": weakref(manager), "used": 0, "contract": 0, "failed": false, "started": false, "has_items": false, "paused_contract": 0}
+		managers[id] = {"ref": weakref(manager), "used": 0, "contract": 0, "failed": false, "started": false, "has_items": false, "paused_contract": 0, "used_items": []}
 	return managers[id]
 
 func track(manager: Node):
@@ -29,22 +63,27 @@ func reset_pocket(manager: Node):
 
 func select_contract(has_items: bool = true) -> int:
 	var selection = mode("contract")
-	if selection == 0 or (not has_items and selection in [2, 4]):
+	if selection == 0:
 		return 0
-	if rng.randf() >= CONTRACT_CHANCE:
+	var candidates = []
+	for id in CATALOG:
+		if id != Contract.NONE and (has_items or not CATALOG[id].requires_items):
+			if selection == 1 or id == selection - 1:
+				candidates.append(id)
+	if candidates.is_empty() or rng.randf() >= activation_chance:
 		return 0
-	if not has_items:
-		return 2 if selection in [1, 3] else 0
-	return rng.randi_range(1, 3) if selection == 1 else maxi(0, selection - 1)
+	return candidates[rng.randi_range(0, candidates.size() - 1)]
 
 func begin_round(manager: Node):
 	track(manager)
 	var entry = state(manager)
 	entry.used = 0
+	entry.used_items.clear()
 	entry.started = true
 	entry.has_items = manager.roundArray[manager.currentRound].usingItems
 	entry.contract = select_contract(entry.has_items)
-	entry.paused_contract = mode("contract") - 1 if not entry.has_items and mode("contract") in [2, 4] else 0
+	var fixed = mode("contract") - 1
+	entry.paused_contract = fixed if fixed > 0 and not entry.has_items and CATALOG[fixed].requires_items else 0
 	if entry.contract == 0:
 		return
 	port.contract_effects.announce(manager)
@@ -52,12 +91,16 @@ func begin_round(manager: Node):
 	manager.perm.SetInteractionPermissions(false)
 	manager.cursor.SetCursor(false, false)
 	var dialogue = manager.shellLoader.dialogue
-	dialogue.ShowText_ForDuration(port.localization.text("CP_CONTRACT_ANNOUNCE", [port.localization.text(CONTRACT_KEYS[entry.contract])]), 3)
+	dialogue.ShowText_ForDuration(port.localization.text("CP_CONTRACT_ANNOUNCE", [port.localization.text(contract_key(entry.contract))]), 3)
 	await port.get_tree().create_timer(3, false).timeout
 
 func item_breaks_contract(manager: Node, item: String) -> bool:
-	var contract = state(manager).contract
-	return (contract == 1 and item in ["cigarettes", "expired medicine"]) or (contract == 3 and item == "handcuffs")
+	var entry = state(manager)
+	if item in CATALOG[entry.contract].items:
+		return true
+	if entry.contract == Contract.NO_INSURANCE:
+		return (item == "handcuffs" and "magnifying glass" in entry.used_items) or (item == "magnifying glass" and "handcuffs" in entry.used_items)
+	return false
 
 func allow_pickup(interaction: Node, item: String) -> bool:
 	var manager = interaction.roundManager
@@ -67,20 +110,21 @@ func allow_pickup(interaction: Node, item: String) -> bool:
 	if item_breaks_contract(manager, item):
 		fail_contract(manager)
 		return false
-	# A stolen item's use completes the already-counted adrenaline action.
-	if interaction.stealing:
-		return true
 	var limit = mode("pocket")
-	if limit > 0 and entry.used >= limit:
+	# A stolen item's use completes the already-counted adrenaline action.
+	if not interaction.stealing and limit > 0 and entry.used >= limit:
 		port.notify("CP_POCKET_EXHAUSTED")
 		return false
-	entry.used += 1
+	if not interaction.stealing:
+		entry.used += 1
+	if item in ["magnifying glass", "handcuffs"] and not item in entry.used_items:
+		entry.used_items.append(item)
 	return true
 
 func allow_shot(manager: Node, target: String) -> bool:
 	if state(manager).failed:
 		return false
-	if state(manager).contract == 2 and target == "self":
+	if state(manager).contract == Contract.NO_SELF_SHOTS and target == "self":
 		fail_contract(manager)
 		return false
 	return true
@@ -93,7 +137,7 @@ func fail_contract(manager: Node):
 	manager.perm.SetIndicators(false)
 	manager.perm.SetInteractionPermissions(false)
 	manager.cursor.SetCursor(false, false)
-	port.contract_effects.execute(manager, CONTRACT_KEYS[entry.contract])
+	port.contract_effects.execute(manager, contract_key(entry.contract))
 
 func hide_health(counter: Node):
 	if mode("health") == 1 and counter.uiparent != null:
@@ -130,7 +174,8 @@ func hud_data() -> Dictionary:
 	var limit = mode("pocket") if entry.has_items else 0
 	if entry.contract == 0 and entry.paused_contract == 0 and limit == 0:
 		return {}
-	return {"contract": entry.contract, "paused": entry.paused_contract, "limit": limit, "remaining": maxi(0, limit - entry.used)}
+	var id: int = entry.paused_contract if entry.paused_contract != 0 else entry.contract
+	return {"contract": entry.contract, "paused": entry.paused_contract, "limit": limit, "remaining": maxi(0, limit - entry.used), "hud_key": hud_key(id, entry.used_items)}
 
 func prune():
 	for id in managers.keys():

@@ -2,7 +2,7 @@ extends PanelContainer
 
 const INK = Color("e4d5ba")
 const MUTED = Color("a79e8e")
-const TITLES = ["CP_OFF", "CP_HUD_NO_HEALING", "CP_HUD_NO_SELF_SHOTS", "CP_HUD_NO_CUFFS"]
+const Contracts = preload("challenges.gd")
 var rule: Label
 var pocket: Label
 var previous = ""
@@ -75,7 +75,7 @@ func refresh(data: Dictionary, localization):
 	bomb.visible = data.contract != 0 and not paused
 	rule.visible = contract != 0
 	if contract != 0:
-		var title = localization.text(TITLES[contract])
+		var title = localization.text(data.get("hud_key", Contracts.hud_key(contract)))
 		rule.text = localization.text("CP_HUD_RULE_PAUSED" if paused else "CP_HUD_RULE", [title])
 		rule.add_theme_color_override("font_color", MUTED if paused else INK)
 	pocket.visible = data.limit > 0

@@ -31,6 +31,7 @@ func run():
 	var manager = current_scene.get_node("standalone managers/menu manager")
 	var news = port.news
 	news.state_path = state_path
+	news.force_show = 0 # Isolate persistence checks from the local preview flag.
 	check(not news.shown and not port.news_checked, "News interrupted the intro")
 	check(news.should_show(), "First launch did not qualify")
 	manager.SkipIntro()

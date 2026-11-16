@@ -20,7 +20,7 @@ func run():
 		TranslationServer.set_locale(language)
 		for has_items in [false, true]:
 			f.rm.roundArray[0].usingItems = has_items
-			for selection in range(5):
+			for selection in range(port.Settings.LIMITS.contract):
 				port.active.contract = selection
 				port.active.pocket = 2
 				var before = f.loader.dialogue.texts.size()
@@ -31,11 +31,11 @@ func run():
 				check(port.contract_effects.armed.playing == (entry.contract != 0), "Arming sound did not match an actual contract")
 				if not has_items:
 					check(entry.contract == (2 if selection in [1, 3] else 0))
-					check(entry.paused_contract == (selection - 1 if selection in [2, 4] else 0))
+					check(entry.paused_contract == (selection - 1 if selection > 1 and selection != 3 else 0))
 					check(f.loader.dialogue.texts.size() - before == (1 if selection in [1, 3] else 0), "Announced an irrelevant contract")
 				else:
 					check(entry.paused_contract == 0, "Item contract did not resume")
-					check(entry.contract in [1, 2, 3] if selection == 1 else entry.contract == maxi(0, selection - 1))
+					check(entry.contract in range(1, 11) if selection == 1 else entry.contract == maxi(0, selection - 1))
 				var data = port.challenges.hud_data()
 				if not data.is_empty():
 					check(data.limit == (2 if has_items else 0))
@@ -65,6 +65,17 @@ func run():
 	port.challenges.state(f.rm).used = 2
 	port.challenge_hud.refresh(port.challenges.hud_data(), port.localization)
 	check(port.challenge_hud.pocket.text.contains("0 / 2"))
+	# The insurance title changes with charge history, without growing the HUD.
+	var entry = port.challenges.state(f.rm)
+	entry.contract = 10
+	for language in ["en", "ru"]:
+		TranslationServer.set_locale(language)
+		for history in [[], ["magnifying glass"], ["handcuffs"]]:
+			entry.used_items = history.duplicate()
+			port.challenge_hud.refresh(port.challenges.hud_data(), port.localization)
+			await process_frame
+			await process_frame
+			check(port.challenge_hud.size.x <= 224 and port.challenge_hud.size.y <= 70, "Insurance HUD grew beyond compact bounds")
 	f.root.queue_free()
 	await process_frame
 	await process_frame

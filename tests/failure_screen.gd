@@ -55,7 +55,7 @@ func run():
 			check(screen.shown and paused, "Failure did not stop the game")
 			check(current_scene == f.root, "Failure immediately replaced the game scene")
 			check(not port.challenge_hud.visible)
-			check(screen.reason.text.contains(port.localization.text(port.challenges.CONTRACT_KEYS[contract])))
+			check(screen.reason.text.contains(port.localization.text(port.challenges.contract_key(contract))))
 			check(screen.title.text == port.localization.text("CP_FAILURE_TITLE"))
 			check(not port.challenges.allow_shot(f.rm, "dealer"), "Failed run still allows shots")
 			check(not port.challenges.allow_pickup(f.items.interaction, "beer"), "Failed run still allows items")

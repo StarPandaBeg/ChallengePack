@@ -19,6 +19,14 @@ func run():
 	var reloaded = settings_script.new()
 	reloaded.load_settings(test_path)
 	check(reloaded.values == settings.values)
+	check(settings_script.LIMITS.contract == 12)
+	for choice in range(12):
+		settings.values.contract = choice
+		check(settings.save_settings(test_path) == OK)
+		reloaded.load_settings(test_path)
+		check(reloaded.values.contract == choice, "Old/new contract selection changed after reload")
+	settings.values.contract = 4
+	reloaded.values = settings.snapshot()
 	var snapshot = reloaded.snapshot()
 	check(reloaded.cycle("shells", test_path) == OK)
 	check(reloaded.values.shells == 0 and snapshot.shells == 2)
@@ -35,6 +43,7 @@ func run():
 	malformed.set_value("rules", "items", -1)
 	malformed.set_value("rules", "shuffle", 2)
 	malformed.set_value("rules", "turn", 2.0)
+	malformed.set_value("rules", "contract", 12)
 	check(malformed.save(test_path) == OK)
 	reloaded.load_settings(test_path)
 	check(reloaded.values == settings_script.DEFAULTS)

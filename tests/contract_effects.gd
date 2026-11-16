@@ -39,10 +39,12 @@ func run():
 	check(effects.armed.stream is AudioStreamWAV and effects.armed.stream.get_length() > 0, "Arming beep did not load without import")
 	check(effects.breach.stream is AudioStreamWAV and effects.breach.stream.get_length() > 0, "Breach sound did not load without import")
 	check(port.challenge_hud.bomb.texture != null, "C4 image did not load without import")
-	for contract in [1, 2, 3]:
+	var forbidden_items = {1: "cigarettes", 3: "handcuffs", 4: "burner phone", 5: "beer", 6: "handsaw", 7: "adrenaline", 8: "beer", 9: "inverter", 10: "handcuffs"}
+	for contract in range(1, 11):
 		var scene = real_room()
 		var manager = scene.get_node("standalone managers/round manager")
 		var shooting = manager.dealerAI.shotgunShooting
+		manager.endless = contract % 2 == 0
 		manager.health_player = 3
 		manager.shellSpawner.sequenceArray.assign(["heal", "blank"])
 		var shots = manager.playerData.stat_shotsFired
@@ -58,7 +60,9 @@ func run():
 		if contract == 2:
 			shooting.Shoot("self") # Actual adapter must intercept before consuming a shell.
 		else:
-			manager.itemManager.interaction.PickupItemFromTable(null, "cigarettes" if contract == 1 else "handcuffs")
+			if contract == 10:
+				check(port.challenges.allow_pickup(manager.itemManager.interaction, "magnifying glass"))
+			manager.itemManager.interaction.PickupItemFromTable(null, forbidden_items[contract])
 		check(entry.failed and effects.executing and paused, "Violation did not enter the paused cinematic")
 		check(not port.failure_screen.shown, "Result appeared before the shot")
 		check(effects.breach.playing and not effects.armed.playing, "Violation warning did not replace arming sound")
@@ -108,5 +112,5 @@ func run():
 		if not remove_mod:
 			check(not effects.executing and not port.failure_screen.shown and not effects.gunshot.playing, "Interrupted sequence resumed in another scene")
 	Engine.time_scale = 1
-	print("CP_CONTRACT_EFFECTS: %s failures; imported-free assets, three real-room violations, grab/self-shot, warning/gunshot/fade/result, duplicate actions, unchanged rules, scene/mod cleanup" % failures)
+	print("CP_CONTRACT_EFFECTS: %s failures; import-free assets, ten real-room violations, grab/self-shot, warning/gunshot/fade/result, duplicate actions, unchanged rules, scene/mod cleanup" % failures)
 	quit(1 if failures else 0)

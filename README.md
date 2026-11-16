@@ -70,7 +70,9 @@ Combine nine independent settings in the standard game and Double or Nothing. Ne
 
 #### Round Contract:
 
-<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _Off / Random / No Healing Items / No Self Shots / No Handcuffs_ - Each charge has a 30% chance of a restriction, announced by a beep and a bomb icon. Break it to trigger a self-shot scene and end the run. Item restrictions pause in rounds without items.
+<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _Off / Random / Selected Contract_ - Ten contracts restrict healing, self-shots, items and combinations. Each charge has a 30% chance, with a beep and bomb icon. Breaking a contract triggers a self-shot and ends the run. Item rules pause without items.
+
+New contracts: No Hints, Untouchable Charge, Fair Caliber, No Stealing, Dry Law, No Inversions and No Safety Net. The last allows a magnifying glass or handcuffs, but never both in one charge. Hover over your selection for its rule.
 
 #### Heal Bullets:
 
@@ -154,7 +156,7 @@ Run the installer and engine checks from the repository root:
 ```powershell
 python -m unittest discover -s tests -p test_installer.py -v
 $repoPath = (Get-Location).Path
-foreach ($scenario in @('probe', 'settings_rules', 'localization', 'smoke', 'gameplay', 'challenges', 'contract_hud', 'heal_bullets', 'failure_screen', 'contract_chance', 'protectors', 'hidden_items', 'lethal_bullets', 'whats_new', 'contract_effects')) {
+foreach ($scenario in @('probe', 'settings_rules', 'localization', 'smoke', 'gameplay', 'challenges', 'contract_hud', 'heal_bullets', 'failure_screen', 'contract_chance', 'protectors', 'hidden_items', 'lethal_bullets', 'whats_new', 'contract_effects', 'contract_rules')) {
     python tools/run_godot.py --path ../game --script "$repoPath/tests/$scenario.gd"
     if ($LASTEXITCODE -ne 0) { throw "Check failed: $scenario" }
 }

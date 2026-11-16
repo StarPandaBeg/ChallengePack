@@ -8,7 +8,7 @@ const LABELS = {
 	"health": ["CP_HEALTH_VISIBILITY", ["CP_DEFAULT", "CP_HIDDEN"]],
 	"mirror": ["CP_MIRROR_ITEMS", ["NO", "YES"]],
 	"pocket": ["CP_LIMITED_POCKET", ["CP_UNLIMITED", "CP_ONE_ITEM", "CP_TWO_ITEMS"]],
-	"contract": ["CP_ROUND_CONTRACT", ["CP_OFF", "CP_RANDOM", "CP_NO_HEALING", "CP_NO_SELF_SHOTS", "CP_NO_CUFFS"]],
+	"contract": ["CP_ROUND_CONTRACT", []], # Values come from the shared contract catalog.
 	"heal": ["CP_HEAL_BULLETS", ["NO", "YES"]]
 }
 var port: Node
@@ -123,13 +123,16 @@ func refresh():
 	start_button.tooltip_text = port.localization.text("CP_TIP_START")
 	return_button.tooltip_text = port.localization.text("CP_TIP_RETURN")
 	for key in buttons:
-		var value_key = LABELS[key][1][port.settings.values[key]]
+		var values = port.challenges.menu_keys() if key == "contract" else LABELS[key][1]
+		var value_key = values[port.settings.values[key]]
 		var value = port.localization.text(value_key) if value_key.begins_with("CP_") else tr(value_key)
 		var caption = port.localization.text(LABELS[key][0])
 		if key == "contract":
-			caption += " (%d%%)" % roundi(port.challenges.CONTRACT_CHANCE * 100)
+			caption += " (%d%%)" % roundi(port.challenges.activation_chance * 100)
 		buttons[key].text = caption + ":\n" + value
 		buttons[key].tooltip_text = port.localization.text("CP_TIP_" + key.to_upper())
+		if key == "contract" and port.settings.values[key] > 1:
+			buttons[key].tooltip_text += "\n" + port.localization.text(port.challenges.CATALOG[port.settings.values[key] - 1].detail)
 	start_button.disabled = not port.compatible
 	status.text = "" if port.compatible else port.localization.text("CP_CANNOT_START", [port.compatibility_message()])
 

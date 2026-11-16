@@ -38,13 +38,15 @@ func run():
 	for language in ["en", "ru"]:
 		TranslationServer.set_locale(language)
 		for key in port.options.buttons:
-			check(port.options.buttons[key].get_tooltip() == port.localization.text("CP_TIP_" + key.to_upper()), "Missing or stale setting tooltip: " + key)
+			check(port.options.buttons[key].get_tooltip().begins_with(port.localization.text("CP_TIP_" + key.to_upper())), "Missing or stale setting tooltip: " + key)
 		check(port.options.start_button.get_tooltip() == port.localization.text("CP_TIP_START"))
 		check(port.options.return_button.get_tooltip() == port.localization.text("CP_TIP_RETURN"))
 		for key in port.options.buttons:
 			for value in range(port.Settings.LIMITS[key]):
 				port.settings.values[key] = value
 				port.options.refresh()
+				if key == "contract" and value > 1:
+					check(port.options.buttons.contract.tooltip_text.contains(port.localization.text(port.challenges.CATALOG[value - 1].detail)), "Contract tooltip omits its rule")
 				await process_frame
 				await process_frame
 				for button in port.options.buttons.values() + [port.options.start_button, port.options.return_button]:
