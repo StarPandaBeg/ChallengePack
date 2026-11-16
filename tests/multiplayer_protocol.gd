@@ -17,6 +17,26 @@ class FixturePlayer extends Node:
 class Handler extends Node:
 	var instance_property_array = []
 
+class ArrivalChecker extends Node:
+	var checking = true
+	var fs = false
+	var membersHere_list = [11]
+	var amountOfPlayers_here = 1
+	func MemberJoinedList(id: int):
+		membersHere_list.append(id)
+		amountOfPlayers_here += 1
+
+class ArrivalPackets extends Node:
+	var memberChecker: Node
+	var owner_session: Node
+	var temp_id = 0
+	var received = []
+	func PipeData(data: Dictionary):
+		if not owner_session.before_pipe(self, data): return
+		received.append(data.duplicate(true))
+		if data["packet alias"] == "member joined list":
+			memberChecker.MemberJoinedList(data.steam_id)
+
 class State extends Node:
 	var instance_handler: Node
 	var MAIN_active_current_turn_socket = 0
@@ -108,6 +128,48 @@ func run():
 	wrong.fingerprint = "different build"
 	host.receive(client.message("hello", wrong), 22)
 	check(host.rejected == [22], "Different patch fingerprint rejected")
+	# Regression: Steam delivers this stock packet after scene loading. It is
+	# not an item/shot request, but must reach the native waiting-player counter.
+	var checker = ArrivalChecker.new()
+	var arrival_packets = ArrivalPackets.new()
+	arrival_packets.owner_session = host
+	arrival_packets.memberChecker = checker
+	host.in_game = true
+	client.in_game = true
+	var arrival = {"packet category": "lobby", "packet alias": "member joined list", "packet_id": 4, "steam_id": 22}
+	client.stamp_event(arrival)
+	check(arrival.get("cp_session") == host.session, "Scene arrival carries session context")
+	var spoofed_arrival = arrival.duplicate(true)
+	spoofed_arrival.steam_id = 11
+	host.receive_native(arrival_packets, spoofed_arrival, 22)
+	check(checker.amountOfPlayers_here == 1, "Arrival cannot impersonate another Steam sender")
+	var stale_arrival = arrival.duplicate(true)
+	stale_arrival.cp_revision -= 1
+	host.receive_native(arrival_packets, stale_arrival, 22)
+	check(checker.amountOfPlayers_here == 1, "Stale scene arrival rejected")
+	host.peers[22].verified = false
+	host.receive_native(arrival_packets, arrival, 22)
+	check(checker.amountOfPlayers_here == 1, "Unverified scene arrival rejected")
+	host.peers[22].verified = true
+	host.receive_native(arrival_packets, arrival, 22)
+	check(checker.amountOfPlayers_here == 2, "Verified arrival advances native Waiting for players")
+	host.receive_native(arrival_packets, arrival, 22)
+	check(checker.amountOfPlayers_here == 2, "Repeated arrival cannot count a participant twice")
+	var update = {"packet category": "lobby", "packat alias": "update member list", "number of players here": 2}
+	host.stamp_event(update)
+	arrival_packets.owner_session = client
+	client.receive_native(arrival_packets, update, 11)
+	check(arrival_packets.received.back()["packet alias"] == "update member list", "Stock member-list alias typo normalized")
+	host.packets = arrival_packets
+	host.startup_deadline = 1
+	host._process(0)
+	check(host.blocked and not host.stopped.is_empty(), "Waiting for players has a finite startup timeout")
+	host.blocked = false
+	host.packets = null
+	host.in_game = false
+	client.in_game = false
+	arrival_packets.free()
+	checker.free()
 	var state = State.new()
 	var handler = Handler.new()
 	var actor = FixturePlayer.new()

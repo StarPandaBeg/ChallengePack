@@ -54,6 +54,7 @@ var covers = {}
 var hidden = {}
 var stock_digest = ""
 var expected_stock_digest = ""
+var startup_deadline = 0
 
 func setup(parent_port: Node):
 	port = parent_port
@@ -100,6 +101,11 @@ func _process(_delta):
 	if not compatible or not is_instance_valid(packets): return
 	if in_game and is_instance_valid(game): presentation()
 	var now = Time.get_ticks_msec()
+	if in_game and startup_deadline > 0 and now > startup_deadline:
+		startup_deadline = 0
+		push_warning("[ChallengePack MP] scene startup timed out; arrived=%s; expected=%s; stages=%s" % [scene_ready.keys(), ids(), stages])
+		fail(port.localization.text("CP_MP_TIMEOUT"))
+		return
 	if now - last_tick < 200: return
 	last_tick = now
 	if GlobalSteam.LOBBY_ID == 0:
@@ -165,17 +171,34 @@ func receive_native(manager: Node, data: Dictionary, remote: int):
 		if not host(): return
 		if not valid_action(data, remote): return
 	elif remote != GlobalSteam.HOST_ID:
-		# Only vanilla version negotiation is accepted from an unverified guest.
-		if category != "MP_LobbyManager" or data.get("packet alias") != "check version" or data.get("packet_id") != 32 or not data.get("version") is String: return
+		if category == "lobby" and data.get("packet alias") == "member joined list":
+			if not accept_scene_arrival(manager, data, remote): return
+		else:
+			# Only vanilla version negotiation is accepted from an unverified guest.
+			if category != "MP_LobbyManager" or data.get("packet alias") != "check version" or data.get("packet_id") != 32 or not data.get("version") is String: return
 	# Several original dispatchers depend on Dictionary insertion order. Never
 	# let a request route through its unrelated first/second arbitrary fields.
-	var canonical = {"packet category": category, "packet alias": data.get("packet alias", ""), "sent_from": "host" if remote == GlobalSteam.HOST_ID else "client", "packet_id": data.get("packet_id", 0)}
+	# The stock member-list update misspells its alias field.
+	var canonical = {"packet category": category, "packet alias": data.get("packet alias", data.get("packat alias", "")), "sent_from": "host" if remote == GlobalSteam.HOST_ID else "client", "packet_id": data.get("packet_id", 0)}
 	for key in data:
 		if not canonical.has(key): canonical[key] = data[key]
 	sender = remote
 	manager.temp_id = remote
 	manager.PipeData(canonical)
 	sender = 0
+
+func accept_scene_arrival(manager: Node, data: Dictionary, remote: int) -> bool:
+	if not host() or not in_game or blocked or session.is_empty(): return false
+	if not peers.get(remote, {}).get("verified", false): return false
+	if data.get("packet_id") != 4 or data.get("steam_id") != remote: return false
+	if data.get("cp_session") != session or data.get("cp_revision") != revision: return false
+	if data.get("cp_charge") != 0 or data.get("cp_turn") != 0: return false
+	var checker = manager.memberChecker
+	if not is_instance_valid(checker) or not checker.checking or checker.fs: return false
+	if remote in checker.membersHere_list: return false
+	scene_ready[remote] = true
+	print("[ChallengePack MP] accepted scene arrival from ", remote)
+	return true
 
 func receive(data: Dictionary, remote: int):
 	if data.get("cp_protocol") != PROTOCOL or not data.get("data") is Dictionary: return
@@ -330,6 +353,9 @@ func valid_action(data: Dictionary, remote: int) -> bool:
 	return true
 
 func stamp_event(data: Dictionary):
+	if in_game and not host() and data.get("packet category") == "lobby" and data.get("packet alias") == "member joined list" and data.get("packet_id") == 4:
+		stamp_request(data)
+		return
 	if data.get("packet category") == "ChallengePack" or not in_game or not host(): return
 	if not data.has("cp_event"):
 		event_counter += 1
@@ -434,6 +460,9 @@ func register_packets(manager: Node):
 	lobby_ui = manager.lobby_ui
 	in_game = is_instance_valid(game)
 	loading = false
+	startup_deadline = Time.get_ticks_msec() + TIMEOUT if in_game else 0
+	scene_ready.clear()
+	if in_game: scene_ready[GlobalSteam.STEAM_ID] = true
 	if not in_game: lobby_id = 0
 	blocked = false
 	busy = false
@@ -461,6 +490,7 @@ func scene_exiting(reference: WeakRef):
 	packets = null
 	lobby_ui = null
 	in_game = false
+	startup_deadline = 0
 	loading = false
 	busy = false
 	if is_instance_valid(ui): ui.queue_free()
@@ -482,6 +512,7 @@ func before_pipe(_manager: Node, data: Dictionary) -> bool:
 
 func stage(token: String) -> bool:
 	var captured_epoch = epoch
+	print("[ChallengePack MP] waiting for stage ", token, "; host=", host())
 	var deadline = Time.get_ticks_msec() + TIMEOUT
 	if host():
 		if not stages.has(token): stages[token] = {}
@@ -507,7 +538,11 @@ func stage(token: String) -> bool:
 				fail(port.localization.text("CP_MP_TIMEOUT"))
 				return false
 			await get_tree().process_frame
-	return not blocked and is_instance_valid(game) and captured_epoch == epoch
+	var complete = not blocked and is_instance_valid(game) and captured_epoch == epoch
+	if complete:
+		if token == "scene": startup_deadline = 0
+		print("[ChallengePack MP] completed stage ", token)
+	return complete
 
 func apply_mirror(items: Array):
 	if not is_instance_valid(game): return
