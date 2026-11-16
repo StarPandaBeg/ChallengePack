@@ -1,6 +1,6 @@
 extends RefCounted
 
-const Extractor = preload("../patch_factory.gd")
+const Extractor = preload("../runtime/patch_builder.gd")
 const Effects = preload("../contract_effects.gd")
 const PATHS = {
 	"packets": "res://multiplayer/scripts/MP_PacketManager.gd",
@@ -54,9 +54,8 @@ func prepare(directory: String) -> bool:
 		var body = make_body(key, source)
 		if not extract.error.is_empty(): return fail(extract.error)
 		body = guard_async(body)
-		var script = GDScript.new()
-		script.source_code = 'extends "%s"\nvar cp_port: Node\n' % path + body
-		if script.reload() != OK: return fail("Cannot compile multiplayer adapter: " + key)
+		var script = Extractor.compile_adapter(path, body)
+		if script == null: return fail("Cannot compile multiplayer adapter: " + key)
 		scripts[path] = script
 		proof += source.sha256_text() + body.sha256_text()
 	for file in ["rules.gd", "session.gd", "settings.gd", "menu.gd", "contract_hud.gd", "contract_nameplates.gd", "../challenge_hud.gd", "../challenges.gd", "../heal_bullets.gd", "../heal_editor.gd", "../contract_effects.gd", "../challengepack.gd", "../patch_factory.gd", "../online_guard.gd"]:

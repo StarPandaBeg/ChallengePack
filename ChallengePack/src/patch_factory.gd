@@ -1,13 +1,7 @@
-extends RefCounted
+extends "runtime/patch_builder.gd"
 
 # Compile subclasses of the installed game, never ship copies of game methods.
 const TARGETS = ["ShellSpawner", "ShellLoader", "ItemManager", "MenuManager", "LeaderboardManager", "HealthCounter", "RoundManager", "ItemInteraction", "ShotgunShooting", "DealerIntelligence", "ShellEjectManager", "ShellExamine", "BurnerPhone", "HandManager"]
-var scripts = {}
-var error = ""
-var error_key = ""
-var error_args = []
-var directory: String
-
 func prepare(mod_directory: String, check_version: bool = true) -> bool:
 	directory = mod_directory
 	scripts.clear()
@@ -32,46 +26,11 @@ func prepare(mod_directory: String, check_version: bool = true) -> bool:
 		var body = make_body(name, source)
 		if not error.is_empty():
 			return false
-		var script = GDScript.new()
-		script.source_code = 'extends "%s"\nvar cp_port: Node\n' % path + body
-		if script.reload() != OK:
+		var script = compile_adapter(path, body)
+		if script == null:
 			return fail("Cannot compile adapter: " + name, "CP_ERROR_COMPILE", [name])
 		scripts[path] = script
 	return true
-
-func fail(message: String, key: String = "CP_ERROR_DETAILS", arguments: Array = []) -> bool:
-	error = message
-	error_key = key
-	error_args = [message] if key == "CP_ERROR_DETAILS" else arguments
-	scripts.clear()
-	push_error("[ChallengePack] " + message)
-	return false
-
-func method(source: String, name: String) -> String:
-	var start = source.find("func " + name + "(")
-	if start < 0:
-		fail("Missing method: " + name, "CP_ERROR_METHOD", [name])
-		return ""
-	var lines = source.substr(start).split("\n")
-	var result = lines[0] + "\n"
-	for i in range(1, lines.size()):
-		var line = lines[i]
-		if not line.is_empty() and not line.begins_with("\t") and not line.begins_with("#"):
-			break
-		result += line + "\n"
-	return result
-
-func replace_once(source: String, before: String, after: String) -> String:
-	if source.count(before) != 1:
-		fail("Adapter anchor mismatch: " + before.strip_edges(), "CP_ERROR_ANCHOR", [before.strip_edges()])
-		return ""
-	return source.replace(before, after)
-
-func replace_count(source: String, before: String, after: String, count: int) -> String:
-	if source.count(before) != count:
-		fail("Adapter anchor mismatch: " + before.strip_edges(), "CP_ERROR_ANCHOR", [before.strip_edges()])
-		return ""
-	return source.replace(before, after)
 
 func make_body(name: String, source: String) -> String:
 	if name == "ShellLoader":
@@ -191,14 +150,3 @@ func make_body(name: String, source: String) -> String:
 		return "\nfunc UploadScore(_rounds, _visible, _initial):\n\tprint(\"[ChallengePack] leaderboard upload blocked\")\n\nfunc UploadScore_Deprecated(_rounds, _visible, _initial):\n\tprint(\"[ChallengePack] leaderboard upload blocked\")\n"
 	return ""
 
-static func attach(node: Node, script: GDScript, port: Node) -> void:
-	# Scene exports are already assigned when node_added fires. Preserve all script
-	# state, including typed arrays and references, before set_script resets it.
-	var state = {}
-	for property in node.get_property_list():
-		if property.usage & PROPERTY_USAGE_SCRIPT_VARIABLE:
-			state[property.name] = node.get(property.name)
-	node.set_script(script)
-	for key in state:
-		node.set(key, state[key])
-	node.set("cp_port", port)
