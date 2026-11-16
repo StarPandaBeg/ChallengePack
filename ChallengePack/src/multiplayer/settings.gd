@@ -8,6 +8,9 @@ func load_settings(path: String = PATH):
 	var cfg = ConfigFile.new()
 	if cfg.load(path) == OK:
 		var saved = cfg.get_value("multiplayer", "rules", {})
+		# Old preferences have no probability field; network rules remain strict.
+		if saved is Dictionary and not saved.has("heal_chance"):
+			saved["heal_chance"] = Rules.Defaults.DEFAULTS.heal_chance
 		if Rules.validate(saved): values = saved.duplicate(true)
 
 func save_settings(path: String = PATH) -> Error:

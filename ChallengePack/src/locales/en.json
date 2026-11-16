@@ -168,7 +168,7 @@
   "CP_MP_TIP_MIRROR": "Replace living players’ inventories with matching sets at each distribution. Table limits still apply.",
   "CP_MP_TIP_POCKET": "Limit item uses per turn. Adrenaline and the stolen item count as one use.",
   "CP_MP_TIP_CONTRACT": "Each player can receive a personal contract until the next charge. Everyone can see it.",
-  "CP_MP_TIP_HEAL": "One blank becomes a healing shell. Inversion swaps green healing and black instant-kill shells.",
+  "CP_MP_TIP_HEAL": "A blank may become a healing shell. Edit its chance per load. Inversion swaps green healing and black instant-kill shells.",
   "CP_MP_RULES_LOCKED": "Match rules are locked until you return to the lobby.",
   "CP_MP_NOT_ENOUGH": "Too few players remain. Returning to the lobby.",
   "CP_MP_NO_GLASS": "No magnifying glass",
@@ -188,5 +188,7 @@
   "CP_MP_BRIEF_LEAKY_GUN": "Rival → you; you → random rival",
   "CP_MP_BRIEF_NO_JAMMER": "Do not use a jammer",
   "CP_MP_BRIEF_NO_GLASS": "Do not use a magnifying glass",
-  "CP_MP_STARTER_LABEL": "Starting player"
+  "CP_MP_STARTER_LABEL": "Starting player",
+  "CP_HEAL_CHANCE": "Chance per load: %s%%",
+  "CP_HEAL_CHANCE_DESCRIPTION": "Each load has this chance to replace one blank shell with a green healing shell, if blanks are available."
 }

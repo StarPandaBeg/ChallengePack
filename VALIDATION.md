@@ -54,6 +54,8 @@ The matrix does not mean 36 manually completed games.
 
 Automated coverage added:
 
+- Healing-shell probability: 0/30/100% per load in solo and multiplayer, preference persistence and migration, localized modal bounds, slider keyboard input, and lobby host-only editing. Chance is authoritative on the host and included in synchronized settings; existing healing and inversion rules remain unchanged.
+
 - Independent multiplayer preferences, strict settings validation, all 2,304 public setting combinations for each of 2/3/4 players, itemless eligibility, twelve contracts, allowed/forbidden owned and stolen items, both jammer/glass orders, random target reversal and table-wide mirror limits.
 - In-memory handshake and rule synchronization, readiness invalidation, guest preference isolation, session/revision checks, sender-to-seat binding, replay rejection, invalid/dead targets and forged inventory slots. This transport sends no Steam packets.
 - Startup regression from the first two-client Steam log: verified `member joined list` packets reach the native waiting-player counter, duplicates and forged/stale arrivals are rejected, and the stock `packat alias` typo is normalized. Startup now has a 30-second timeout and stage diagnostics. Retest a real two-client match with the rebuilt archive; these local checks do not establish successful Steam gameplay.

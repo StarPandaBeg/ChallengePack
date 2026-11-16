@@ -159,6 +159,22 @@ func run():
 	await click(menu.edit_button)
 	await click(editor.close_button)
 	check(not editor.shown and menu.shown, "Done closed the whole menu")
+	check(not menu.heal_edit_button.visible, "Healing editor hidden while disabled")
+	await click(menu.buttons.heal)
+	await click(menu.heal_edit_button)
+	check(menu.heal_editor.shown and menu.heal_editor.slider.has_focus(), "Healing modal opens with slider focus")
+	for language in ["en", "ru", "pl"]:
+		TranslationServer.set_locale(language)
+		await process_frame
+		await process_frame
+		check(root.get_visible_rect().encloses(menu.heal_editor.box.get_global_rect()), "Healing modal fits " + language)
+	menu.heal_editor.slider.value = 47
+	await action("ui_right")
+	check(port.settings.values.heal_chance == 48, "Healing slider supports keyboard/controller")
+	settings.load_settings(path)
+	check(settings.values.heal_chance == 48, "Healing chance saved")
+	await action("ui_cancel")
+	check(not menu.heal_editor.shown and menu.shown and menu.heal_edit_button.has_focus(), "Healing Back preserves the menu and focus")
 	await action("ui_cancel")
 	check(not menu.shown and manager.is_processing_input(), "Menu did not restore vanilla input")
 	current_scene.queue_free()

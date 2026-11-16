@@ -15,6 +15,7 @@ func run():
 	var test_path = ProjectSettings.globalize_path("res://../ChallengePack/tests/.scratch/settings.cfg")
 	DirAccess.make_dir_recursive_absolute(test_path.get_base_dir())
 	settings.values.merge({"shells": 2, "items": 1, "shuffle": 1, "turn": 2, "health": 1, "mirror": 1, "pocket": 2, "contract": 1, "heal": 1}, true)
+	settings.values.heal_chance = 47
 	check(settings.save_settings(test_path) == OK)
 	var reloaded = settings_script.new()
 	reloaded.load_settings(test_path)
@@ -44,6 +45,7 @@ func run():
 	malformed.set_value("rules", "shuffle", 2)
 	malformed.set_value("rules", "turn", 2.0)
 	malformed.set_value("rules", "contract", 14)
+	malformed.set_value("healing", "chance", 101)
 	check(malformed.save(test_path) == OK)
 	reloaded.load_settings(test_path)
 	check(reloaded.values == settings_script.DEFAULTS)

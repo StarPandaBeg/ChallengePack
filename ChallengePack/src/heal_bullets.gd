@@ -8,7 +8,7 @@ func _init(owner_port: Node):
 	rng.randomize()
 
 func seed_charge(spawner: Node):
-	if port.active.get("heal", 0) == 0:
+	if port.active.get("heal", 0) == 0 or rng.randf() >= float(port.active.get("heal_chance", 30)) / 100.0:
 		return
 	var blanks = []
 	for i in range(spawner.sequenceArray.size()):

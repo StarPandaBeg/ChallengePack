@@ -24,6 +24,8 @@ var return_button: Button
 var shown = false
 var edit_button: Button
 var editor: CanvasLayer
+var heal_edit_button: Button
+var heal_editor: CanvasLayer
 
 func setup(owner_port: Node, menu_manager: Node):
 	port = owner_port
@@ -71,6 +73,10 @@ func setup(owner_port: Node, menu_manager: Node):
 			edit_button = make_button(cell, "")
 			edit_button.add_theme_font_size_override("font_size", 16)
 			edit_button.pressed.connect(open_editor)
+		if key == "heal":
+			heal_edit_button = make_button(cell, "")
+			heal_edit_button.add_theme_font_size_override("font_size", 16)
+			heal_edit_button.pressed.connect(open_heal_editor)
 	status = Label.new()
 	status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	status.custom_minimum_size = Vector2(840, 0)
@@ -88,6 +94,10 @@ func setup(owner_port: Node, menu_manager: Node):
 	editor = ContractEditor.new()
 	add_child(editor)
 	editor.setup(port, self)
+	heal_editor = preload("heal_editor.gd").new()
+	add_child(heal_editor)
+	heal_editor.setup(port.localization, editor.box.theme, set_heal_chance, close_heal_editor)
+	heal_editor.box.add_theme_stylebox_override("panel", editor.box.get_theme_stylebox("panel").duplicate())
 	panel.hide()
 	refresh()
 
@@ -123,6 +133,32 @@ func configure_focus():
 		edit_button.focus_next = edit_button.get_path_to(buttons.heal)
 		buttons.contract.focus_next = buttons.contract.get_path_to(edit_button)
 		buttons.heal.focus_previous = buttons.heal.get_path_to(edit_button)
+	if heal_edit_button.visible:
+		buttons.heal.focus_neighbor_right = buttons.heal.get_path_to(heal_edit_button)
+		buttons.heal.focus_next = buttons.heal.get_path_to(heal_edit_button)
+		heal_edit_button.focus_neighbor_left = heal_edit_button.get_path_to(buttons.heal)
+		heal_edit_button.focus_neighbor_top = heal_edit_button.get_path_to(buttons.pocket)
+		heal_edit_button.focus_neighbor_bottom = heal_edit_button.get_path_to(start_button)
+		heal_edit_button.focus_previous = heal_edit_button.get_path_to(buttons.heal)
+		heal_edit_button.focus_next = heal_edit_button.get_path_to(start_button)
+		start_button.focus_previous = start_button.get_path_to(heal_edit_button)
+
+func open_heal_editor():
+	if shown and port.settings.values.heal == 1:
+		heal_editor.open()
+		manager.controller.previousFocus = heal_editor.slider
+
+func close_heal_editor():
+	heal_edit_button.grab_focus()
+	manager.controller.previousFocus = heal_edit_button
+
+func set_heal_chance(value: int):
+	port.settings.values.heal_chance = value
+	var result = port.settings.save_settings()
+	refresh()
+	if result != OK:
+		status.text = port.localization.text("CP_SAVE_ERROR", [result])
+		status.show()
 
 func open_editor():
 	if shown and port.settings.values.contract == 1:
@@ -160,11 +196,16 @@ func refresh():
 		var caption = port.localization.text(LABELS[key][0])
 		if key == "contract":
 			caption += " (%d%%)" % chance_percent
+		if key == "heal" and port.settings.values.heal == 1:
+			caption += " (%d%%)" % port.settings.values.heal_chance
 		buttons[key].text = caption + ":\n" + value
 		buttons[key].tooltip_text = port.localization.text("CP_TIP_" + key.to_upper(), [chance_percent] if key == "contract" else [])
 	edit_button.text = port.localization.text("CP_EDIT_CONTRACTS")
 	edit_button.tooltip_text = port.localization.text("CP_TIP_EDIT_CONTRACTS")
 	edit_button.visible = port.settings.values.contract == 1
+	heal_edit_button.text = port.localization.text("CP_EDIT_CONTRACTS")
+	heal_edit_button.visible = port.settings.values.heal == 1
+	heal_editor.refresh(port.settings.values.heal_chance)
 	configure_focus()
 	start_button.disabled = not port.compatible
 	status.text = "" if port.compatible else port.localization.text("CP_CANNOT_START", [port.compatibility_message()])
@@ -194,6 +235,9 @@ func open():
 	manager.controller.previousFocus = buttons.shells
 
 func close():
+	if heal_editor.shown:
+		heal_editor.close()
+		return
 	if editor.shown:
 		editor.close()
 		return
@@ -207,7 +251,7 @@ func close():
 	manager.ResetButtons()
 
 func start():
-	if not port.compatible or editor.shown:
+	if not port.compatible or editor.shown or heal_editor.shown:
 		return
 	port.active = port.settings.snapshot()
 	shown = false
@@ -216,7 +260,7 @@ func start():
 	manager.cp_start_game()
 
 func _input(event):
-	if editor.shown:
+	if editor.shown or heal_editor.shown:
 		return
 	if shown and (event.is_action_pressed("ui_cancel") or event.is_action_pressed("exit game")):
 		close()

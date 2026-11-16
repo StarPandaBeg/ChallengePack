@@ -168,7 +168,7 @@
   "CP_MP_TIP_MIRROR": "Przy każdym rozdaniu zastąp ekwipunek żywych graczy identycznymi zestawami. Limity stołu nadal obowiązują.",
   "CP_MP_TIP_POCKET": "Ogranicz użycia przedmiotów na turę. Adrenalina i skradziony przedmiot liczą się jako jedno użycie.",
   "CP_MP_TIP_CONTRACT": "Każdy gracz może otrzymać osobisty kontrakt do kolejnego przeładowania. Wszyscy go widzą.",
-  "CP_MP_TIP_HEAL": "Jeden ślepy nabój staje się leczniczy. Inwerter zamienia zielony nabój leczniczy w czarny, zabijający od razu, i odwrotnie.",
+  "CP_MP_TIP_HEAL": "Ślepy nabój może stać się leczniczy. Ustaw szansę przy ładowaniu. Inwerter zamienia zielone leczenie i czarny natychmiastowy zgon.",
   "CP_MP_RULES_LOCKED": "Zasady są zablokowane do powrotu do lobby.",
   "CP_MP_NOT_ENOUGH": "Zostało za mało graczy. Powrót do lobby.",
   "CP_MP_NO_GLASS": "Bez lupy",
@@ -188,5 +188,7 @@
   "CP_MP_BRIEF_LEAKY_GUN": "Rywal → ty; ty → losowy rywal",
   "CP_MP_BRIEF_NO_JAMMER": "Nie używaj zakłócacza",
   "CP_MP_BRIEF_NO_GLASS": "Nie używaj lupy",
-  "CP_MP_STARTER_LABEL": "Gracz rozpoczynający"
+  "CP_MP_STARTER_LABEL": "Gracz rozpoczynający",
+  "CP_HEAL_CHANCE": "Szansa przy ładowaniu: %s%%",
+  "CP_HEAL_CHANCE_DESCRIPTION": "Przy każdym ładowaniu istnieje taka szansa na zamianę jednego ślepego naboju na zielony nabój leczniczy, jeśli są ślepe naboje."
 }

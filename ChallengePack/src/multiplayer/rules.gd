@@ -17,7 +17,7 @@ func _init():
 	settings["first_player"] = 0
 
 static func validate(value) -> bool:
-	if not value is Dictionary or value.size() != LIMITS.size() + 3:
+	if not value is Dictionary or value.size() != LIMITS.size() + 4:
 		return false
 	for key in LIMITS:
 		if not value.has(key) or typeof(value[key]) != TYPE_INT or value[key] < 0 or value[key] >= LIMITS[key]:
@@ -25,6 +25,8 @@ static func validate(value) -> bool:
 	if typeof(value.get("first_player")) != TYPE_INT or value.first_player < 0:
 		return false
 	if typeof(value.get("contract_chance")) != TYPE_INT or value.contract_chance < 0 or value.contract_chance > 100:
+		return false
+	if typeof(value.get("heal_chance")) != TYPE_INT or value.heal_chance < 0 or value.heal_chance > 100:
 		return false
 	if not value.get("contract_pool") is Array:
 		return false
@@ -109,7 +111,7 @@ func shot_effect(socket: int, actual: int, shell: String, saw: bool, hp: int, ma
 
 func sequences(original: Array) -> Dictionary:
 	var shown = original.duplicate()
-	if settings.heal == 1 and "blank" in shown:
+	if settings.heal == 1 and "blank" in shown and rng.randf() < float(settings.heal_chance) / 100.0:
 		var indices = []
 		for i in range(shown.size()):
 			if shown[i] == "blank": indices.append(i)

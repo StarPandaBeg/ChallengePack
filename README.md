@@ -74,7 +74,7 @@ Combine nine independent settings in the standard game and Double or Nothing. Ne
 
 #### Heal Bullets:
 
-<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _No / Yes_ - Green shells heal their target; shooting yourself keeps your turn. Invert one to create a black instant-kill shell.
+<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _No / Yes_ - Set the chance of a green shell appearing with each load (30% by default). Green shells heal their target; shooting yourself keeps your turn. Invert one to create a black instant-kill shell.
 
 Your choices are saved between launches. The compact two-column menu includes tooltips and supports mouse, keyboard and controller. English, Russian and Polish are included, with a What's New screen to introduce the challenges.
 

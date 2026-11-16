@@ -58,6 +58,7 @@ func run():
 	TranslationServer.add_translation(translation)
 	port.active = port.Settings.DEFAULTS.duplicate()
 	port.active.heal = 1
+	port.active.heal_chance = 100
 	# Presentation, charge size, no-shuffle order, and hidden loading gestures.
 	for visibility in range(3):
 		for shuffle in range(2):
@@ -229,6 +230,17 @@ func run():
 	port.active.heal = 0
 	f.spawner.SpawnShells(5, 2, 3, true)
 	check(not f.spawner.sequenceArray.has("heal"), "Disabled heal mode changed vanilla shells")
+	port.active.heal = 1
+	port.active.shells = 2
+	port.heal_bullets.rng.seed = 177
+	for chance in [0, 30, 100]:
+		port.active.heal_chance = chance
+		var green = 0
+		for i in 1000:
+			f.spawner.sequenceArray.assign(["blank", "live"])
+			port.heal_bullets.seed_charge(f.spawner)
+			green += f.spawner.sequenceArray.count("heal")
+		check(green == 0 if chance == 0 else (green == 1000 if chance == 100 else green > 200 and green < 400), "Solo healing probability")
 	f.root.queue_free()
 	await process_frame
 	port.queue_free()

@@ -20,6 +20,15 @@ func run():
 	if R == null or not R.can_instantiate(): quit(1); return
 	var rules = R.new()
 	check(R.validate(rules.settings), "Defaults must validate")
+	rules.settings.heal = 1
+	rules.rng.seed = 177
+	for chance in [0, 30, 100]:
+		rules.settings.heal_chance = chance
+		var green = 0
+		for i in 1000:
+			green += rules.sequences(["live", "blank"]).visible.count("heal")
+		check(green == 0 if chance == 0 else (green == 1000 if chance == 100 else green > 200 and green < 400), "Healing spawn probability")
+	rules.settings.heal_chance = 100
 	var bad = rules.settings.duplicate(true)
 	bad.turn = 4
 	check(not R.validate(bad), "Reject invalid turn")
@@ -93,10 +102,18 @@ func run():
 						check(effect.keep_turn == (target == 0 and shell in ["blank", "heal"]), "Actual target determines extra turn")
 	var settings = load(directory.path_join("multiplayer/settings.gd")).new()
 	settings.values.turn = 3
+	settings.values.heal_chance = 47
 	check(settings.save_settings("user://cp_mp_test.cfg") == OK, "Save MP preferences")
 	var restored = load(directory.path_join("multiplayer/settings.gd")).new()
 	restored.load_settings("user://cp_mp_test.cfg")
 	check(restored.values == settings.values, "Restore MP preferences")
+	var legacy = ConfigFile.new()
+	var old_settings = settings.values.duplicate(true)
+	old_settings.erase("heal_chance")
+	legacy.set_value("multiplayer", "rules", old_settings)
+	legacy.save("user://cp_mp_test.cfg")
+	restored.load_settings("user://cp_mp_test.cfg")
+	check(restored.values.heal_chance == 30 and restored.values.turn == 3, "Old MP preferences migrate without losing rules")
 	DirAccess.remove_absolute("user://cp_mp_test.cfg")
 	for file in ["session.gd", "menu.gd", "factory.gd"]:
 		var script = load(directory.path_join("multiplayer/" + file))

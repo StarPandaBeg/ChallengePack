@@ -3,7 +3,7 @@ extends RefCounted
 const PATH = "user://challengepack.cfg"
 const Contracts = preload("challenges.gd")
 const LIMITS = {"shells": 3, "items": 2, "shuffle": 2, "turn": 3, "health": 2, "mirror": 2, "pocket": 3, "contract": 2, "heal": 2}
-const DEFAULTS = {"shells": 0, "items": 0, "shuffle": 0, "turn": 0, "health": 0, "mirror": 0, "pocket": 0, "contract": 0, "heal": 0, "contract_pool": Contracts.ALL_IDS, "contract_chance": 30}
+const DEFAULTS = {"shells": 0, "items": 0, "shuffle": 0, "turn": 0, "health": 0, "mirror": 0, "pocket": 0, "contract": 0, "heal": 0, "contract_pool": Contracts.ALL_IDS, "contract_chance": 30, "heal_chance": 30}
 var values = DEFAULTS.duplicate(true)
 var storage_path = PATH
 
@@ -16,6 +16,9 @@ func load_settings(path: String = ""):
 		var value = cfg.get_value("rules", key, 0)
 		if typeof(value) == TYPE_INT and value >= 0 and value < LIMITS[key]:
 			values[key] = value
+	var heal_chance = cfg.get_value("healing", "chance", DEFAULTS.heal_chance)
+	if typeof(heal_chance) == TYPE_INT and heal_chance >= 0 and heal_chance <= 100:
+		values.heal_chance = heal_chance
 	if cfg.get_value("contracts", "schema", 0) != 1:
 		# Migrate the original Off/Random/Fixed selector without changing its rule.
 		var old = cfg.get_value("rules", "contract", 0)
@@ -49,6 +52,7 @@ func save_settings(path: String = "") -> Error:
 	cfg.set_value("contracts", "schema", 1)
 	cfg.set_value("contracts", "pool", values.contract_pool)
 	cfg.set_value("contracts", "chance", values.contract_chance)
+	cfg.set_value("healing", "chance", values.heal_chance)
 	return cfg.save(storage_path if path.is_empty() else path)
 
 func snapshot() -> Dictionary:

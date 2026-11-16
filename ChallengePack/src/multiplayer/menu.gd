@@ -13,6 +13,8 @@ var hud: VBoxContainer
 var ready_button: Button
 var open_button: Button
 var edit_button: Button
+var heal_edit_button: Button
+var heal_editor: CanvasLayer
 var first_player: OptionButton
 var first_player_group: VBoxContainer
 var first_player_label: Label
@@ -115,6 +117,11 @@ func setup(owner_session: Node):
 			edit_button.add_theme_font_size_override("font_size", 14)
 			edit_button.pressed.connect(open_editor)
 			cell.add_child(edit_button)
+		if key == "heal":
+			heal_edit_button = Button.new()
+			heal_edit_button.add_theme_font_size_override("font_size", 14)
+			heal_edit_button.pressed.connect(open_heal_editor)
+			cell.add_child(heal_edit_button)
 	first_player_group = VBoxContainer.new()
 	first_player_group.custom_minimum_size.x = 400
 	grid.add_child(first_player_group)
@@ -135,6 +142,10 @@ func setup(owner_session: Node):
 	close.pressed.connect(toggle)
 	column.add_child(close)
 	build_editor()
+	heal_editor = preload("../heal_editor.gd").new()
+	add_child(heal_editor)
+	heal_editor.setup(session.port.localization, panel.theme, set_heal_chance, close_heal_editor)
+	connect_button_audio(heal_editor)
 	connect_button_audio(panel)
 	connect_button_audio(editor)
 	panel.hide()
@@ -203,11 +214,16 @@ func refresh():
 	var editable = session.host() and not session.in_game and not session.loading
 	edit_button.text = text("CP_EDIT_CONTRACTS")
 	edit_button.visible = values.contract != 0
+	heal_edit_button.text = text("CP_EDIT_CONTRACTS")
+	heal_edit_button.visible = values.heal != 0
+	heal_editor.refresh(values.heal_chance, editable)
 	for key in choices:
 		var options = Labels[key][1]
 		if key == "turn": options = ["CP_DEFAULT", "CP_MP_FIXED_FIRST", "CP_ROUND_ROBIN", "CP_RANDOM"]
 		var value_key = options[values[key]]
 		choices[key].text = text(Labels[key][0]) + ":\n" + (text(value_key) if value_key.begins_with("CP_") else tr(value_key))
+		if key == "heal" and values.heal == 1:
+			choices[key].text += " (%d%%)" % values.heal_chance
 		choices[key].tooltip_text = text("CP_MP_TIP_" + key.to_upper())
 		choices[key].disabled = not editable
 	var signature = str(GlobalSteam.LOBBY_MEMBERS) + TranslationServer.get_locale()
@@ -322,7 +338,23 @@ func open_editor():
 	editor.show()
 	checks.values()[0].grab_focus()
 
+func open_heal_editor():
+	panel.hide()
+	heal_editor.open()
+
+func close_heal_editor():
+	panel.show()
+	heal_edit_button.grab_focus()
+
+func set_heal_chance(value: int):
+	if not session.host() or session.in_game or session.loading: return
+	var values = session.rules.settings.duplicate(true)
+	values.heal_chance = value
+	session.change_settings(values)
+	refresh()
+
 func toggle():
+	if heal_editor.shown: heal_editor.close()
 	shown = not shown
 	editor.hide()
 	panel.visible = shown
@@ -343,6 +375,7 @@ func toggle():
 		blocked_raycast = null
 
 func _input(event):
+	if heal_editor.shown: return
 	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_F8:
 		toggle()
 		get_viewport().set_input_as_handled()

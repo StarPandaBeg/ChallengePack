@@ -54,6 +54,16 @@ func run():
 		await process_frame
 		check(root.get_visible_rect().encloses(port.mp.ui.editor.get_global_rect()), "Contract editor fits " + language)
 		check(port.mp.ui.checks.size() == 12, "All twelve contracts")
+		port.mp.ui.editor.hide()
+		port.mp.rules.settings.heal = 1
+		port.mp.ui.refresh()
+		port.mp.ui.open_heal_editor()
+		await process_frame
+		await process_frame
+		check(root.get_visible_rect().encloses(port.mp.ui.heal_editor.box.get_global_rect()), "Network healing modal fits " + language)
+		check(port.mp.ui.heal_editor.slider.editable == (port.mp.host() and not port.mp.in_game and not port.mp.loading), "Only lobby host can edit healing probability")
+		port.mp.ui.heal_editor.close()
+		port.mp.rules.settings.heal = 0
 		port.mp.ui.toggle()
 		check(port.mp.ui.ready_button.visible, "Ready available after closing settings")
 	change_scene_to_file("res://multiplayer/scenes/mp_main.tscn")
@@ -169,6 +179,7 @@ func run():
 	port.mp.rules.settings.shells = 2
 	game.MAIN_active_sequence_dict = {"sequence": ["live", "blank", "blank"], "sequence_visible": ["live", "blank", "blank"], "sequence_in_shotgun": ["live", "blank", "blank"]}
 	port.mp.rules.settings.heal = 1
+	port.mp.rules.settings.heal_chance = 100
 	port.mp.rules.settings.shuffle = 1
 	port.mp.generate_sequence(game.round_manager)
 	check(game.MAIN_active_sequence_dict.sequence_in_shotgun.has("heal"), "Healing shell in host charge")
