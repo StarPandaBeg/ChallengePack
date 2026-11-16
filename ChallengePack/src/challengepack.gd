@@ -17,7 +17,7 @@ const MultiplayerSession = preload("multiplayer/session.gd")
 const MultiplayerFactory = preload("multiplayer/factory.gd")
 var mp
 var mp_factory = MultiplayerFactory.new()
-const VERSION = "2.1.0"
+const VERSION = "2.2.0"
 var settings = Settings.new()
 var factory = Factory.new()
 var guard = Guard.new()

@@ -82,7 +82,7 @@ func run():
 	check(port.options.buttons.shells.text.begins_with("видимость патронов:\n"))
 	check(port.options.start_button.text == TranslationServer.translate("START"))
 	check(port.options.return_button.text == TranslationServer.translate("RETURN"))
-	check(port.options.version.text == "ChallengePack 2.1.0 / одиночная игра")
+	check(port.options.version.text == "ChallengePack 2.2.0 / одиночная игра")
 	TranslationServer.set_locale(original_locale)
 	port.close_options()
 	check(not port.options_open())

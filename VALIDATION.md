@@ -1,4 +1,4 @@
-# Validation — 2.1.0
+# Validation — 2.2.0
 
 Target: Buckshot Roulette **2.2.0.6**, Steam Windows, Godot **4.1.1**.
 
@@ -107,7 +107,7 @@ Run `build.bat` from the repository root, or double-click it in Explorer. To ski
 .\build.bat /q
 ```
 
-The script rebuilds `ChallengePack/src/assets/protectors.res` from the mesh and textures in `assets/protectors/`, then creates `dist/ChallengePack-2.1.0-win64.zip` and its SHA-256 checksum. It stops if either step fails. Only `install.bat` and `uninstall.bat` sit at the top of the installable mod folder; its scripts and resources are kept in `src/`. The archive contains the installable mod and documentation; Python and the Godot editor are not required to play.
+The script rebuilds `ChallengePack/src/assets/protectors.res` from the mesh and textures in `assets/protectors/`, then creates `dist/ChallengePack-2.2.0-win64.zip` and its SHA-256 checksum. It stops if either step fails. Only `install.bat` and `uninstall.bat` sit at the top of the installable mod folder; its scripts and resources are kept in `src/`. The archive contains the installable mod and documentation; Python and the Godot editor are not required to play.
 
 ### Translation catalogs
 

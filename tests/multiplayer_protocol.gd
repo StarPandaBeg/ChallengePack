@@ -28,7 +28,7 @@ class MemorySettings extends RefCounted:
 	func save_settings() -> Error: return OK
 
 class Owner extends Node:
-	const VERSION = "2.1.0"
+	const VERSION = "2.2.0"
 	var localization
 
 var failures = 0

@@ -13,7 +13,7 @@
 
 ---
 
-> **ChallengePack 2.1.0** for **Buckshot Roulette 2.2.0.6 (Steam, Windows)**. Standard game, Double or Nothing and experimental multiplayer for **2–4 players**. Modified single-player scores are not uploaded to leaderboards.
+> **ChallengePack 2.2.0** for **Buckshot Roulette 2.2.0.6 (Steam, Windows)**. Standard game, Double or Nothing and experimental multiplayer for **2–4 players**. Modified single-player scores are not uploaded to leaderboards.
 
 <div align="center">
   <img src=".github/promo.png" alt="Challenge Pack">
@@ -95,7 +95,7 @@ Network behavior has automated checks, but full matches across separate Steam ac
 
 ## Installation
 
-1. Download the **2.1.0** archive from [releases](https://github.com/StarPandaBeg/ChallengePack/releases), or [build it from source](#building-from-source).
+1. Download the **2.2.0** archive from [releases](https://github.com/StarPandaBeg/ChallengePack/releases), or [build it from source](#building-from-source).
 2. Open the folder containing `Buckshot Roulette.exe` through Steam: **Manage → Browse local files**, then open `Buckshot Roulette_windows`.
 3. Extract the entire `ChallengePack` folder next to the executable:
 

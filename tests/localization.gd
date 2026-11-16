@@ -20,7 +20,7 @@ func run():
 	TranslationServer.set_locale("ru")
 	check(localization.text("CP_TITLE") == "настройка игры")
 	check(localization.text("CP_DEALER_FIRST") == "Я начну первым.")
-	check(localization.text("CP_VERSION", ["2.1.0"]) == "ChallengePack 2.1.0 / одиночная игра")
+	check(localization.text("CP_VERSION", ["2.2.0"]) == "ChallengePack 2.2.0 / одиночная игра")
 	check(localization.text("CP_ERROR_SCRIPT", ["ShellLoader"]).ends_with("ShellLoader"))
 	var english = localization.catalogs.en
 	var russian = localization.catalogs.ru
