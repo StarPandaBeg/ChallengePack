@@ -14,7 +14,9 @@ const PATHS = {
 	"item": "res://multiplayer/scripts/user scripts/MP_ItemInteraction.gd",
 	"shell": "res://multiplayer/scripts/global scripts/MP_ShellBranch.gd",
 	"loader": "res://multiplayer/scripts/global scripts/MP_ShellLoader.gd",
-	"health": "res://multiplayer/scripts/user scripts/MP_HealthCounter.gd"
+	"health": "res://multiplayer/scripts/user scripts/MP_HealthCounter.gd",
+	"phone": "res://multiplayer/scripts/user scripts/MP_BurnerPhone.gd",
+	"lobby_ui": "res://multiplayer/scripts/global scripts/MP_LobbyUI.gd"
 }
 var scripts = {}
 var error = ""
@@ -38,6 +40,7 @@ func prepare(directory: String) -> bool:
 		if source.sha256_text() != expected.get(key): return fail("Unsupported multiplayer script: " + path)
 		var body = make_body(key, source)
 		if not extract.error.is_empty(): return fail(extract.error)
+		body = guard_async(body)
 		var script = GDScript.new()
 		script.source_code = 'extends "%s"\nvar cp_port: Node\n' % path + body
 		if script.reload() != OK: return fail("Cannot compile multiplayer adapter: " + key)
@@ -64,6 +67,8 @@ func make_body(key: String, source: String) -> String:
 	match key:
 		"packets":
 			var read = method(source, "read_p2p_packet")
+			read = replace(read, "var readable_data: Dictionary =", "var readable_data =")
+			read = replace(read, "\t\tif GlobalSteam.STEAM_ID != GlobalSteam.HOST_ID:", "\t\tif not readable_data is Dictionary: return\n\t\tif GlobalSteam.STEAM_ID != GlobalSteam.HOST_ID:")
 			read = replace(read, "bytes_to_var(packet_code.decompress_dynamic(-1, FileAccess.COMPRESSION_GZIP))", "bytes_to_var(packet_code.decompress_dynamic(1048576, FileAccess.COMPRESSION_GZIP))")
 			read = replace(read, "\t\tPipeData(readable_data)", "\t\tcp_port.mp.receive_native(self, readable_data, packet_sender)")
 			var send = method(source, "send_p2p_packet")
@@ -72,11 +77,11 @@ func make_body(key: String, source: String) -> String:
 			pipe = replace(pipe, "\tif GlobalVariables.printing_packets:", "\tif not cp_port.mp.before_pipe(self, dict): return\n\tif GlobalVariables.printing_packets:")
 			return read + send + pipe + "\nfunc _ready():\n\tcp_port.mp.register_packets(self)\n\tsuper()\n\nfunc send_p2p_packet_directly_to_host(_from: int, data: Dictionary):\n\tcp_port.mp.direct_request(self, data)\n"
 		"lobby":
-			return "\nfunc join_lobby(id: int):\n\tif not cp_port.mp.can_join(id):\n\t\tcp_port.mp.notice(\"CP_MP_MISMATCH\")\n\t\treturn\n\tsuper(id)\n"
+			return "\nfunc join_lobby(id: int):\n\tif not await cp_port.mp.check_lobby(id):\n\t\tcp_port.mp.notice(\"CP_MP_MISMATCH\")\n\t\treturn\n\tsuper(id)\n"
 		"controller":
 			return "\nfunc StartGame():\n\tif cp_port.mp.can_start():\n\t\tcp_port.mp.loading = true\n\t\tsuper()\n\telse:\n\t\tcp_port.mp.notice(\"CP_MP_NOT_READY\")\n"
 		"search":
-			return "\nfunc OnLobbyList(found):\n\tvar compatible = []\n\tfor id in found:\n\t\tif cp_port.mp.can_join(id): compatible.append(id)\n\tsuper(compatible)\n"
+			return "\nfunc Get():\n\tSteam.addRequestLobbyListStringFilter(\"challengepack\", cp_port.VERSION, 0)\n\tSteam.addRequestLobbyListStringFilter(\"cp_fingerprint\", cp_port.mp.fingerprint, 0)\n\tsuper()\n\nfunc OnLobbyList(found):\n\tvar compatible = []\n\tfor id in found:\n\t\tif cp_port.mp.can_join(id): compatible.append(id)\n\tsuper(compatible)\n"
 		"handler":
 			return "\nfunc StartMainGame():\n\tif await cp_port.mp.stage(\"scene\"):\n\t\tawait super()\n"
 		"round":
@@ -103,14 +108,13 @@ func make_body(key: String, source: String) -> String:
 			outcome = replace(outcome, '\telse: PlaySound_BlankFire()', '\telif current_shell == "heal": properties.health_counter.speaker_increase_health.play()\n\telse: PlaySound_BlankFire()')
 			outcome = replace(outcome, '\t\t\t\tinstance.health_current -= active_shooter_shotgun_damage', '\t\t\t\tinstance.health_current = cp_port.mp.pending_shots[properties.socket_number].cp_health')
 			outcome = replace(outcome, '\tRemoveFirstShellFromSequence()', '\tif current_shell == "heal": cp_port.mp.apply_heal(self)\n\tif not cp_port.mp.pending_shots[properties.socket_number].get("cp_penalty", false):\n\t\tRemoveFirstShellFromSequence()')
-			var ending = method(source, "CheckIfEndingTurn")
-			ending = ending.replace('active_shooter_shell == "blank"', 'active_shooter_shell in ["blank", "heal"]')
-			ending += "\tcp_port.mp.action_finished()\n"
+			var ending = "\nfunc CheckIfEndingTurn(packet_dictionary: Dictionary):\n\tawait cp_port.mp.finish_shot(self, packet_dictionary)\n"
 			return receive + outcome + ending
 		"item":
 			var change = method(source, "ChangeGameStateWithItem")
 			change = replace(change, 'if shell_in_chamber == "live": properties.intermediary.game_state.MAIN_active_sequence_dict.sequence_in_shotgun[0] = "blank"\n\t\t\t\telse: properties.intermediary.game_state.MAIN_active_sequence_dict.sequence_in_shotgun[0] = "live"', 'properties.intermediary.game_state.MAIN_active_sequence_dict.sequence_in_shotgun[0] = cp_port.heal_bullets.invert(shell_in_chamber)')
-			return change
+			change = replace(change, "properties.health_current += 1", 'properties.health_current = packet.get("cp_health", properties.health_current)')
+			return change + "\nfunc EndItemInteraction(packet: Dictionary):\n\tawait cp_port.mp.finish_item(self, packet)\n"
 		"shell":
 			return "\nfunc SetState(type: String):\n\tif type in [\"heal\", \"lethal\"]:\n\t\tcp_port.mp.shell_material(self, type, false)\n\telse: super(type)\n\nfunc SetState_Inspecting(type: String):\n\tif type in [\"heal\", \"lethal\"]:\n\t\tcp_port.mp.shell_material(self, type, true)\n\telse: super(type)\n"
 		"loader":
@@ -118,6 +122,29 @@ func make_body(key: String, source: String) -> String:
 			spawn = replace(spawn, '\tfor i in range(sequence.size()):', '\tif cp_port.mp.rules.settings.shells == 2: return\n\tfor i in range(sequence.size()):')
 			spawn = replace(spawn, 'shell_branch.SetState(sequence[i])', 'shell_branch.SetState("unknown" if cp_port.mp.rules.settings.shells == 1 else sequence[i])')
 			return spawn
+		"phone":
+			var phone = method(source, "GetBurnerPhoneString")
+			phone = replace(phone, '\t\t\t"blank": final_string_p2', '\t\t\t"heal": final_string_p2 = "... " + cp_port.localization.text("CP_HEAL_ROUND")\n\t\t\t"lethal": final_string_p2 = "... " + cp_port.localization.text("CP_LETHAL_ROUND")\n\t\t\t"blank": final_string_p2')
+			return phone
+		"lobby_ui":
+			return "\nfunc CheckStartButton():\n\tsuper()\n\tui_button_start_game.visible = ui_button_start_game.visible and cp_port.mp.can_start()\n"
 		"health":
 			return "\nfunc _process(_delta):\n\tif cp_port.mp.rules.settings.health == 1:\n\t\tui_main_parent.hide()\n"
 	return ""
+
+func guard_async(body: String) -> String:
+	var lines = body.split("\n")
+	var result = ""
+	var asynchronous = false
+	for line in lines:
+		if line.begins_with("func "):
+			asynchronous = false
+			result += line + "\n"
+			# Async adapters capture their originating scene and charge.
+			result += "\tvar cp_epoch = cp_port.mp.epoch\n"
+			continue
+		result += line + "\n"
+		if line.strip_edges().begins_with("await ") or line.strip_edges().begins_with("await("):
+			var indentation = line.substr(0, line.length() - line.lstrip("\t").length())
+			result += indentation + "if cp_epoch != cp_port.mp.epoch or cp_port.mp.blocked: return\n"
+	return result

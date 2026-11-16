@@ -15,6 +15,11 @@ var choices = {}
 var chance: HSlider
 var chance_label: Label
 var shown = false
+var theft_targets: HBoxContainer
+var target_ids = []
+var bomb: TextureRect
+var blocked_raycast: WeakRef
+var raycast_state = false
 
 func text(key: String, args: Array = []) -> String:
 	return session.port.localization.text(key, args)
@@ -31,6 +36,16 @@ func setup(owner_session: Node):
 	hud.position = Vector2(18, 54)
 	hud.add_theme_font_size_override("font_size", 15)
 	add_child(hud)
+	bomb = TextureRect.new()
+	bomb.texture = ImageTexture.create_from_image(Image.load_from_file(session.port.mod_directory.path_join("assets/contracts/c4.png")))
+	bomb.position = Vector2(298, 54)
+	bomb.size = Vector2(40, 40)
+	bomb.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	bomb.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	add_child(bomb)
+	theft_targets = HBoxContainer.new()
+	theft_targets.position = Vector2(18, 160)
+	add_child(theft_targets)
 	panel = PanelContainer.new()
 	panel.position = Vector2(80, 55)
 	panel.custom_minimum_size = Vector2(850, 0)
@@ -159,6 +174,7 @@ func refresh():
 		var peer = session.peers.get(member.steam_id, {})
 		lines.append(member.steam_name + ": " + text("CP_MP_READY" if peer.get("ready", false) else ("CP_MP_VERIFIED" if peer.get("verified", false) else "CP_MP_CHECKING")))
 	status.text = "\n".join(lines)
+	if session.in_game: status.text = text("CP_MP_RULES_LOCKED")
 	ready_button.text = text("CP_MP_READY_TOGGLE")
 	ready_button.disabled = session.in_game or session.loading or session.session.is_empty()
 	for id in checks:
@@ -180,6 +196,27 @@ func refresh():
 				if 3 in entry.history: name = text("CP_NO_HINTS") + " (" + text("CP_MP_GLASS") + ")"
 			contracts.append(("> " if p.is_active else "") + p.user_name + ": " + name)
 	hud.text = "\n".join(contracts)
+	bomb.visible = not contracts.is_empty()
+	var local = null
+	if session.in_game and is_instance_valid(session.game):
+		for p in session.game.instance_handler.instance_property_array:
+			if p.is_active: local = p
+	var candidates = []
+	if local != null and local.is_stealing_item and values.items == 1:
+		for p in session.game.instance_handler.instance_property_array:
+			if p != local: candidates.append(p.socket_number)
+	if candidates != target_ids:
+		for child in theft_targets.get_children(): child.queue_free()
+		target_ids = candidates
+		for socket in candidates:
+			var button = Button.new()
+			button.text = text("CP_MP_REVEAL") + ": " + session.property_for(socket).user_name
+			button.pressed.connect(func(): session.theft_target = socket)
+			theft_targets.add_child(button)
+		if not candidates.is_empty():
+			session.theft_target = candidates[0]
+			if local.cursor.controller_active: theft_targets.get_children().back().grab_focus()
+	theft_targets.visible = not candidates.is_empty() and not shown
 	if session.host() and is_instance_valid(session.lobby_ui) and not session.in_game:
 		session.lobby_ui.ui_button_start_game.visible = session.can_start()
 
@@ -203,6 +240,7 @@ func select_contract(pressed: bool, id: int):
 	refresh()
 
 func select_all(all: bool):
+	if not session.host() or session.in_game: return
 	var values = session.rules.settings.duplicate(true)
 	values.contract_pool = session.rules.Catalog.ALL_IDS.duplicate() if all else []
 	session.change_settings(values)
@@ -223,8 +261,19 @@ func toggle():
 	shown = not shown
 	editor.hide()
 	panel.visible = shown
-	if shown: choices.shells.grab_focus()
-	else: open_button.grab_focus()
+	if shown:
+		choices.shells.grab_focus()
+		if session.in_game and is_instance_valid(session.game):
+			for p in session.game.instance_handler.instance_property_array:
+				if p.is_active:
+					blocked_raycast = weakref(p.mouse_raycast)
+					raycast_state = p.mouse_raycast.getting_selection
+					p.mouse_raycast.SetMouseRaycast(false)
+	else:
+		open_button.grab_focus()
+		if blocked_raycast != null and blocked_raycast.get_ref() != null:
+			blocked_raycast.get_ref().SetMouseRaycast(raycast_state)
+		blocked_raycast = null
 
 func _input(event):
 	if shown and (event.is_action_pressed("ui_cancel") or event.is_action_pressed("exit game")):
