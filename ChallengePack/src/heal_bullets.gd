@@ -28,7 +28,7 @@ func material(base: StandardMaterial3D, shell: String = "heal") -> StandardMater
 	return result
 
 func invert(shell: String) -> String:
-	return {"live": "blank", "blank": "live", "heal": "lethal", "lethal": "heal"}.get(shell, shell)
+	return preload("domain/shell_rules.gd").invert(shell)
 
 func damage(manager: Node, target: String) -> int:
 	if manager.shellSpawner.sequenceArray[0] == "lethal":

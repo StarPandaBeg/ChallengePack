@@ -1,7 +1,7 @@
 extends RefCounted
 
-const Catalog = preload("../challenges.gd")
-const Defaults = preload("../settings.gd")
+const Catalog = preload("../domain/contracts.gd")
+const Defaults = preload("../domain/settings_schema.gd")
 const ITEM_NAMES = {1: "handsaw", 2: "magnifying glass", 3: "handcuffs", 4: "cigarettes", 5: "beer", 6: "burner phone", 7: "expired medicine", 8: "adrenaline", 9: "inverter", 10: "remote"}
 const LIMITS = {"shells": 3, "items": 2, "shuffle": 2, "turn": 4, "health": 2, "mirror": 2, "pocket": 3, "contract": 2, "heal": 2}
 var rng = RandomNumberGenerator.new()
@@ -102,12 +102,7 @@ func target(socket: int, selected: int, alive: Array) -> int:
 	return socket if others.is_empty() else others[rng.randi_range(0, others.size() - 1)]
 
 func shot_effect(socket: int, actual: int, shell: String, saw: bool, hp: int, maximum: int) -> Dictionary:
-	var strength = 2 if saw or state(socket).contract == Catalog.Contract.TWO_FOR_ONE else 1
-	var after = hp
-	if shell == "heal": after = mini(maximum, hp + strength)
-	if shell == "live": after = maxi(0, hp - strength)
-	if shell == "lethal": after = 0
-	return {"target": actual, "strength": strength, "health": after, "keep_turn": actual == socket and shell in ["blank", "heal"]}
+	return preload("../domain/mode_policy.gd").multiplayer_effect(state(socket).contract, socket, actual, shell, saw, hp, maximum)
 
 func sequences(original: Array) -> Dictionary:
 	var shown = original.duplicate()

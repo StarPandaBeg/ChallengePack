@@ -1,9 +1,10 @@
 extends RefCounted
 
 const PATH = "user://challengepack.cfg"
-const Contracts = preload("challenges.gd")
-const LIMITS = {"shells": 3, "items": 2, "shuffle": 2, "turn": 3, "health": 2, "mirror": 2, "pocket": 3, "contract": 2, "heal": 2}
-const DEFAULTS = {"shells": 0, "items": 0, "shuffle": 0, "turn": 0, "health": 0, "mirror": 0, "pocket": 0, "contract": 0, "heal": 0, "contract_pool": Contracts.ALL_IDS, "contract_chance": 30, "heal_chance": 30}
+const Contracts = preload("domain/contracts.gd")
+const Schema = preload("domain/settings_schema.gd")
+const LIMITS = Schema.LIMITS
+const DEFAULTS = Schema.DEFAULTS
 var values = DEFAULTS.duplicate(true)
 var storage_path = PATH
 
@@ -56,4 +57,4 @@ func save_settings(path: String = "") -> Error:
 	return cfg.save(storage_path if path.is_empty() else path)
 
 func snapshot() -> Dictionary:
-	return values.duplicate(true)
+	return preload("domain/settings_snapshot.gd").new(values).to_dictionary()

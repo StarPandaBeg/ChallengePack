@@ -1,39 +1,20 @@
 extends RefCounted
 
-enum Contract { NONE, NO_HEALING, NO_SELF_SHOTS, NO_CUFFS, NO_HINTS, UNTOUCHABLE_CHARGE, FAIR_CALIBER, NO_STEALING, DRY_LAW, NO_INVERSION, NO_INSURANCE, TWO_FOR_ONE, LEAKY_GUN }
-# IDs and setting values are append-only: old saved choices keep their meaning.
-const LEGACY_SETTING_COUNT = Contract.LEAKY_GUN + 2
-const ALL_IDS = [Contract.NO_HEALING, Contract.NO_SELF_SHOTS, Contract.NO_CUFFS, Contract.NO_HINTS, Contract.UNTOUCHABLE_CHARGE, Contract.FAIR_CALIBER, Contract.NO_STEALING, Contract.DRY_LAW, Contract.NO_INVERSION, Contract.NO_INSURANCE, Contract.TWO_FOR_ONE, Contract.LEAKY_GUN]
-const CATALOG = {
-	Contract.NONE: {"key": "CP_OFF", "hud": "CP_OFF", "detail": "CP_TIP_CONTRACT", "items": [], "requires_items": false},
-	Contract.NO_HEALING: {"key": "CP_NO_HEALING", "hud": "CP_HUD_NO_HEALING", "detail": "CP_HUD_HEALING_DETAIL", "items": ["cigarettes", "expired medicine"], "requires_items": true},
-	Contract.NO_SELF_SHOTS: {"key": "CP_NO_SELF_SHOTS", "hud": "CP_HUD_NO_SELF_SHOTS", "detail": "CP_HUD_SELF_DETAIL", "items": [], "requires_items": false},
-	Contract.NO_CUFFS: {"key": "CP_NO_CUFFS", "hud": "CP_HUD_NO_CUFFS", "detail": "CP_HUD_CUFFS_DETAIL", "items": ["handcuffs"], "requires_items": true},
-	Contract.NO_HINTS: {"key": "CP_NO_HINTS", "hud": "CP_HUD_NO_HINTS", "detail": "CP_DETAIL_NO_HINTS", "items": ["magnifying glass", "burner phone"], "requires_items": true},
-	Contract.UNTOUCHABLE_CHARGE: {"key": "CP_UNTOUCHABLE_CHARGE", "hud": "CP_HUD_UNTOUCHABLE_CHARGE", "detail": "CP_DETAIL_UNTOUCHABLE_CHARGE", "items": ["beer", "inverter"], "requires_items": true},
-	Contract.FAIR_CALIBER: {"key": "CP_FAIR_CALIBER", "hud": "CP_HUD_FAIR_CALIBER", "detail": "CP_DETAIL_FAIR_CALIBER", "items": ["handsaw"], "requires_items": true},
-	Contract.NO_STEALING: {"key": "CP_NO_STEALING", "hud": "CP_HUD_NO_STEALING", "detail": "CP_DETAIL_NO_STEALING", "items": ["adrenaline"], "requires_items": true},
-	Contract.DRY_LAW: {"key": "CP_DRY_LAW", "hud": "CP_HUD_DRY_LAW", "detail": "CP_DETAIL_DRY_LAW", "items": ["beer"], "requires_items": true},
-	Contract.NO_INVERSION: {"key": "CP_NO_INVERSION", "hud": "CP_HUD_NO_INVERSION", "detail": "CP_DETAIL_NO_INVERSION", "items": ["inverter"], "requires_items": true},
-	Contract.NO_INSURANCE: {"key": "CP_NO_INSURANCE", "hud": "CP_HUD_NO_INSURANCE", "detail": "CP_DETAIL_NO_INSURANCE", "items": [], "requires_items": true},
-	Contract.TWO_FOR_ONE: {"key": "CP_TWO_FOR_ONE", "hud": "CP_HUD_TWO_FOR_ONE", "detail": "CP_DETAIL_TWO_FOR_ONE", "items": [], "requires_items": false},
-	Contract.LEAKY_GUN: {"key": "CP_LEAKY_GUN", "hud": "CP_HUD_LEAKY_GUN", "detail": "CP_DETAIL_LEAKY_GUN", "items": [], "requires_items": false}
-}
+const Catalog = preload("domain/contracts.gd")
+const Contract = Catalog.Contract
+const LEGACY_SETTING_COUNT = Catalog.LEGACY_SETTING_COUNT
+const ALL_IDS = Catalog.ALL_IDS
+const CATALOG = Catalog.CATALOG
 var port: Node
 var managers = {}
 var current: WeakRef
 var rng = RandomNumberGenerator.new()
 
 static func contract_key(id: int) -> String:
-	return CATALOG[id].key
+	return Catalog.contract_key(id)
 
 static func hud_key(id: int, used_items: Array = []) -> String:
-	if id == Contract.NO_INSURANCE:
-		if "magnifying glass" in used_items:
-			return "CP_HUD_INSURANCE_NO_CUFFS"
-		if "handcuffs" in used_items:
-			return "CP_HUD_INSURANCE_NO_GLASS"
-	return CATALOG[id].hud
+	return Catalog.hud_key(id, used_items)
 
 func _init(owner_port: Node):
 	port = owner_port
@@ -58,7 +39,7 @@ func reset_pocket(manager: Node):
 func shot_strength(manager: Node) -> int:
 	# A contract supplies the same strength as a saw, without changing the barrel
 	# or persisting into the next charge. Combining both never multiplies again.
-	return maxi(2, manager.currentShotgunDamage) if state(manager).contract == Contract.TWO_FOR_ONE else manager.currentShotgunDamage
+	return preload("domain/mode_policy.gd").solo_strength(state(manager).contract, manager.currentShotgunDamage)
 
 func player_target(manager: Node, selected: String) -> String:
 	if state(manager).contract == Contract.LEAKY_GUN:
@@ -73,9 +54,7 @@ func select_contract(has_items: bool = true) -> int:
 	for id in ALL_IDS:
 		if id in pool and (has_items or not CATALOG[id].requires_items):
 			candidates.append(id)
-	if candidates.is_empty() or rng.randf() >= float(port.active.get("contract_chance", 30)) / 100.0:
-		return 0
-	return candidates[rng.randi_range(0, candidates.size() - 1)]
+	return preload("domain/shell_rules.gd").choose_contract(candidates, port.active.get("contract_chance", 30), rng)
 
 func begin_round(manager: Node):
 	track(manager)
