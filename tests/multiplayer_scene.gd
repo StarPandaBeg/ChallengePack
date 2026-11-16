@@ -32,6 +32,16 @@ func run():
 	port.mp.set_process(false) # Never create/join real lobbies from a fixture.
 	check(port.mp.ui.open_button.get_parent() == port.mp.lobby_ui.ui_parent_lobby_home, "Entry follows native lobby visibility")
 	check(port.mp.ui.ready_button.get_parent() == port.mp.lobby_ui.ui_parent_lobby_home, "Ready is a lobby action, outside the settings submenu")
+	steam.LOBBY_ID = 0
+	port.mp.ui.refresh()
+	check(not port.mp.ui.open_button.visible and not port.mp.ui.ready_button.visible, "Mod actions hidden outside a lobby")
+	port.mp.ui.toggle()
+	check(not port.mp.ui.shown, "Cannot open mod settings without a lobby")
+	steam.LOBBY_ID = 1
+	steam.LOBBY_MEMBERS = [{"steam_id": steam.STEAM_ID, "steam_name": "Host"}]
+	port.mp.peers[steam.STEAM_ID] = {"verified": true, "ready": false}
+	port.mp.ui.refresh()
+	check(port.mp.ui.open_button.visible, "Mod settings available inside a lobby")
 	for language in ["en", "ru", "pl"]:
 		TranslationServer.set_locale(language)
 		port.mp.ui.toggle()
@@ -40,6 +50,12 @@ func run():
 		await process_frame
 		check(root.get_visible_rect().encloses(port.mp.ui.panel.get_global_rect()), "Lobby menu fits " + language)
 		check(port.mp.ui.choices.size() == 9, "All nine settings")
+		check(not port.mp.ui.status.visible, "Member statuses removed from settings modal")
+		var member_status = port.mp.ui.member_statuses[0]
+		check(member_status.get_parent() == port.mp.lobby_ui.ui_parent_lobby_home, "Status belongs to native lobby")
+		check(member_status.position.y == port.mp.lobby_ui.array_members[0].position.y, "Status aligned with player row")
+		check(member_status.text == port.localization.text("CP_MP_VERIFIED"), "Verified but unready status visible beside player")
+		check(port.mp.ui.open_button.get_theme_stylebox("focus").border_width_top == 0, "Buttons have no focus frame")
 		for mode in 4:
 			port.mp.rules.settings.turn = mode
 			port.mp.ui.refresh()
@@ -66,6 +82,9 @@ func run():
 		port.mp.rules.settings.heal = 0
 		port.mp.ui.toggle()
 		check(port.mp.ui.ready_button.visible, "Ready available after closing settings")
+	steam.LOBBY_ID = 0
+	port.mp.ui.refresh()
+	check(not port.mp.ui.open_button.visible and not port.mp.ui.member_statuses[0].visible, "Leaving lobby hides entry and row statuses")
 	change_scene_to_file("res://multiplayer/scenes/mp_main.tscn")
 	await process_frame
 	await process_frame

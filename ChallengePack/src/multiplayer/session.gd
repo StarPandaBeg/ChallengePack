@@ -113,6 +113,7 @@ func _process(_delta):
 	last_tick = now
 	if GlobalSteam.LOBBY_ID == 0:
 		lobby_id = 0
+		if is_instance_valid(ui): ui.refresh()
 		return
 	var current = ids()
 	var changed = current != members or lobby_owner != GlobalSteam.HOST_ID or lobby_id != GlobalSteam.LOBBY_ID

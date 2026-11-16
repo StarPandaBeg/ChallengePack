@@ -31,6 +31,10 @@ var raycast_state = false
 var member_signature = ""
 var backdrop: ColorRect
 var lobby_button_parent: Control
+var member_statuses: Array[Label] = []
+
+func available() -> bool:
+	return GlobalSteam.LOBBY_ID > 0 and GlobalSteam.STEAM_ID in session.ids()
 
 func text(key: String, args: Array = []) -> String:
 	return session.port.localization.text(key, args)
@@ -67,6 +71,20 @@ func setup(owner_session: Node):
 	else:
 		add_child(ready_button)
 	connect_button_audio(ready_button)
+	if is_instance_valid(session.lobby_ui):
+		var right = 0.0
+		for source in session.lobby_ui.array_members:
+			right = maxf(right, source.position.x + source.size.x * source.scale.x)
+		for source in session.lobby_ui.array_members:
+			var label = source.duplicate(0) as Label
+			for child in label.get_children(): child.free()
+			label.name = "ChallengePackMemberStatus"
+			label.position = Vector2(right + 24, source.position.y)
+			label.size.x = 1300
+			label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			label.text = ""
+			lobby_button_parent.add_child(label)
+			member_statuses.append(label)
 	backdrop = ColorRect.new()
 	backdrop.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	backdrop.color = Color(0, 0, 0, 0.98)
@@ -214,8 +232,11 @@ func contract_text(id: int, detail: bool = false) -> String:
 
 func refresh():
 	if session == null or not is_instance_valid(status): return
+	var connected = available()
+	if not connected and shown: toggle()
+	open_button.visible = connected and not session.in_game
 	var values = session.rules.settings
-	var editable = session.host() and not session.in_game and not session.loading
+	var editable = connected and session.host() and not session.in_game and not session.loading
 	edit_button.text = text("CP_EDIT_CONTRACTS")
 	edit_button.visible = values.contract != 0
 	heal_edit_button.text = text("CP_EDIT_CONTRACTS")
@@ -244,15 +265,17 @@ func refresh():
 	first_player_group.visible = values.turn == 1
 	first_player_label.text = text("CP_MP_STARTER_LABEL")
 	first_player.disabled = not editable
-	var lines = []
-	for member in GlobalSteam.LOBBY_MEMBERS:
-		var peer = session.peers.get(member.steam_id, {})
-		lines.append(member.steam_name + ": " + text("CP_MP_READY" if peer.get("ready", false) else ("CP_MP_VERIFIED" if peer.get("verified", false) else "CP_MP_CHECKING")))
-	status.text = "\n".join(lines)
-	if session.in_game: status.text = text("CP_MP_RULES_LOCKED")
+	for i in member_statuses.size():
+		var label = member_statuses[i]
+		label.visible = connected and not session.in_game and i < GlobalSteam.LOBBY_MEMBERS.size()
+		if not label.visible: continue
+		var peer = session.peers.get(GlobalSteam.LOBBY_MEMBERS[i].steam_id, {})
+		label.text = text("CP_MP_READY" if peer.get("ready", false) else ("CP_MP_VERIFIED" if peer.get("verified", false) else "CP_MP_CHECKING"))
+	status.text = text("CP_MP_RULES_LOCKED") if session.in_game else ""
+	status.visible = session.in_game
 	var local_ready = session.peers.get(GlobalSteam.STEAM_ID, {}).get("ready", false)
 	ready_button.text = ("[X] " if local_ready else "[ ] ") + text("CP_MP_READY_TOGGLE").to_upper()
-	ready_button.visible = not session.in_game and not shown
+	ready_button.visible = connected and not session.in_game and not shown
 	ready_button.disabled = session.in_game or session.loading or session.session.is_empty()
 	for id in checks:
 		checks[id].text = contract_text(id)
@@ -359,12 +382,13 @@ func set_heal_chance(value: int):
 	refresh()
 
 func toggle():
+	if not shown and not available(): return
 	if heal_editor.shown: heal_editor.close()
 	shown = not shown
 	editor.hide()
 	panel.visible = shown
 	backdrop.visible = shown
-	ready_button.visible = not session.in_game and not shown
+	ready_button.visible = available() and not session.in_game and not shown
 	if shown:
 		choices.shells.grab_focus()
 		if session.in_game and is_instance_valid(session.game):
@@ -374,7 +398,7 @@ func toggle():
 					raycast_state = p.mouse_raycast.getting_selection
 					p.mouse_raycast.SetMouseRaycast(false)
 	else:
-		if not session.in_game: open_button.grab_focus()
+		if not session.in_game and available(): open_button.grab_focus()
 		if blocked_raycast != null and blocked_raycast.get_ref() != null:
 			blocked_raycast.get_ref().SetMouseRaycast(raycast_state)
 		blocked_raycast = null
@@ -407,8 +431,7 @@ func make_theme() -> Theme:
 	var hover = empty.duplicate()
 	hover.bg_color = Color(0, 0.12, 0)
 	var focus = empty.duplicate()
-	focus.set_border_width_all(1)
-	focus.border_color = GREEN
+	focus.bg_color = Color(0, 0.12, 0)
 	var frame = empty.duplicate()
 	frame.bg_color = Color.BLACK
 	frame.set_border_width_all(1)
@@ -476,6 +499,8 @@ func play_menu_sound(pressed: bool):
 	if is_instance_valid(speaker): speaker.play()
 
 func _exit_tree():
+	for label in member_statuses:
+		if is_instance_valid(label): label.queue_free()
 	# The lobby entry belongs to the native home screen, so it follows its intro
 	# and visibility; release it when this overlay is replaced within the scene.
 	if is_instance_valid(lobby_button_parent) and is_instance_valid(open_button):
