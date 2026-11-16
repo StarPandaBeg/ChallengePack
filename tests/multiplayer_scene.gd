@@ -27,13 +27,17 @@ func run():
 	await process_frame
 	check(is_instance_valid(port.mp.ui), "Lobby settings UI created")
 	port.mp.set_process(false) # Never create/join real lobbies from a fixture.
+	check(port.mp.ui.open_button.get_parent() == port.mp.lobby_ui.ui_parent_lobby_home, "Entry follows native lobby visibility")
 	for language in ["en", "ru"]:
 		TranslationServer.set_locale(language)
 		port.mp.ui.toggle()
 		port.mp.ui.refresh()
+		port.mp.ui.status.text = "Host: ready\nGuest 1: ready\nGuest 2: ready\nGuest 3: ready"
 		await process_frame
 		check(root.get_visible_rect().encloses(port.mp.ui.panel.get_global_rect()), "Lobby menu fits " + language)
 		check(port.mp.ui.choices.size() == 9, "All nine settings")
+		check(port.mp.ui.backdrop.visible, "Settings block pointer input to the underlying lobby")
+		check(port.mp.ui.choices.shells.get_theme_color("font_color") == Color(0, 1, 0), "Native green lobby theme")
 		port.mp.ui.open_editor()
 		await process_frame
 		check(root.get_visible_rect().encloses(port.mp.ui.editor.get_global_rect()), "Contract editor fits " + language)

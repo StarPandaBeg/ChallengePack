@@ -1,5 +1,8 @@
 extends CanvasLayer
 
+const GREEN = Color(0, 1, 0)
+const DIM_GREEN = Color(0, 0.42, 0)
+
 const Labels = preload("../menu.gd").LABELS
 var session: Node
 var panel: PanelContainer
@@ -21,6 +24,8 @@ var bomb: TextureRect
 var blocked_raycast: WeakRef
 var raycast_state = false
 var member_signature = ""
+var backdrop: ColorRect
+var lobby_button_parent: Control
 
 func text(key: String, args: Array = []) -> String:
 	return session.port.localization.text(key, args)
@@ -29,16 +34,31 @@ func setup(owner_session: Node):
 	session = owner_session
 	layer = 112
 	open_button = Button.new()
-	open_button.position = Vector2(18, 16)
-	open_button.text = "ChallengePack"
+	open_button.position = Vector2(18, 16) if session.in_game else Vector2(127, 345)
+	open_button.theme = make_theme()
+	open_button.add_theme_font_size_override("font_size", 23 if session.in_game else 39)
+	if not session.in_game: open_button.scale = Vector2(0.395638, 0.618437)
+	open_button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	open_button.text = "CHALLENGEPACK"
 	open_button.pressed.connect(toggle)
-	add_child(open_button)
+	if not session.in_game and is_instance_valid(session.lobby_ui):
+		lobby_button_parent = session.lobby_ui.ui_parent_lobby_home
+		lobby_button_parent.add_child(open_button)
+	else:
+		add_child(open_button)
+	connect_button_audio(open_button)
+	backdrop = ColorRect.new()
+	backdrop.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	backdrop.color = Color(0, 0, 0, 0.98)
+	backdrop.hide()
+	add_child(backdrop)
 	hud = Label.new()
 	hud.position = Vector2(18, 54)
 	hud.custom_minimum_size.x = 310
 	hud.size.x = 310
 	hud.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	hud.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hud.theme = open_button.theme
 	hud.add_theme_font_size_override("font_size", 15)
 	add_child(hud)
 	bomb = TextureRect.new()
@@ -51,40 +71,40 @@ func setup(owner_session: Node):
 	add_child(bomb)
 	theft_targets = HBoxContainer.new()
 	theft_targets.position = Vector2(18, 160)
+	theft_targets.theme = open_button.theme
 	add_child(theft_targets)
 	panel = PanelContainer.new()
-	panel.position = Vector2(80, 55)
+	panel.position = Vector2(54, 20)
 	panel.custom_minimum_size = Vector2(850, 0)
-	panel.theme = Theme.new()
-	panel.theme.default_font_size = 17
-	panel.theme.default_font = load("res://fonts/fake receipt.otf")
-	var style = StyleBoxFlat.new()
-	style.bg_color = Color(0.025, 0.025, 0.025, 0.99)
-	style.set_content_margin_all(16)
-	panel.add_theme_stylebox_override("panel", style)
+	panel.theme = open_button.theme
 	add_child(panel)
 	var column = VBoxContainer.new()
+	column.add_theme_constant_override("separation", 2)
 	panel.add_child(column)
 	var title = Label.new()
-	title.text = "ChallengePack " + session.port.VERSION
+	title.text = "CHALLENGEPACK " + session.port.VERSION
+	title.add_theme_font_size_override("font_size", 23)
 	column.add_child(title)
 	var scroll = ScrollContainer.new()
-	scroll.custom_minimum_size = Vector2(820, 285)
+	scroll.custom_minimum_size = Vector2(820, 260)
 	scroll.follow_focus = true
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	column.add_child(scroll)
 	grid = GridContainer.new()
 	grid.columns = 2
+	grid.add_theme_constant_override("h_separation", 12)
+	grid.add_theme_constant_override("v_separation", 4)
 	scroll.add_child(grid)
 	for key in Labels:
 		var button = Button.new()
 		button.custom_minimum_size = Vector2(400, 48)
-		button.add_theme_font_size_override("font_size", 17)
+		button.add_theme_font_size_override("font_size", 16)
 		button.pressed.connect(cycle.bind(key))
 		grid.add_child(button)
 		choices[key] = button
 	first_player = OptionButton.new()
 	first_player.custom_minimum_size.x = 400
+	first_player.get_popup().theme = panel.theme
 	first_player.item_selected.connect(select_player)
 	grid.add_child(first_player)
 	var edit = Button.new()
@@ -94,7 +114,7 @@ func setup(owner_session: Node):
 	status = Label.new()
 	status.custom_minimum_size = Vector2(800, 0)
 	status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	status.add_theme_font_size_override("font_size", 15)
+	status.add_theme_font_size_override("font_size", 13)
 	column.add_child(status)
 	ready_button = Button.new()
 	ready_button.pressed.connect(session.ready_toggle)
@@ -104,18 +124,24 @@ func setup(owner_session: Node):
 	close.pressed.connect(toggle)
 	column.add_child(close)
 	build_editor()
+	connect_button_audio(panel)
+	connect_button_audio(editor)
 	panel.hide()
 	refresh()
 
 func build_editor():
 	editor = PanelContainer.new()
-	editor.position = Vector2(80, 55)
+	editor.position = panel.position
 	editor.custom_minimum_size.x = 850
 	editor.theme = panel.theme
 	editor.add_theme_stylebox_override("panel", panel.get_theme_stylebox("panel").duplicate())
 	add_child(editor)
 	var col = VBoxContainer.new()
 	editor.add_child(col)
+	var title = Label.new()
+	title.text = text("CP_ROUND_CONTRACT")
+	title.add_theme_font_size_override("font_size", 23)
+	col.add_child(title)
 	var scroll = ScrollContainer.new()
 	scroll.custom_minimum_size = Vector2(820, 280)
 	scroll.follow_focus = true
@@ -123,11 +149,12 @@ func build_editor():
 	col.add_child(scroll)
 	var entries = GridContainer.new()
 	entries.columns = 2
+	entries.add_theme_constant_override("h_separation", 12)
 	scroll.add_child(entries)
 	for id in session.rules.Catalog.ALL_IDS:
 		var check = CheckBox.new()
 		check.custom_minimum_size = Vector2(400, 34)
-		check.add_theme_font_size_override("font_size", 17)
+		check.add_theme_font_size_override("font_size", 16)
 		check.toggled.connect(select_contract.bind(id))
 		entries.add_child(check)
 		checks[id] = check
@@ -230,6 +257,7 @@ func refresh():
 			button.text = text("CP_MP_REVEAL") + ": " + session.property_for(socket).user_name
 			button.pressed.connect(func(): session.theft_target = socket)
 			theft_targets.add_child(button)
+			connect_button_audio(button)
 		if not candidates.is_empty():
 			session.theft_target = candidates[0]
 			if local.cursor.controller_active: theft_targets.get_children().back().grab_focus()
@@ -278,6 +306,7 @@ func toggle():
 	shown = not shown
 	editor.hide()
 	panel.visible = shown
+	backdrop.visible = shown
 	if shown:
 		choices.shells.grab_focus()
 		if session.in_game and is_instance_valid(session.game):
@@ -304,3 +333,91 @@ func _input(event):
 			choices.contract.grab_focus()
 		else: toggle()
 		get_viewport().set_input_as_handled()
+
+# Match the native lobby's receipt font, green phosphor text and square focus.
+func make_theme() -> Theme:
+	var result = Theme.new()
+	result.default_font = load("res://fonts/fake receipt.otf")
+	result.default_font_size = 16
+	var empty = StyleBoxFlat.new()
+	empty.bg_color = Color(0, 0, 0, 0)
+	empty.content_margin_left = 8
+	empty.content_margin_right = 8
+	empty.content_margin_top = 2
+	empty.content_margin_bottom = 2
+	var hover = empty.duplicate()
+	hover.bg_color = Color(0, 0.12, 0)
+	var focus = empty.duplicate()
+	focus.set_border_width_all(1)
+	focus.border_color = GREEN
+	var frame = empty.duplicate()
+	frame.bg_color = Color.BLACK
+	frame.set_border_width_all(1)
+	frame.border_color = DIM_GREEN
+	frame.set_content_margin_all(14)
+	result.set_stylebox("panel", "PanelContainer", frame)
+	result.set_stylebox("panel", "PopupMenu", frame)
+	result.set_stylebox("panel", "TooltipPanel", frame)
+	for kind in ["Button", "OptionButton", "CheckBox", "PopupMenu", "Label", "TooltipLabel"]:
+		result.set_color("font_color", kind, GREEN)
+		result.set_color("font_hover_color", kind, GREEN)
+		result.set_color("font_focus_color", kind, GREEN)
+		result.set_color("font_pressed_color", kind, GREEN)
+		result.set_color("font_hover_pressed_color", kind, GREEN)
+		result.set_color("font_disabled_color", kind, DIM_GREEN)
+		result.set_color("font_outline_color", kind, Color.BLACK)
+		result.set_color("icon_normal_color", kind, GREEN)
+		result.set_color("icon_hover_color", kind, GREEN)
+		result.set_color("icon_pressed_color", kind, GREEN)
+		result.set_color("icon_disabled_color", kind, DIM_GREEN)
+		for state in ["normal", "disabled"]: result.set_stylebox(state, kind, empty)
+		for state in ["hover", "pressed", "hover_pressed"]: result.set_stylebox(state, kind, hover)
+		result.set_stylebox("focus", kind, focus)
+	result.set_stylebox("hover", "PopupMenu", hover)
+	var track = StyleBoxFlat.new()
+	track.bg_color = Color(0, 0.22, 0)
+	track.content_margin_top = 2
+	track.content_margin_bottom = 2
+	var fill = track.duplicate()
+	fill.bg_color = GREEN
+	result.set_constant("scrollbar_width", "ScrollContainer", 10)
+	for kind in ["HSlider", "VScrollBar", "HScrollBar"]:
+		result.set_stylebox("slider", kind, track)
+		result.set_stylebox("scroll", kind, track)
+		for state in ["grabber_area", "grabber_area_highlight", "grabber", "grabber_highlight", "grabber_pressed"]:
+			result.set_stylebox(state, kind, fill)
+	var handle = GradientTexture2D.new()
+	handle.width = 8
+	handle.height = 16
+	handle.gradient = Gradient.new()
+	handle.gradient.colors = PackedColorArray([GREEN, GREEN])
+	for state in ["grabber", "grabber_highlight", "grabber_disabled"]:
+		result.set_icon(state, "HSlider", handle)
+	for checked in [false, true]:
+		var image = Image.create(16, 16, false, Image.FORMAT_RGBA8)
+		image.fill(Color.BLACK)
+		for edge in [Rect2i(0, 0, 16, 2), Rect2i(0, 14, 16, 2), Rect2i(0, 0, 2, 16), Rect2i(14, 0, 2, 16)]:
+			image.fill_rect(edge, GREEN)
+		if checked: image.fill_rect(Rect2i(4, 4, 8, 8), GREEN)
+		var icon = ImageTexture.create_from_image(image)
+		result.set_icon("checked" if checked else "unchecked", "CheckBox", icon)
+		result.set_icon("checked_disabled" if checked else "unchecked_disabled", "CheckBox", icon)
+	return result
+
+func connect_button_audio(node: Node):
+	if node is BaseButton:
+		node.mouse_entered.connect(play_menu_sound.bind(false))
+		node.focus_entered.connect(play_menu_sound.bind(false))
+		node.pressed.connect(play_menu_sound.bind(true))
+	for child in node.get_children(): connect_button_audio(child)
+
+func play_menu_sound(pressed: bool):
+	if session.in_game or not is_instance_valid(session.lobby_ui): return
+	var speaker = session.lobby_ui.speaker_button_press if pressed else session.lobby_ui.speaker_button_hover
+	if is_instance_valid(speaker): speaker.play()
+
+func _exit_tree():
+	# The lobby entry belongs to the native home screen, so it follows its intro
+	# and visibility; release it when this overlay is replaced within the scene.
+	if is_instance_valid(lobby_button_parent) and is_instance_valid(open_button):
+		open_button.queue_free()
