@@ -47,3 +47,62 @@ Headless runs may emit unsupported cursor/mouse and dummy-renderer `mesh_get_sur
 - Manually check both shotgun contracts at normal speed with and without items, on the last shell, with cuffs and during normal/Double or Nothing games. Confirm the selected target reverses only for the player, saw boosts never stack, green shells heal up to the round maximum, and the next charge restores ordinary behavior.
 
 The matrix does not mean 36 manually completed games.
+
+## Developer reference
+
+### Logs and saved settings
+
+Look for `[ChallengePack]` in `%APPDATA%\Godot\app_userdata\Buckshot Roulette\logs\godot.log`. The log reports the mod version, compatibility result and attached managers. Include the game version, selected settings and relevant errors in bug reports.
+
+Preferences remain in `%APPDATA%\Godot\app_userdata\Buckshot Roulette\challengepack.cfg`; delete that file to reset them.
+
+### Building from source
+
+Use Python 3, Windows PowerShell and Godot **4.1.1**. The development tools expect this workspace layout:
+
+```text
+workspace/
+  ChallengePack/                  # this repository
+  game/                          # extracted game project, with project.godot
+  godot/
+    Godot_v4.1.1-stable_win64.exe
+```
+
+Run `build.bat` from the repository root, or double-click it in Explorer. To skip the final pause:
+
+```powershell
+.\build.bat /q
+```
+
+The script rebuilds `ChallengePack/src/assets/protectors.res` from the mesh and textures in `assets/protectors/`, then creates `dist/ChallengePack-2.1.0-win64.zip` and its SHA-256 checksum. It stops if either step fails. Only `install.bat` and `uninstall.bat` sit at the top of the installable mod folder; its scripts and resources are kept in `src/`. The archive contains the installable mod and documentation; Python and the Godot editor are not required to play.
+
+### Translation catalogs
+
+Mod-specific text follows the language selected in the game. Russian is included; other languages fall back to English. Start, Return, Yes and No reuse the game's translations.
+
+Translation catalogs are UTF-8 JSON files in `ChallengePack/src/locales/`: `en.json` contains the base messages, and `ru.json` contains Russian translations. To add a language, copy the keys into `<language>.json` using its lowercase language code (for example, `de.json`). Keep `%s` placeholders in the same order. Missing or empty entries fall back to English. Regional locales such as `ru_RU` use their language catalog. Restart the game after editing a catalog; switching the game's language updates the menu automatically.
+
+### What's new screen
+
+The first visit to the main menu shows a scrollable introduction to the challenges, once per mod version. Close it with the button or Escape/Back. Mouse wheel, Tab and controller/arrow navigation can browse the cards. Its read state is saved separately in `user://challengepack_news.cfg`.
+
+For testing, set `const FORCE_SHOW = 1` at the top of `ChallengePack/src/whats_new.gd`. The screen will appear on every game launch, even if already read; returning to the menu during the same launch does not reopen it. Set it back to `0` before packaging a release.
+
+To replace the screenshot placeholders, put PNG files in `ChallengePack/src/assets/news/`: `shells.png`, `items.png`, `shuffle.png`, `turn.png`, `health.png`, `mirror.png`, `pocket.png`, `contract.png`, `heal.png`. Images keep their aspect ratio inside the rectangles (180 × 106); editor import is unnecessary. Missing images keep the placeholder. News text uses the `CP_NEWS_*` localization keys.
+
+### Running checks
+
+Run the installer and engine checks from the repository root:
+
+```powershell
+python -m unittest discover -s tests -p test_installer.py -v
+$repoPath = (Get-Location).Path
+foreach ($scenario in @('probe', 'settings_rules', 'localization', 'smoke', 'gameplay', 'challenges', 'contract_hud', 'heal_bullets', 'failure_screen', 'contract_chance', 'protectors', 'hidden_items', 'lethal_bullets', 'whats_new', 'contract_effects', 'contract_rules', 'shot_contracts', 'contract_editor')) {
+    python tools/run_godot.py --path ../game --script "$repoPath/tests/$scenario.gd"
+    if ($LASTEXITCODE -ne 0) { throw "Check failed: $scenario" }
+}
+```
+
+For checks against the installed game's embedded resources, pass `--game-exe "D:/.../Buckshot Roulette.exe"` to the runner and omit `--path ../game`. Checks do not install the mod. Logs are written under `tests/.scratch/`, and runs time out automatically.
+
+Compatibility hashes pin the supported game scripts. Update them with `python tools/update_compatibility.py` only after reviewing changes and adapting the mod. See the coverage and manual acceptance checks above.
