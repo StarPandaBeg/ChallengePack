@@ -6,6 +6,7 @@ const TITLES = ["CP_OFF", "CP_HUD_NO_HEALING", "CP_HUD_NO_SELF_SHOTS", "CP_HUD_N
 var rule: Label
 var pocket: Label
 var previous = ""
+var bomb: TextureRect
 
 func _init():
 	position = Vector2(8, 8)
@@ -17,17 +18,40 @@ func _init():
 	background.border_width_left = 2
 	background.content_margin_left = 8
 	background.content_margin_right = 8
-	background.content_margin_top = 5
-	background.content_margin_bottom = 5
+	background.content_margin_top = 4
+	background.content_margin_bottom = 4
 	add_theme_stylebox_override("panel", background)
 	var column = VBoxContainer.new()
 	column.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	column.add_theme_constant_override("separation", 2)
 	add_child(column)
-	rule = label(column, 14, INK)
+	rule = label(column, 13, INK)
 	rule.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	pocket = label(column, 12, MUTED)
+	var row = HBoxContainer.new()
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_theme_constant_override("separation", 6)
+	column.add_child(row)
+	pocket = label(row, 12, MUTED)
+	pocket.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var spacer = Control.new()
+	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(spacer)
+	bomb = TextureRect.new()
+	bomb.custom_minimum_size = Vector2(18, 18)
+	bomb.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	bomb.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	bomb.size_flags_vertical = Control.SIZE_SHRINK_END
+	bomb.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bomb.modulate = Color("c97b6d")
+	row.add_child(bomb)
+	bomb.hide()
 	hide()
+
+func setup(directory: String):
+	var image = Image.load_from_file(directory.path_join("assets/contracts/c4.png"))
+	if image != null:
+		bomb.texture = ImageTexture.create_from_image(image)
 
 func label(parent: Node, font_size: int, color: Color) -> Label:
 	var result = Label.new()
@@ -44,9 +68,11 @@ func refresh(data: Dictionary, localization):
 	previous = signature
 	visible = not data.is_empty()
 	if not visible:
+		bomb.hide()
 		return
 	var contract: int = data.paused if data.paused != 0 else data.contract
 	var paused: bool = data.paused != 0
+	bomb.visible = data.contract != 0 and not paused
 	rule.visible = contract != 0
 	if contract != 0:
 		var title = localization.text(TITLES[contract])

@@ -1,0 +1,18 @@
+Contract presentation assets
+
+c4.png: "Dynamite" by Delapouite, Game-icons.net, CC BY 3.0.
+Source: https://game-icons.net/1x1/delapouite/dynamite.html
+Download: https://game-icons.net/icons/ffffff/transparent/1x1/delapouite/dynamite.png
+License: https://creativecommons.org/licenses/by/3.0/
+Original white-on-transparent PNG; displayed smaller and tinted in the HUD.
+
+armed.wav: confirmation_002.ogg from Interface Sounds (1.0), by Kenney.
+breach.wav: error_006.ogg from the same pack.
+Source: https://kenney.nl/assets/interface-sounds
+License: CC0 1.0; see Kenney-License.txt.
+Downloaded from the unmodified-file mirror:
+https://github.com/GeorgeQLe/assets-sfx-ui/tree/main/assets/kenney/interface-sounds/Audio
+Converted to mono 44.1 kHz signed 16-bit PCM WAV for Godot 4.1 runtime loading.
+
+The shotgun animation and gunshot audio are loaded from the user's installed
+game. No game animation or audio is included in this mod.

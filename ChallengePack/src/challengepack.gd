@@ -12,6 +12,7 @@ const HealBullets = preload("heal_bullets.gd")
 const FailureScreen = preload("failure_screen.gd")
 const Protectors = preload("protectors.gd")
 const WhatsNew = preload("whats_new.gd")
+const ContractEffects = preload("contract_effects.gd")
 const VERSION = "2.1.0"
 var settings = Settings.new()
 var factory = Factory.new()
@@ -36,6 +37,7 @@ var notice_key = "CP_ONLINE_DISABLED"
 var notice_args = []
 var challenge_hud: PanelContainer
 var failure_screen: CanvasLayer
+var contract_effects: CanvasLayer
 var returning_from_mp = false
 
 func _enter_tree():
@@ -82,9 +84,13 @@ func _ready():
 	layer.add_child(notice_label)
 	challenge_hud = ChallengeHUD.new()
 	layer.add_child(challenge_hud)
+	challenge_hud.setup(mod_directory)
 	failure_screen = FailureScreen.new()
 	add_child(failure_screen)
 	failure_screen.setup(self)
+	contract_effects = ContractEffects.new()
+	add_child(contract_effects)
+	contract_effects.setup(self)
 	if OS.get_cmdline_args().has("+connect_lobby"):
 		online_notice()
 

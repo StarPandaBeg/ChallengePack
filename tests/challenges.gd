@@ -141,6 +141,10 @@ func run():
 	full.items.GrabItems_Enemy()
 	check(full.items.numberOfItemsGrabbed_enemy == 8)
 	check(full.items.gridParentArray_enemy_available.is_empty())
+	# Finish queued removals from the mirrored redistribution before the vanilla
+	# theft routine snapshots the inventory and scans it after its camera delay.
+	await process_frame
+	await process_frame
 	await full.items.SetupItemSteal()
 	check(not full.table.get_node("Protectors").visible)
 	full.items.RevertItemSteal()

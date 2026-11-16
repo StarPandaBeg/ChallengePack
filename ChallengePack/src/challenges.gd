@@ -47,6 +47,7 @@ func begin_round(manager: Node):
 	entry.paused_contract = mode("contract") - 1 if not entry.has_items and mode("contract") in [2, 4] else 0
 	if entry.contract == 0:
 		return
+	port.contract_effects.announce(manager)
 	manager.perm.SetIndicators(false)
 	manager.perm.SetInteractionPermissions(false)
 	manager.cursor.SetCursor(false, false)
@@ -92,7 +93,7 @@ func fail_contract(manager: Node):
 	manager.perm.SetIndicators(false)
 	manager.perm.SetInteractionPermissions(false)
 	manager.cursor.SetCursor(false, false)
-	port.failure_screen.open(CONTRACT_KEYS[entry.contract])
+	port.contract_effects.execute(manager, CONTRACT_KEYS[entry.contract])
 
 func hide_health(counter: Node):
 	if mode("health") == 1 and counter.uiparent != null:

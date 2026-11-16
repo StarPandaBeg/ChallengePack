@@ -70,7 +70,7 @@ Combine nine independent settings in the standard game and Double or Nothing. Ne
 
 #### Round Contract:
 
-<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _Off / Random / No Healing Items / No Self Shots / No Handcuffs_ - Each charge has a 30% chance of a restriction for the player. Break it and lose the challenge. Item restrictions pause in rounds without items.
+<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _Off / Random / No Healing Items / No Self Shots / No Handcuffs_ - Each charge has a 30% chance of a restriction, announced by a beep and a bomb icon. Break it to trigger a self-shot scene and end the run. Item restrictions pause in rounds without items.
 
 #### Heal Bullets:
 
@@ -154,7 +154,7 @@ Run the installer and engine checks from the repository root:
 ```powershell
 python -m unittest discover -s tests -p test_installer.py -v
 $repoPath = (Get-Location).Path
-foreach ($scenario in @('probe', 'settings_rules', 'localization', 'smoke', 'gameplay', 'challenges', 'contract_hud', 'heal_bullets', 'failure_screen', 'contract_chance', 'protectors', 'hidden_items', 'lethal_bullets', 'whats_new')) {
+foreach ($scenario in @('probe', 'settings_rules', 'localization', 'smoke', 'gameplay', 'challenges', 'contract_hud', 'heal_bullets', 'failure_screen', 'contract_chance', 'protectors', 'hidden_items', 'lethal_bullets', 'whats_new', 'contract_effects')) {
     python tools/run_godot.py --path ../game --script "$repoPath/tests/$scenario.gd"
     if ($LASTEXITCODE -ne 0) { throw "Check failed: $scenario" }
 }
@@ -183,6 +183,8 @@ Menu layout may differ.
 Distributed under the MIT License.
 
 See [LICENSE](LICENSE) for more information.
+
+The contract bomb icon is [Dynamite by Delapouite](https://game-icons.net/1x1/delapouite/dynamite.html), licensed under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/). Contract warning sounds come from [Kenney Interface Sounds](https://kenney.nl/assets/interface-sounds), CC0. Source links and asset notices are included in `ChallengePack/src/assets/contracts/CREDITS.txt`. The installed game's shot animation and audio are used at runtime.
 
 # Disclaimer
 

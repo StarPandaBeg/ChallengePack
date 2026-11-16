@@ -24,9 +24,11 @@ func run():
 				port.active.contract = selection
 				port.active.pocket = 2
 				var before = f.loader.dialogue.texts.size()
+				port.contract_effects.armed.stop()
 				arm_contract()
 				await port.challenges.begin_round(f.rm)
 				var entry = port.challenges.state(f.rm)
+				check(port.contract_effects.armed.playing == (entry.contract != 0), "Arming sound did not match an actual contract")
 				if not has_items:
 					check(entry.contract == (2 if selection in [1, 3] else 0))
 					check(entry.paused_contract == (selection - 1 if selection in [2, 4] else 0))
@@ -41,6 +43,7 @@ func run():
 				await process_frame
 				await process_frame
 				var panel = port.challenge_hud
+				check(panel.bomb.visible == (entry.contract != 0), "Bomb is shown for an inactive or suspended contract")
 				check(panel.visible == not data.is_empty())
 				check(panel.position == Vector2(8, 8) and panel.size.x <= 224 and panel.size.y <= 70, "HUD exceeds its compact corner bounds: " + str(panel.size))
 				for node in panel.find_children("*", "Control", true, false):
