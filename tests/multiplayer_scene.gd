@@ -151,10 +151,10 @@ func run():
 	port.mp.presentation()
 	for item in handler.instance_property_array[1].user_inventory_instance_array:
 		if is_instance_valid(item): check(not item.visible, "Ending theft hides the target inventory again")
-	port.mp.rules.state(1).contract = port.mp.rules.Catalog.Contract.NO_INVERSION
+	port.mp.rules.state(0).contract = port.mp.rules.Catalog.Contract.NO_INVERSION
 	port.mp.ui.refresh()
 	await process_frame
-	var contract_card = port.mp.ui.hud.cards[1]
+	var contract_card = port.mp.ui.hud.cards[0]
 	check(contract_card.bomb.visible and contract_card.bomb.size == Vector2(14, 14), "Contract card keeps a small bomb icon")
 	check(root.get_visible_rect().encloses(contract_card.bomb.get_global_rect()), "Contract icon stays within screen")
 	check(contract_card.has_theme_stylebox_override("panel"), "Each contract has its own panel")
@@ -164,17 +164,37 @@ func run():
 		TranslationServer.set_locale(language)
 		port.mp.ui.refresh()
 		await process_frame
-		check(port.mp.ui.hud.cards.size() == 4, "Separate card for each personal contract")
+		check(port.mp.ui.hud.cards.size() == 1 and port.mp.ui.hud.cards.has(0), "Corner HUD contains only the local contract")
+		check(port.mp.ui.nameplates.labels.size() == 3, "Rival contracts appear above their names")
+		for socket in [1, 2, 3]:
+			var source = handler.instance_property_array[socket].state_manager.nametag
+			var label = port.mp.ui.nameplates.labels[socket]
+			check(label.get_parent() == source and label.position.y > 0, "Contract follows the native name above the head")
+			check(label.font == source.font and label.font_size == source.font_size, "Contract matches nickname typography")
+			check(label.get_node("Bomb").texture != null and label.get_node("Bomb").position.x < 0, "Small bomb precedes contract title")
+			check(not label.text.is_empty() and not label.text.begins_with("CP_"), "Overhead title is localized")
 		check(port.mp.ui.hud.get_child(0) == port.mp.ui.hud.cards[0], "Own contract appears first")
-		check(root.get_visible_rect().encloses(port.mp.ui.hud.get_global_rect()), "Four contract cards fit " + language)
+		check(root.get_visible_rect().encloses(port.mp.ui.hud.get_global_rect()), "Own contract card fits " + language)
 		var before_hint = port.mp.ui.hud.cards[0].get_meta("hint_label").text
 		port.mp.rules.state(0).history = [2]
 		port.mp.ui.refresh()
 		check(port.mp.ui.hud.cards[0].get_meta("hint_label").text != before_hint, "Insurance reminder updates after first item")
 		port.mp.rules.state(0).history = []
+	var rival_label = port.mp.ui.nameplates.labels[1]
+	var native_name = handler.instance_property_array[1].state_manager.nametag
+	native_name.hide()
+	check(not rival_label.is_visible_in_tree(), "Contract hides with native nickname")
+	native_name.show()
+	handler.instance_property_array[1].health_current = 0
+	port.mp.ui.refresh()
+	check(not port.mp.ui.nameplates.labels.has(1), "Dead rival has no overhead contract")
+	handler.instance_property_array[1].health_current = 3
+	port.mp.ui.refresh()
+	check(port.mp.ui.nameplates.labels.has(1), "Contract restored for living rival")
 	for p in handler.instance_property_array: port.mp.rules.state(p.socket_number).contract = 0
 	port.mp.ui.refresh()
 	check(port.mp.ui.hud.cards.is_empty(), "Expired contract cards are removed")
+	check(port.mp.ui.nameplates.labels.is_empty(), "Expired overhead contracts are removed")
 	port.mp.rules.state(1).contract = 0
 	port.mp.rules.settings.shells = 2
 	game.MAIN_active_sequence_dict = {"sequence": ["live", "blank", "blank"], "sequence_visible": ["live", "blank", "blank"], "sequence_in_shotgun": ["live", "blank", "blank"]}

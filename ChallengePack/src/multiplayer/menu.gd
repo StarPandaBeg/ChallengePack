@@ -10,6 +10,7 @@ var editor: PanelContainer
 var grid: GridContainer
 var status: Label
 var hud: VBoxContainer
+var nameplates: Node
 var ready_button: Button
 var open_button: Button
 var edit_button: Button
@@ -74,6 +75,9 @@ func setup(owner_session: Node):
 	hud = preload("contract_hud.gd").new()
 	add_child(hud)
 	hud.setup(session.port.mod_directory)
+	nameplates = preload("contract_nameplates.gd").new()
+	add_child(nameplates)
+	nameplates.setup(session.port.mod_directory)
 	theft_targets = HBoxContainer.new()
 	theft_targets.position = Vector2(18, 160)
 	theft_targets.theme = open_button.theme
@@ -279,7 +283,8 @@ func refresh():
 			if p.is_active: local = p
 	var limit = values.pocket if local != null else 0
 	var remaining = maxi(0, limit - session.rules.state(local.socket_number).used) if local != null else 0
-	hud.refresh_multiplayer(own_contracts + contracts, remaining, limit, session.port.localization)
+	hud.refresh_multiplayer(own_contracts, remaining, limit, session.port.localization)
+	nameplates.refresh(session.game.instance_handler.instance_property_array if session.in_game and is_instance_valid(session.game) else [], contracts)
 	theft_targets.position.y = hud.position.y + hud.size.y + 12 if hud.visible else 8
 	var candidates = []
 	if local != null and local.is_stealing_item and values.items == 1:
