@@ -20,7 +20,13 @@ func public_digest() -> String:
 	return var_to_bytes(owner.snapshot()).hex_encode().sha256_text()
 
 func apply_snapshot(data: Dictionary):
-	if not is_instance_valid(owner.game) or not data.get("players") is Dictionary or not data.get("health") is Dictionary: return
+	var Model = preload("snapshot_model.gd")
+	if not is_instance_valid(owner.game) or not Model.has_shape(data): return
+	var roster = {}
+	for player in owner.game.instance_handler.instance_property_array:
+		roster[player.socket_number] = player.health_on_round_start
+	if not Model.valid(data, roster): return
+	data = Model.new(data).to_dictionary()
 	owner.rules.charge = data.charge
 	owner.rules.turn = data.turn
 	owner.rules.players = data.players.duplicate(true)
