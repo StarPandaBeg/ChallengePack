@@ -63,7 +63,7 @@ Automated coverage added:
 Required real-network checks:
 
 1. Install the archive on 2, 3 and 4 separate Steam clients with the supported game version. Check create/search/join, ID paste, invitations and lobby links. Reject missing mods and mismatched fingerprints; check the 10-second handshake timeout.
-2. Have every player confirm rules, then change either ChallengePack or vanilla match settings. Readiness must reset. Verify guest controls stay read-only and guests keep their own saved preferences.
+2. Have every player press Ready directly in the lobby beside ChallengePack, then change either ChallengePack or vanilla match settings. Readiness must reset. The readiness action is absent from the settings submenu and during a match. Verify guest controls stay read-only and guests keep their own saved preferences.
 3. Finish representative matches with every mode, all twelve contracts, every shell type and all multiplayer items. Check last shells, timeouts, stealing, direction reversal, skipped turns, simultaneous deaths and round wins.
 4. Inspect hidden shells/items/health during intro, loading, free look, controller selection, theft cancellation/timeout, item use and spectating. Check each cover's placement from every seat at normal speed.
 5. Introduce latency/disconnection. Verify phase acknowledgments, no duplicate effects, resynchronization and timeout exit. A guest leaving must not reset the surviving match's session. Host departure ends the match; host change in a lobby requires renewed confirmation.

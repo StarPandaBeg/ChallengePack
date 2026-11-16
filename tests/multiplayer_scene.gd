@@ -28,6 +28,7 @@ func run():
 	check(is_instance_valid(port.mp.ui), "Lobby settings UI created")
 	port.mp.set_process(false) # Never create/join real lobbies from a fixture.
 	check(port.mp.ui.open_button.get_parent() == port.mp.lobby_ui.ui_parent_lobby_home, "Entry follows native lobby visibility")
+	check(port.mp.ui.ready_button.get_parent() == port.mp.lobby_ui.ui_parent_lobby_home, "Ready is a lobby action, outside the settings submenu")
 	for language in ["en", "ru"]:
 		TranslationServer.set_locale(language)
 		port.mp.ui.toggle()
@@ -37,16 +38,20 @@ func run():
 		check(root.get_visible_rect().encloses(port.mp.ui.panel.get_global_rect()), "Lobby menu fits " + language)
 		check(port.mp.ui.choices.size() == 9, "All nine settings")
 		check(port.mp.ui.backdrop.visible, "Settings block pointer input to the underlying lobby")
+		check(not port.mp.ui.ready_button.visible, "Lobby ready action stays outside modal settings")
+		check(root.get_visible_rect().encloses(port.mp.ui.ready_button.get_global_rect()), "Lobby ready action fits " + language)
 		check(port.mp.ui.choices.shells.get_theme_color("font_color") == Color(0, 1, 0), "Native green lobby theme")
 		port.mp.ui.open_editor()
 		await process_frame
 		check(root.get_visible_rect().encloses(port.mp.ui.editor.get_global_rect()), "Contract editor fits " + language)
 		check(port.mp.ui.checks.size() == 12, "All twelve contracts")
 		port.mp.ui.toggle()
+		check(port.mp.ui.ready_button.visible, "Ready available after closing settings")
 	change_scene_to_file("res://multiplayer/scenes/mp_main.tscn")
 	await process_frame
 	await process_frame
 	port.mp.set_process(false)
+	check(not port.mp.ui.ready_button.visible, "No readiness action during a match")
 	globals.mp_debugging = true # Suppress Steam sends, use actual scene resources.
 	globals.timeouts_enabled = false
 	steam.HOST_ID = steam.STEAM_ID

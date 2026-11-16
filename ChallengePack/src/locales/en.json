@@ -157,7 +157,7 @@
   "CP_MP_READY": "ready",
   "CP_MP_VERIFIED": "verified, not ready",
   "CP_MP_CHECKING": "checking mod…",
-  "CP_MP_READY_TOGGLE": "Ready / Not ready",
+  "CP_MP_READY_TOGGLE": "Ready",
   "CP_MP_GLASS": "magnifying glass",
   "CP_MP_REVEAL": "Peek at inventory",
   "CP_MP_TIP_SHELLS": "Show shell types, only their count, or hide the charge completely.",

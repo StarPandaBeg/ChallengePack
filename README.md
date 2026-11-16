@@ -80,7 +80,7 @@ Your choices are saved between launches. The compact two-column menu includes to
 
 ## Multiplayer
 
-Everyone needs the **same ChallengePack build**. Create a lobby, open **ChallengePack**, choose the rules and have every player press **Ready**. Only the host can edit settings; changes reset readiness. Solo and multiplayer preferences are saved separately.
+Everyone needs the **same ChallengePack build**. Create a lobby, open **ChallengePack** and choose the rules. Back in the lobby, every player presses **Ready** beside ChallengePack; the host then starts the match. Only the host can edit settings; changes reset readiness. Solo and multiplayer preferences are saved separately.
 
 All nine modes are available, with a few multiplayer twists:
 

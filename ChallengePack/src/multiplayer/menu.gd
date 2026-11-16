@@ -48,6 +48,20 @@ func setup(owner_session: Node):
 	else:
 		add_child(open_button)
 	connect_button_audio(open_button)
+	ready_button = Button.new()
+	ready_button.position = Vector2(300, 345)
+	ready_button.theme = open_button.theme
+	ready_button.add_theme_font_size_override("font_size", 39)
+	ready_button.scale = Vector2(0.395638, 0.618437)
+	ready_button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	ready_button.pressed.connect(func(): session.ready_toggle(); refresh())
+	if is_instance_valid(lobby_button_parent):
+		lobby_button_parent.add_child(ready_button)
+		open_button.focus_neighbor_right = open_button.get_path_to(ready_button)
+		ready_button.focus_neighbor_left = ready_button.get_path_to(open_button)
+	else:
+		add_child(ready_button)
+	connect_button_audio(ready_button)
 	backdrop = ColorRect.new()
 	backdrop.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	backdrop.color = Color(0, 0, 0, 0.98)
@@ -123,9 +137,6 @@ func setup(owner_session: Node):
 	status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	status.add_theme_font_size_override("font_size", 13)
 	column.add_child(status)
-	ready_button = Button.new()
-	ready_button.pressed.connect(session.ready_toggle)
-	column.add_child(ready_button)
 	var close = Button.new()
 	close.text = text("CP_DONE")
 	close.pressed.connect(toggle)
@@ -224,7 +235,9 @@ func refresh():
 		lines.append(member.steam_name + ": " + text("CP_MP_READY" if peer.get("ready", false) else ("CP_MP_VERIFIED" if peer.get("verified", false) else "CP_MP_CHECKING")))
 	status.text = "\n".join(lines)
 	if session.in_game: status.text = text("CP_MP_RULES_LOCKED")
-	ready_button.text = text("CP_MP_READY_TOGGLE")
+	var local_ready = session.peers.get(GlobalSteam.STEAM_ID, {}).get("ready", false)
+	ready_button.text = ("[X] " if local_ready else "[ ] ") + text("CP_MP_READY_TOGGLE").to_upper()
+	ready_button.visible = not session.in_game and not shown
 	ready_button.disabled = session.in_game or session.loading or session.session.is_empty()
 	for id in checks:
 		checks[id].text = contract_text(id)
@@ -316,6 +329,7 @@ func toggle():
 	editor.hide()
 	panel.visible = shown
 	backdrop.visible = shown
+	ready_button.visible = not session.in_game and not shown
 	if shown:
 		choices.shells.grab_focus()
 		if session.in_game and is_instance_valid(session.game):
@@ -430,3 +444,5 @@ func _exit_tree():
 	# and visibility; release it when this overlay is replaced within the scene.
 	if is_instance_valid(lobby_button_parent) and is_instance_valid(open_button):
 		open_button.queue_free()
+	if is_instance_valid(lobby_button_parent) and is_instance_valid(ready_button):
+		ready_button.queue_free()
