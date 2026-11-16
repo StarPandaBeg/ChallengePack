@@ -136,7 +136,7 @@ Run the complete regression suite from the repository root:
 python tools/check.py
 ```
 
-This runs 23 engine scenarios and the installer suite. Logs and a JSON summary are written to `tests/.scratch/check/`. A focused run accepts scenario names, for example `python tools/check.py multiplayer multiplayer_protocol multiplayer_scene --skip-installer`.
+This runs 24 engine scenarios and the installer suite. Logs and a JSON summary are written to `tests/.scratch/check/`. A focused run accepts scenario names, for example `python tools/check.py multiplayer multiplayer_protocol multiplayer_scene --skip-installer`.
 
 Use `--game-exe "D:/.../Buckshot Roulette.exe"` to check installed Steam resources instead of the extracted project. These fixtures do not install the mod or join real Steam lobbies. Each engine scenario has a 240-second deadline.
 
@@ -154,3 +154,5 @@ The deterministic `behavior_trace` fixture compares seeded results against the p
 Refactoring verification on 2026-11-16: all 23 Godot 4.1.1 scenarios and seven installer cases passed. Production GDScript decreased from 4,391 lines in 35 files at `86b383b` to 4,243 lines in 31 files. This is still 161 lines above the 4,082-line pre-refactoring baseline; the refactor is not presented as a completed reduction below that baseline. User screenshots, prepared resources and news-preview parameters were unchanged.
 
 The extracted release also passed `release_probe.gd` through the installed Steam executable: all solo/network adapters compiled and import-free mod assets loaded (`CP_RELEASE_OK`). No real multi-client Steam match was run.
+
+Solo hidden-health fix: `hidden_health.gd` first reproduced the missing round indicator on the actual `main.tscn` scene. After the fix it passed in Godot 4.1.1 and through the Steam executable, covering normal/endless mode, HP group concealment after display updates, and unchanged native round-indicator visibility. The existing `challenges` matrix also passed.

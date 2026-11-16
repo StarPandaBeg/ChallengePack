@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SCENARIOS = (
     "settings_rules", "localization", "probe", "gameplay", "contract_rules", "contract_chance",
     "contract_editor", "challenges", "shot_contracts", "heal_bullets",
-    "lethal_bullets", "hidden_items", "protectors", "failure_screen",
+    "lethal_bullets", "hidden_health", "hidden_items", "protectors", "failure_screen",
     "contract_hud", "contract_effects", "whats_new", "smoke",
     "multiplayer", "multiplayer_protocol", "multiplayer_scene", "behavior_trace", "architecture",
 )

@@ -51,9 +51,10 @@ func health_counter(f: Dictionary) -> Node:
 	var counter = load("res://scripts/HealthCounter.gd").new()
 	counter.roundManager = f.rm
 	counter.uiparent = child(f.root, Node3D.new())
+	counter.uiArray.assign([child(counter.uiparent, Node3D.new()), child(counter.uiparent, Node3D.new())])
 	for i in range(7):
-		counter.symbolArray_player.append(child(counter.uiparent, MeshInstance3D.new()))
-		counter.symbolArray_enemy.append(child(counter.uiparent, MeshInstance3D.new()))
+		counter.symbolArray_player.append(child(counter.uiArray[0], MeshInstance3D.new()))
+		counter.symbolArray_enemy.append(child(counter.uiArray[1], MeshInstance3D.new()))
 	counter.animator_flickerPlayer = animator(f.root, ["RESET", "flicker digit"])
 	counter.animator_flickerEnemy = animator(f.root, ["RESET", "flicker digit"])
 	f.rm.health_player = 2
@@ -110,7 +111,8 @@ func run():
 					check(entry.used == 0)
 					var counter = health_counter(f)
 					counter.UpdateDisplay()
-					check(counter.uiparent.visible == (hidden == 0))
+					check(counter.uiparent.visible)
+					for group in counter.uiArray: check(group.visible == (hidden == 0))
 					check(f.rm.health_player == 2 and f.rm.health_opponent == 3)
 					var names = ["beer", "cigarettes", "cigarettes", "handcuffs"]
 					supply_items(f, names)

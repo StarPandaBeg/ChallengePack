@@ -122,8 +122,8 @@ func fail_contract(manager: Node):
 	port.contract_effects.execute(manager, contract_key(entry.contract))
 
 func hide_health(counter: Node):
-	if mode("health") == 1 and counter.uiparent != null:
-		counter.uiparent.visible = false
+	if mode("health") == 1:
+		for group in counter.uiArray: group.hide()
 
 func mirror_inventory(manager: Node) -> Array:
 	var result = []
