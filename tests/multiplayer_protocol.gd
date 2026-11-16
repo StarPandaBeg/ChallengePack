@@ -179,6 +179,13 @@ func run():
 	handler.instance_property_array = [actor, rival]
 	state.instance_handler = handler
 	host.game = state
+	check(host.TIMEOUT == 30000, "Synchronization allows thirty seconds")
+	host.queued_stage = "resume"
+	check(await host.stage("resume"), "Queued acknowledgments are drained before waiting or timeout")
+	check(host.drain_count > 0, "Stage actively processes the receive queue")
+	client.game = state
+	client.queued_stage = "resume"
+	check(await client.stage("resume"), "Client drains queued stage release before waiting or timeout")
 	host.rules.charge = 2
 	host.rules.turn = 5
 	var request = {"packet category": "MP_PacketVerification", "packet alias": "shoot user request", "packet_id": 12, "sent_from_socket": 0, "socket_to_shoot": 1}
@@ -226,6 +233,17 @@ func run():
 	check(host.verify(null, item).is_empty(), "Forged item ID rejected")
 	item.local_grid_index = 8
 	check(host.verify(null, item).is_empty(), "Invalid grid slot rejected")
+	actor.is_viewing_jammer = true
+	var jam = {"packet alias": "secondary item interaction request", "packet_id": 24, "sent_from_socket": 0, "item_id": 3, "item_selected_socket_number": 1}
+	# Use the alias registered by the game rather than trusting a client string.
+	jam["packet alias"] = host.REQUESTS[24]
+	check(not host.verify(null, jam).is_empty(), "Living jammer target accepted")
+	rival.is_jammed = true
+	check(host.verify(null, jam).is_empty(), "Already jammed target rejected")
+	check(host.native_outbox.size() == 1 and host.native_outbox[0].item_selected_socket_number == -1, "Stale jammer target receives synchronized cancellation")
+	actor.is_viewing_jammer = false
+	host.verify(null, jam)
+	check(host.native_outbox.size() == 1, "Duplicate jammer confirmation cannot exit twice")
 	steam.STEAM_ID = previous_me
 	steam.HOST_ID = previous_host
 	host.free()

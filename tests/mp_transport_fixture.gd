@@ -7,6 +7,20 @@ var outbox = []
 var stopped = ""
 var rejected = []
 var penalties = 0
+var queued_stage = ""
+var drain_count = 0
+var native_outbox = []
+
+func drain_packets():
+	drain_count += 1
+	if not queued_stage.is_empty():
+		if local_host:
+			stages[queued_stage][22] = true
+		else:
+			released[queued_stage] = true
+		queued_stage = ""
+
+func broadcast_native(data: Dictionary): native_outbox.append(data.duplicate(true))
 
 func host() -> bool: return local_host
 func ids() -> Array: return test_members

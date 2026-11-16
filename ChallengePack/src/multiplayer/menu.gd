@@ -14,6 +14,8 @@ var ready_button: Button
 var open_button: Button
 var edit_button: Button
 var first_player: OptionButton
+var first_player_group: VBoxContainer
+var first_player_label: Label
 var checks = {}
 var choices = {}
 var chance: HSlider
@@ -113,11 +115,16 @@ func setup(owner_session: Node):
 			edit_button.add_theme_font_size_override("font_size", 14)
 			edit_button.pressed.connect(open_editor)
 			cell.add_child(edit_button)
+	first_player_group = VBoxContainer.new()
+	first_player_group.custom_minimum_size.x = 400
+	grid.add_child(first_player_group)
+	first_player_label = Label.new()
+	first_player_label.add_theme_font_size_override("font_size", 13)
+	first_player_group.add_child(first_player_label)
 	first_player = OptionButton.new()
-	first_player.custom_minimum_size.x = 400
 	first_player.get_popup().theme = panel.theme
 	first_player.item_selected.connect(select_player)
-	grid.add_child(first_player)
+	first_player_group.add_child(first_player)
 	status = Label.new()
 	status.custom_minimum_size = Vector2(800, 0)
 	status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -214,7 +221,9 @@ func refresh():
 			first_player.set_item_metadata(first_player.item_count - 1, member.steam_id)
 	for index in first_player.item_count:
 		if first_player.get_item_metadata(index) == values.first_player: first_player.select(index)
-	first_player.disabled = not editable or values.turn != 1
+	first_player_group.visible = values.turn == 1
+	first_player_label.text = text("CP_MP_STARTER_LABEL")
+	first_player.disabled = not editable
 	var lines = []
 	for member in GlobalSteam.LOBBY_MEMBERS:
 		var peer = session.peers.get(member.steam_id, {})

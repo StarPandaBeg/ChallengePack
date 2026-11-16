@@ -144,7 +144,7 @@
   "CP_MP_MISMATCH": "To lobby wymaga zgodnych wersji ChallengePack i gry.",
   "CP_MP_STOPPED": "Gra wieloosobowa przerwana: %s",
   "CP_MP_HOST_LEFT": "Gospodarz opuścił rozgrywkę.",
-  "CP_MP_TIMEOUT": "Gracze nie zsynchronizowali się w ciągu 10 sekund.",
+  "CP_MP_TIMEOUT": "Gracze nie zsynchronizowali się w ciągu %s sekund.",
   "CP_MP_NOT_READY": "Wszyscy gracze muszą potwierdzić aktualne zasady ChallengePack.",
   "CP_MP_CONTRACT_FAILED": "%s złamał kontrakt i odpada do końca rundy.",
   "CP_MP_NO_JAMMER": "Bez zakłócaczy",
@@ -187,5 +187,6 @@
   "CP_MP_BRIEF_TWO_FOR_ONE": "Twoje obrażenia i leczenie ×2",
   "CP_MP_BRIEF_LEAKY_GUN": "Rywal → ty; ty → losowy rywal",
   "CP_MP_BRIEF_NO_JAMMER": "Nie używaj zakłócacza",
-  "CP_MP_BRIEF_NO_GLASS": "Nie używaj lupy"
+  "CP_MP_BRIEF_NO_GLASS": "Nie używaj lupy",
+  "CP_MP_STARTER_LABEL": "Gracz rozpoczynający"
 }

@@ -40,6 +40,12 @@ func run():
 		await process_frame
 		check(root.get_visible_rect().encloses(port.mp.ui.panel.get_global_rect()), "Lobby menu fits " + language)
 		check(port.mp.ui.choices.size() == 9, "All nine settings")
+		for mode in 4:
+			port.mp.rules.settings.turn = mode
+			port.mp.ui.refresh()
+			check(port.mp.ui.first_player_group.visible == (mode == 1), "Starter selection only appears for fixed starter")
+		check(not port.mp.ui.first_player_label.text.is_empty(), "Starter selection has a label")
+		port.mp.rules.settings.turn = 0
 		check(port.mp.ui.backdrop.visible, "Settings block pointer input to the underlying lobby")
 		check(not port.mp.ui.ready_button.visible, "Lobby ready action stays outside modal settings")
 		check(root.get_visible_rect().encloses(port.mp.ui.ready_button.get_global_rect()), "Lobby ready action fits " + language)
@@ -75,6 +81,37 @@ func run():
 		p.health_counter.prev_health = 3
 		p.health_on_round_start = 4
 	check(handler.instance_property_array.size() == 4, "Four player instances")
+	port.mp.rules.settings.health = 1
+	game.MAIN_active_round_index = 1
+	for p in handler.instance_property_array:
+		var counter = p.health_counter
+		counter.EnableDisplay()
+		check(counter.ui_main_parent.visible, "Hidden HP preserves the screen")
+		check(counter.ui_round_indicator_base.visible, "Hidden HP preserves the round")
+		check(counter.ui_round_indicator_selector.position == counter.pos_array_rounds[1].position, "Current round is selected")
+		for charges in [counter.ui_charge_array, counter.ui_charge_array_temp, counter.ui_charge_array_side_left, counter.ui_charge_array_side_right]:
+			if not charges.is_empty(): check(not charges[0].get_parent().visible, "HP groups stay hidden when display flashes")
+	var jammer_actor = handler.instance_property_array[0]
+	jammer_actor.jammer_manager.Jammer_Check()
+	for frame in 40:
+		await process_frame
+		check(not jammer_actor.health_counter.ui_charge_array[0].is_visible_in_tree(), "Jammer flicker never exposes HP")
+	jammer_actor.health_counter.EnableDisplay()
+	jammer_actor.is_on_jammer_selection = true
+	jammer_actor.jammer_manager.selected_target_is_valid = false
+	jammer_actor.jammer_manager.ConfirmButton()
+	check(jammer_actor.is_on_jammer_selection, "Invalid confirmation preserves jammer selection")
+	game.MAIN_active_current_turn_socket = 0
+	jammer_actor.is_viewing_jammer = true
+	jammer_actor.is_on_secondary_interaction = true
+	jammer_actor.is_interacting_with_item = true
+	port.mp.busy = true
+	check(port.mp.before_pipe(port.mp.packets, {"packet category": "MP_UserInstanceProperties", "packet alias": "timeout exceeded", "timeout_type": "jammer", "socket_number": 0, "ending_turn_after_timeout": false}), "Native jammer timeout accepted")
+	check(not port.mp.busy and jammer_actor.has_turn, "Jammer timeout releases the host action lock")
+	check(not jammer_actor.is_viewing_jammer and not jammer_actor.is_on_secondary_interaction and not jammer_actor.is_on_jammer_selection, "Jammer timeout clears selection flags")
+	port.mp.rules.settings.health = 0
+	for p in handler.instance_property_array: port.mp.health_visibility(p.health_counter)
+	game.MAIN_active_round_index = 0
 	port.mp.rules.settings.mirror = 1
 	game.MAIN_active_num_of_items_to_grab = 4
 	port.mp.prepare_mirror(game.round_manager)

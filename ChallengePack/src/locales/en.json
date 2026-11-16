@@ -144,7 +144,7 @@
   "CP_MP_MISMATCH": "This lobby requires the same ChallengePack and game versions.",
   "CP_MP_STOPPED": "Multiplayer stopped: %s",
   "CP_MP_HOST_LEFT": "The host left the match.",
-  "CP_MP_TIMEOUT": "Players did not synchronize within 10 seconds.",
+  "CP_MP_TIMEOUT": "Players did not synchronize within %s seconds.",
   "CP_MP_NOT_READY": "All players must confirm the current ChallengePack rules.",
   "CP_MP_CONTRACT_FAILED": "%s broke their contract and is out of this round.",
   "CP_MP_NO_JAMMER": "No Jammers",
@@ -187,5 +187,6 @@
   "CP_MP_BRIEF_TWO_FOR_ONE": "Your damage and healing ×2",
   "CP_MP_BRIEF_LEAKY_GUN": "Rival → you; you → random rival",
   "CP_MP_BRIEF_NO_JAMMER": "Do not use a jammer",
-  "CP_MP_BRIEF_NO_GLASS": "Do not use a magnifying glass"
+  "CP_MP_BRIEF_NO_GLASS": "Do not use a magnifying glass",
+  "CP_MP_STARTER_LABEL": "Starting player"
 }

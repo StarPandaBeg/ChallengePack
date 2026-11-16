@@ -16,6 +16,7 @@ const PATHS = {
 	"shell": "res://multiplayer/scripts/global scripts/MP_ShellBranch.gd",
 	"loader": "res://multiplayer/scripts/global scripts/MP_ShellLoader.gd",
 	"health": "res://multiplayer/scripts/user scripts/MP_HealthCounter.gd",
+	"jammer": "res://multiplayer/scripts/user scripts/MP_Jammer.gd",
 	"phone": "res://multiplayer/scripts/user scripts/MP_BurnerPhone.gd",
 	"lobby_ui": "res://multiplayer/scripts/global scripts/MP_LobbyUI.gd",
 	"item_manager": "res://multiplayer/scripts/user scripts/MP_ItemManager.gd",
@@ -87,7 +88,7 @@ func make_body(key: String, source: String) -> String:
 			send = replace(send, "\tif GlobalVariables.mp_debugging: return", "\tcp_port.mp.stamp_event(packet_data)\n\tif GlobalVariables.mp_debugging: return")
 			var pipe = method(source, "PipeData")
 			pipe = replace(pipe, "\tif GlobalVariables.printing_packets:", "\tif not cp_port.mp.before_pipe(self, dict): return\n\tif GlobalVariables.printing_packets:")
-			return read + send + pipe + "\nfunc _ready():\n\tcp_port.mp.register_packets(self)\n\tsuper()\n\nfunc send_p2p_packet_directly_to_host(_from: int, data: Dictionary):\n\tcp_port.mp.direct_request(self, data)\n"
+			return read + send + pipe + "\nfunc _ready():\n\tprocess_priority = -100\n\tcp_port.mp.register_packets(self)\n\tsuper()\n\nfunc _process(_delta):\n\tcp_port.mp.drain_packets()\n\nfunc send_p2p_packet_directly_to_host(_from: int, data: Dictionary):\n\tcp_port.mp.direct_request(self, data)\n"
 		"lobby":
 			return "\nfunc join_lobby(id: int):\n\tif not await cp_port.mp.check_lobby(id):\n\t\tcp_port.mp.notice(\"CP_MP_MISMATCH\")\n\t\treturn\n\tsuper(id)\n"
 		"controller":
@@ -147,7 +148,9 @@ func make_body(key: String, source: String) -> String:
 		"lobby_ui":
 			return "\nfunc CheckStartButton():\n\tsuper()\n\tui_button_start_game.visible = ui_button_start_game.visible and cp_port.mp.can_start()\n"
 		"health":
-			return "\nfunc _process(_delta):\n\tif cp_port.mp.rules.settings.health == 1:\n\t\tui_main_parent.hide()\n"
+			return "\nfunc _ready():\n\tsuper()\n\tcp_port.mp.health_visibility(self)\n\nfunc _process(_delta):\n\tcp_port.mp.health_visibility(self)\n\nfunc EnableDisplay():\n\tsuper()\n\tcp_port.mp.health_visibility(self)\n"
+		"jammer":
+			return "\nfunc ConfirmButton():\n\tif not selected_target_is_valid: return\n\tawait super()\n"
 	return ""
 
 func guard_async(body: String) -> String:

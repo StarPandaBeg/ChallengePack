@@ -4,7 +4,8 @@ const Rules = preload("rules.gd")
 const Settings = preload("settings.gd")
 const Effects = preload("../contract_effects.gd")
 const PROTOCOL = 1
-const TIMEOUT = 30000
+const TIMEOUT_SECONDS = 30
+const TIMEOUT = TIMEOUT_SECONDS * 1000
 const REQUESTS = {10: "pickup shotgun request", 12: "shoot user request", 15: "look at user request", 17: "grab item request", 19: "place item request", 22: "interact with item request", 24: "secondary item interaction request"}
 var port: Node
 var settings = Settings.new()
@@ -54,6 +55,7 @@ var hidden = {}
 var stock_digest = ""
 var expected_stock_digest = ""
 var startup_deadline = 0
+var draining_packets = false
 
 func setup(parent_port: Node):
 	port = parent_port
@@ -98,12 +100,14 @@ func fail(reason: String):
 
 func _process(_delta):
 	if not compatible or not is_instance_valid(packets): return
+	drain_packets()
+	if not is_instance_valid(packets): return
 	if in_game and is_instance_valid(game): presentation()
 	var now = Time.get_ticks_msec()
 	if in_game and startup_deadline > 0 and now > startup_deadline:
 		startup_deadline = 0
 		push_warning("[ChallengePack MP] scene startup timed out; arrived=%s; expected=%s; stages=%s" % [scene_ready.keys(), ids(), stages])
-		fail(port.localization.text("CP_MP_TIMEOUT"))
+		fail(port.localization.text("CP_MP_TIMEOUT", [TIMEOUT_SECONDS]))
 		return
 	if now - last_tick < 200: return
 	last_tick = now
@@ -153,12 +157,19 @@ func _process(_delta):
 					peers[id].deadline = now + TIMEOUT
 				else: send("hello", identity(), id)
 		if not barrier.is_empty() and now > barrier_deadline:
-			fail(port.localization.text("CP_MP_TIMEOUT"))
+			fail(port.localization.text("CP_MP_TIMEOUT", [TIMEOUT_SECONDS]))
 	elif snapshot_deadline > 0 and now > snapshot_deadline:
-		fail(port.localization.text("CP_MP_TIMEOUT"))
+		fail(port.localization.text("CP_MP_TIMEOUT", [TIMEOUT_SECONDS]))
 	if not host() and peers.has(GlobalSteam.HOST_ID) and not peers[GlobalSteam.HOST_ID].verified and now > peers[GlobalSteam.HOST_ID].deadline:
 		fail(port.localization.text("CP_MP_MISMATCH"))
 	if is_instance_valid(ui): ui.refresh()
+
+func drain_packets():
+	if draining_packets or not is_instance_valid(packets) or GlobalSteam.LOBBY_ID == 0: return
+	if Steam.getAvailableP2PPacketSize(0) == 0: return
+	draining_packets = true
+	packets.read_all_p2p_packets()
+	draining_packets = false
 
 func receive_native(manager: Node, data: Dictionary, remote: int):
 	if not remote in ids(): return
@@ -504,6 +515,8 @@ func before_pipe(_manager: Node, data: Dictionary) -> bool:
 		if host(): stamp_event(data)
 		if not accept_event(data): return false
 	if data.get("packet category") == "MP_PacketVerification" and sender == 0: return false
+	if data.get("packet alias") == "timeout exceeded" and data.get("timeout_type") == "jammer":
+		finish_jammer_selection(data.get("socket_number", -1), not data.get("ending_turn_after_timeout", false))
 	if data.has("cp_players"): rules.players = data.cp_players.duplicate(true)
 	return not blocked
 
@@ -515,12 +528,17 @@ func stage(token: String) -> bool:
 		if not stages.has(token): stages[token] = {}
 		stages[token][GlobalSteam.STEAM_ID] = true
 		while is_instance_valid(game) and not blocked and captured_epoch == epoch:
+			# process_frame resumes before node processing after focus returns.
+			# Consume queued acknowledgments before expiring a wall-clock deadline.
+			drain_packets()
+			if blocked or captured_epoch != epoch or not stages.has(token): return false
 			var complete = true
 			for id in ids():
 				if not stages[token].has(id): complete = false
 			if complete: break
 			if Time.get_ticks_msec() > deadline:
-				fail(port.localization.text("CP_MP_TIMEOUT"))
+				push_warning("[ChallengePack MP] stage timeout: %s; ready=%s; expected=%s" % [token, stages[token].keys(), ids()])
+				fail(port.localization.text("CP_MP_TIMEOUT", [TIMEOUT_SECONDS]))
 				return false
 			await get_tree().process_frame
 		send("stage_release", {"token": token})
@@ -528,11 +546,15 @@ func stage(token: String) -> bool:
 		send("stage_ready", {"token": token, "identity": identity(), "rules": rules.settings, "vanilla": vanilla_digest()}, GlobalSteam.HOST_ID)
 		var retry_at = Time.get_ticks_msec() + 500
 		while not released.has(token) and not blocked and captured_epoch == epoch:
+			drain_packets()
+			if released.has(token): break
+			if blocked or captured_epoch != epoch: return false
 			if Time.get_ticks_msec() >= retry_at:
 				send("stage_ready", {"token": token, "identity": identity(), "rules": rules.settings, "vanilla": vanilla_digest()}, GlobalSteam.HOST_ID)
 				retry_at = Time.get_ticks_msec() + 500
 			if Time.get_ticks_msec() > deadline:
-				fail(port.localization.text("CP_MP_TIMEOUT"))
+				push_warning("[ChallengePack MP] stage release timed out: " + token)
+				fail(port.localization.text("CP_MP_TIMEOUT", [TIMEOUT_SECONDS]))
 				return false
 			await get_tree().process_frame
 	var complete = not blocked and is_instance_valid(game) and captured_epoch == epoch
@@ -724,7 +746,12 @@ func verify(_verifier: Node, data: Dictionary) -> Dictionary:
 				return {}
 		24:
 			var target = property_for(data.get("item_selected_socket_number", -1))
-			if not active or not p.is_viewing_jammer or data.get("item_id") != 3 or target == null or target == p or target.health_current <= 0 or target.is_jammed: return {}
+			if not active or not p.is_viewing_jammer or data.get("item_id") != 3: return {}
+			if target == null or target == p or target.health_current <= 0 or target.is_jammed:
+				# The UI locks while confirmation travels to the host. Return the
+				# consumed jammer through the regular synchronized exit animation.
+				broadcast_native({"packet category": "MP_UserInstanceProperties", "packet alias": "secondary item interaction", "sent_from": "host", "packet_id": 25, "socket_number": p.socket_number, "item_id": 3, "has_exit_animation": true, "item_selected_socket_number": -1, "item_selected_local_grid_index": 0, "ending_turn_after_item_use": false})
+				return {}
 			data["has_exit_animation"] = true
 			data["item_selected_local_grid_index"] = 0
 		_:
@@ -827,6 +854,40 @@ func continue_turn(socket: int, after_shot: bool = false):
 		GlobalVariables.cursor_state_after_toggle = true
 		p.cursor.SetCursor(true, true)
 
+func finish_jammer_selection(socket: int, resume: bool):
+	var p = property_for(socket)
+	if p == null: return
+	p.is_viewing_jammer = false
+	p.is_on_jammer_selection = false
+	p.is_on_secondary_interaction = false
+	p.is_interacting_with_item = false
+	p.jammer_manager.looping = false
+	if p.is_active: p.jammer_manager.SetJammerControllerPrompts(false)
+	if resume and game.MAIN_active_current_turn_socket == socket and p.health_current > 0:
+		p.has_turn = true
+	busy = false
+	print("[ChallengePack MP] jammer selection finished; socket=", socket, "; resume=", resume)
+
+func health_visibility(counter: Node):
+	var concealed = rules.settings.health == 1
+	# Hide stable HP parents, so EnableDisplay and jammer flicker cannot reveal
+	# individual charges. The round indicator belongs to a separate branch.
+	for charges in [counter.ui_charge_array, counter.ui_charge_array_temp, counter.ui_charge_array_side_left, counter.ui_charge_array_side_right]:
+		if charges.is_empty(): continue
+		var group = charges[0].get_parent()
+		if concealed:
+			if not group.has_meta("cp_health_visible"): group.set_meta("cp_health_visible", group.visible)
+			group.hide()
+		elif group.has_meta("cp_health_visible"):
+			group.visible = group.get_meta("cp_health_visible")
+			group.remove_meta("cp_health_visible")
+	if concealed and counter.properties.health_current > 0 and not counter.ui_parent_winner.visible:
+		var round_index = game.MAIN_active_round_index
+		if round_index >= 0 and not counter.pos_array_rounds.is_empty():
+			counter.ui_round_indicator_selector.position = counter.pos_array_rounds[mini(round_index, counter.pos_array_rounds.size() - 1)].position
+			counter.ui_round_indicator_base.show()
+			counter.ui_round_indicator_selector.show()
+
 func finish_shot(shoot: Node, packet: Dictionary):
 	var token = "shot-%s" % packet.get("cp_event", 0)
 	if completed_actions.has(token): return
@@ -858,7 +919,7 @@ func finish_item(interaction: Node, packet: Dictionary):
 	if captured_epoch != epoch or not is_instance_valid(interaction): return
 	var p = interaction.properties
 	p.is_interacting_with_item = false
-	if packet.item_id == 3: p.is_on_secondary_interaction = false
+	if packet.item_id == 3: finish_jammer_selection(p.socket_number, not packet.ending_turn_after_item_use)
 	busy = false
 	if not host(): return
 	flush_snapshots()
