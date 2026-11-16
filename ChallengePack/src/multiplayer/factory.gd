@@ -38,8 +38,6 @@ func prepare(directory: String) -> bool:
 	var globals = FileAccess.get_file_as_string("res://scripts/GlobalVariables.gd").replace("\r\n", "\n")
 	if not 'var currentVersion_nr = "v2.2.0"' in globals or not 'var currentVersion_hotfix = 6\n' in globals:
 		return fail("Multiplayer requires Buckshot Roulette 2.2.0.6")
-	if not load(directory.path_join("assets/protectors.res")) is PackedScene:
-		return fail("Missing multiplayer protector resource")
 	if Image.load_from_file(directory.path_join("assets/contracts/c4.png")) == null:
 		return fail("Missing contract HUD image")
 	for name in ["armed.wav", "breach.wav"]:
@@ -60,7 +58,7 @@ func prepare(directory: String) -> bool:
 		if script.reload() != OK: return fail("Cannot compile multiplayer adapter: " + key)
 		scripts[path] = script
 		proof += source.sha256_text() + body.sha256_text()
-	for file in ["rules.gd", "session.gd", "settings.gd", "menu.gd", "../challenges.gd", "../heal_bullets.gd", "../contract_effects.gd", "../challengepack.gd", "../patch_factory.gd", "../online_guard.gd"]:
+	for file in ["rules.gd", "session.gd", "settings.gd", "menu.gd", "../challenge_hud.gd", "../challenges.gd", "../heal_bullets.gd", "../contract_effects.gd", "../challengepack.gd", "../patch_factory.gd", "../online_guard.gd"]:
 		proof += FileAccess.get_file_as_string(directory.path_join("multiplayer/" + file)).replace("\r\n", "\n").sha256_text()
 	fingerprint = proof.sha256_text()
 	return true
@@ -102,6 +100,10 @@ func make_body(key: String, source: String) -> String:
 			var gen = method(source, "GenerateRandomSequence")
 			gen += "\tcp_port.mp.generate_sequence(self)\n"
 			var load_routine = method(source, "LoadShotgun")
+			load_routine = replace(load_routine, '\tintermed.intermed_properties.cam.BeginLerp("sequence socket_" + str(intermed.intermed_properties.socket_number), true)', '\tif cp_port.mp.rules.settings.shells != 2:\n\t\tintermed.intermed_properties.cam.BeginLerp("sequence socket_" + str(intermed.intermed_properties.socket_number), true)')
+			load_routine = replace(load_routine, 'create_timer(game_state.MAIN_sequence_visible_duration, false)', 'create_timer(.25 if cp_port.mp.rules.settings.shells == 2 else game_state.MAIN_sequence_visible_duration, false)')
+			load_routine = replace(load_routine, 'create_timer(1.3, false)', 'create_timer(.35 if cp_port.mp.rules.settings.shells == 2 else 1.3, false)')
+			load_routine = replace(load_routine, 'create_timer(.4, false)', 'create_timer(.2 if cp_port.mp.rules.settings.shells == 2 else .4, false)')
 			load_routine = replace(load_routine, '\tanimator_shell_sequence_machine.play("move up")', '\tif cp_port.mp.rules.settings.shells != 2:\n\t\tanimator_shell_sequence_machine.play("move up")')
 			load_routine = replace(load_routine, '\tspeaker_sequence_machine.play()\n\tawait', '\tif cp_port.mp.rules.settings.shells != 2: speaker_sequence_machine.play()\n\tawait')
 			load_routine = replace(load_routine, '\tspeaker_sequence_machine.play()\n\tanimator', '\tif cp_port.mp.rules.settings.shells != 2: speaker_sequence_machine.play()\n\tanimator')

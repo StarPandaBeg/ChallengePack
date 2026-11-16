@@ -11,6 +11,9 @@ func check(ok: bool, reason: String):
 		push_error(reason)
 
 func run():
+	# This scene uses fake members; queued callbacks from a real Steam lobby
+	# must not overwrite their IDs or remove instances during the fixture.
+	Steam.set_block_signals(true)
 	var globals = root.get_node("GlobalVariables")
 	var steam = root.get_node("GlobalSteam")
 	var installed = root.get_node_or_null("ChallengePack")
@@ -52,6 +55,7 @@ func run():
 	await process_frame
 	port.mp.set_process(false)
 	check(not port.mp.ui.ready_button.visible, "No readiness action during a match")
+	check(not port.mp.ui.open_button.visible, "No ChallengePack title over gameplay")
 	globals.mp_debugging = true # Suppress Steam sends, use actual scene resources.
 	globals.timeouts_enabled = false
 	steam.HOST_ID = steam.STEAM_ID
@@ -64,7 +68,6 @@ func run():
 	handler.SetupInstances_test(players)
 	port.mp.rules.settings.items = 1
 	port.mp.presentation()
-	check(port.mp.covers.is_empty(), "Protectors wait for deferred player initialization")
 	await process_frame
 	await process_frame
 	for p in handler.instance_property_array:
@@ -81,29 +84,32 @@ func run():
 		check(p.shotgun.has_meta("challengepack_hooked"), "Shotgun adapter attached")
 	port.mp.rules.settings.items = 1
 	port.mp.presentation()
-	check(port.mp.covers.size() == 3, "One protector pair per rival")
 	for local_socket in 4:
 		for p in handler.instance_property_array: p.is_active = p.socket_number == local_socket
 		port.mp.presentation()
-		check(port.mp.covers.size() == 3 and not port.mp.covers.has(local_socket), "Only rivals covered from seat %s" % local_socket)
+		check(current_scene.find_children("ChallengePackProtectors*", "Node3D", true, false).is_empty(), "No multiplayer covers from seat %s" % local_socket)
 		for p in handler.instance_property_array:
-			if p.is_active: continue
-			var holder = port.mp.covers[p.socket_number]
-			check(holder.is_visible_in_tree(), "Protectors visible from seat %s" % local_socket)
-			check(holder.get_parent() == p.item_manager.item_spawn_parent_local.get_parent(), "Inventory cleanup cannot delete protectors")
-			check(holder.transform == p.item_manager.item_spawn_parent_local.transform, "Protector anchor matches seat transform")
+			for item in p.user_inventory_instance_array:
+				if is_instance_valid(item) and not p.is_active:
+					check(not item.visible, "Rival inventory stays hidden without covers")
 	for p in handler.instance_property_array: p.is_active = p.socket_number == 0
 	port.mp.presentation()
-	var removed_cover = port.mp.covers[1]
-	removed_cover.queue_free()
-	await process_frame
+	var thief = handler.instance_property_array[0]
+	thief.is_stealing_item = true
+	port.mp.theft_target = 1
 	port.mp.presentation()
-	check(is_instance_valid(port.mp.covers[1]), "Deleted protector is recreated")
+	for item in handler.instance_property_array[1].user_inventory_instance_array:
+		if is_instance_valid(item): check(item.visible == port.mp.hidden[item.get_instance_id()], "Theft reveals the target inventory without covers")
+	thief.is_stealing_item = false
+	port.mp.presentation()
+	for item in handler.instance_property_array[1].user_inventory_instance_array:
+		if is_instance_valid(item): check(not item.visible, "Ending theft hides the target inventory again")
 	port.mp.rules.state(1).contract = port.mp.rules.Catalog.Contract.NO_INVERSION
 	port.mp.ui.refresh()
 	await process_frame
-	check(port.mp.ui.bomb.visible and port.mp.ui.bomb.size == Vector2(20, 20), "Contract bomb remains a 20px HUD icon")
+	check(port.mp.ui.bomb.visible and port.mp.ui.bomb.size == Vector2(18, 18), "Contract bomb uses the compact solo HUD layout")
 	check(root.get_visible_rect().encloses(port.mp.ui.bomb.get_global_rect()), "Contract icon stays within screen")
+	check(port.mp.ui.hud.has_theme_stylebox_override("panel"), "Public contracts use the solo HUD panel")
 	port.mp.rules.state(1).contract = 0
 	port.mp.rules.settings.shells = 2
 	game.MAIN_active_sequence_dict = {"sequence": ["live", "blank", "blank"], "sequence_visible": ["live", "blank", "blank"], "sequence_in_shotgun": ["live", "blank", "blank"]}
@@ -116,6 +122,15 @@ func run():
 	game.round_manager.shell_loader.SpawnShells()
 	for mesh in game.round_manager.shell_loader.shell_instance_array:
 		check(not mesh.visible, "Hidden loader shows no shells")
+	var shell_branch = game.round_manager.shell_loader.shell_instance_array[0].get_child(0)
+	shell_branch.SetState("heal")
+	var healing_material = shell_branch.shell.get_surface_override_material(1)
+	check(healing_material.albedo_color.g > healing_material.albedo_color.r * 2, "Healing shell hull is green")
+	check(healing_material.albedo_texture == null, "Red source texture cannot darken healing shell")
+	shell_branch.SetState("lethal")
+	check(shell_branch.shell.get_surface_override_material(1).albedo_color != healing_material.albedo_color, "Lethal and healing shells stay distinct")
+	shell_branch.SetState("blank")
+	check(shell_branch.shell.get_surface_override_material(1) == shell_branch.mat_blank_default, "Ordinary shell materials preserved")
 	var before = port.mp.snapshot()
 	port.mp.apply_snapshot(before)
 	check(port.mp.snapshot() == before, "Snapshot round trip")
@@ -148,6 +163,15 @@ func run():
 	await create_timer(5.5).timeout
 	check(handler.instance_property_array[2].health_current == 0, "Contract penalty kills violator")
 	check(game.MAIN_active_sequence_dict.sequence_in_shotgun == remaining, "Contract penalty preserves charge")
+	port.mp.rules.settings.shells = 2
+	game.MAIN_sequence_visible_duration = 20
+	game.MAIN_active_first_turn_socket = 0
+	game.MAIN_active_current_turn_socket = 0
+	var load_started = Time.get_ticks_msec()
+	await game.round_manager.LoadShotgun()
+	check(Time.get_ticks_msec() - load_started < 4000, "Hidden loading skips the long shell showcase")
+	for mesh in game.round_manager.shell_loader.shell_instance_array:
+		check(not mesh.visible, "Short hidden loading still conceals every shell")
 	for p in handler.instance_property_array:
 		p.health_counter.speaker_increase_health.stop()
 	current_scene.queue_free()

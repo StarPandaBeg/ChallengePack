@@ -88,7 +88,7 @@
   "CP_NEWS_SHELLS_TITLE": "Less information, more suspense",
   "CP_NEWS_SHELLS": "Show only the shell count, or hide the entire charge. Keep track of what is left yourself.",
   "CP_NEWS_ITEMS_TITLE": "Secrets behind the covers",
-  "CP_NEWS_ITEMS": "Retractable covers conceal rival inventories. Held items stay visible; reveal a rival’s items when stealing.",
+  "CP_NEWS_ITEMS": "Covers hide the dealer’s items in solo play. In multiplayer, rival items are invisible. Held items stay visible; stealing reveals the chosen inventory.",
   "CP_NEWS_SHUFFLE_TITLE": "Trust your memory",
   "CP_NEWS_SHUFFLE": "Turn off shuffling to load shells in the order shown on the table. Remember the sequence to get ahead.",
   "CP_NEWS_TURN_TITLE": "Who goes first?",

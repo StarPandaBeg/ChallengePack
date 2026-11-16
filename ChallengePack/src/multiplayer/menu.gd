@@ -9,7 +9,7 @@ var panel: PanelContainer
 var editor: PanelContainer
 var grid: GridContainer
 var status: Label
-var hud: Label
+var hud: PanelContainer
 var ready_button: Button
 var open_button: Button
 var edit_button: Button
@@ -41,6 +41,7 @@ func setup(owner_session: Node):
 	if not session.in_game: open_button.scale = Vector2(0.395638, 0.618437)
 	open_button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	open_button.text = "CHALLENGEPACK"
+	open_button.visible = not session.in_game
 	open_button.pressed.connect(toggle)
 	if not session.in_game and is_instance_valid(session.lobby_ui):
 		lobby_button_parent = session.lobby_ui.ui_parent_lobby_home
@@ -67,23 +68,10 @@ func setup(owner_session: Node):
 	backdrop.color = Color(0, 0, 0, 0.98)
 	backdrop.hide()
 	add_child(backdrop)
-	hud = Label.new()
-	hud.position = Vector2(18, 54)
-	hud.custom_minimum_size.x = 310
-	hud.size.x = 310
-	hud.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	hud.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	hud.theme = open_button.theme
-	hud.add_theme_font_size_override("font_size", 15)
+	hud = preload("../challenge_hud.gd").new()
 	add_child(hud)
-	bomb = TextureRect.new()
-	bomb.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	bomb.texture = ImageTexture.create_from_image(Image.load_from_file(session.port.mod_directory.path_join("assets/contracts/c4.png")))
-	bomb.position = Vector2(298, 54)
-	bomb.size = Vector2(20, 20)
-	bomb.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	bomb.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	add_child(bomb)
+	hud.setup(session.port.mod_directory)
+	bomb = hud.bomb
 	theft_targets = HBoxContainer.new()
 	theft_targets.position = Vector2(18, 160)
 	theft_targets.theme = open_button.theme
@@ -248,6 +236,7 @@ func refresh():
 	chance.set_value_no_signal(values.contract_chance)
 	chance_label.text = text("CP_CONTRACT_CHANCE", [values.contract_chance])
 	var contracts = []
+	var own_contracts = []
 	if session.in_game and is_instance_valid(session.game):
 		for p in session.game.instance_handler.instance_property_array:
 			var entry = session.rules.state(p.socket_number)
@@ -257,16 +246,17 @@ func refresh():
 				if 2 in entry.history: name = text("CP_MP_NO_JAMMER")
 				if 3 in entry.history: name = text("CP_MP_NO_GLASS")
 			if entry.failed: name += " / " + text("CP_MP_FAILED")
-			contracts.append(("> " if p.is_active else "") + p.user_name + ": " + name)
-	hud.text = "\n".join(contracts) + ("\n" if not contracts.is_empty() else "")
-	hud.reset_size()
-	bomb.position = Vector2(308, hud.position.y + maxf(0, hud.size.y - 20))
-	theft_targets.position.y = hud.position.y + hud.size.y + 12
-	bomb.visible = not contracts.is_empty()
+			var row = ("> " if p.is_active else "") + p.user_name + ": " + name
+			if p.is_active: own_contracts.append(row)
+			else: contracts.append(row)
 	var local = null
 	if session.in_game and is_instance_valid(session.game):
 		for p in session.game.instance_handler.instance_property_array:
 			if p.is_active: local = p
+	var limit = values.pocket if local != null else 0
+	var remaining = maxi(0, limit - session.rules.state(local.socket_number).used) if local != null else 0
+	hud.refresh_multiplayer(own_contracts + contracts, remaining, limit, session.port.localization)
+	theft_targets.position.y = hud.position.y + hud.size.y + 12 if hud.visible else 8
 	var candidates = []
 	if local != null and local.is_stealing_item and values.items == 1:
 		for p in session.game.instance_handler.instance_property_array:
@@ -339,7 +329,7 @@ func toggle():
 					raycast_state = p.mouse_raycast.getting_selection
 					p.mouse_raycast.SetMouseRaycast(false)
 	else:
-		open_button.grab_focus()
+		if not session.in_game: open_button.grab_focus()
 		if blocked_raycast != null and blocked_raycast.get_ref() != null:
 			blocked_raycast.get_ref().SetMouseRaycast(raycast_state)
 		blocked_raycast = null

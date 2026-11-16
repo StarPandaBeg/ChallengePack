@@ -82,3 +82,16 @@ func refresh(data: Dictionary, localization):
 	if data.limit > 0:
 		pocket.text = localization.text("CP_HUD_POCKET_SHORT", [data.remaining, data.limit])
 	size = Vector2(224, 0)
+
+func refresh_multiplayer(rows: Array, remaining: int, limit: int, localization):
+	var signature = "mp:" + str(rows) + str([remaining, limit]) + TranslationServer.get_locale()
+	if signature == previous: return
+	previous = signature
+	visible = not rows.is_empty() or limit > 0
+	rule.visible = not rows.is_empty()
+	rule.text = "\n".join(rows)
+	rule.add_theme_color_override("font_color", INK)
+	pocket.visible = limit > 0
+	if limit > 0: pocket.text = localization.text("CP_HUD_POCKET_SHORT", [remaining, limit])
+	bomb.visible = not rows.is_empty()
+	size = Vector2(264, 0)

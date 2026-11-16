@@ -87,9 +87,9 @@ All nine modes are available, with a few multiplayer twists:
 - Contracts are personal and visible to everyone. Breaking one eliminates its owner until the next round; the others keep playing.
 - Jammer restrictions replace handcuff restrictions. Double shots affect the contract owner's shots; Leaky Shotgun redirects a self-shot at a random living rival.
 - Mirrored items give all living players matching fresh inventories, respecting the table's item limits.
-- Choose a fixed starting player, rotate the first turn, leave it random or keep the original rules. When stealing behind covers, choose whose inventory to reveal.
+- Choose a fixed starting player, rotate the first turn, leave it random or keep the original rules. Rival items are invisible without covers; when stealing, choose whose inventory to reveal.
 
-Use the **ChallengePack** button or **F8** to view rules during play. Ordinary lobbies are hidden while the mod is installed. If the host leaves, the match ends; returning to the lobby lets you start again.
+Press **F8** to view rules during play. Ordinary lobbies are hidden while the mod is installed. If the host leaves, the match ends; returning to the lobby lets you start again.
 
 Network behavior has automated checks, but full matches across separate Steam accounts still need manual testing. See [VALIDATION.md](VALIDATION.md#multiplayer-acceptance).
 

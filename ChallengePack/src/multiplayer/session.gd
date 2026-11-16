@@ -4,7 +4,7 @@ const Rules = preload("rules.gd")
 const Settings = preload("settings.gd")
 const Effects = preload("../contract_effects.gd")
 const PROTOCOL = 1
-const TIMEOUT = 10000
+const TIMEOUT = 30000
 const REQUESTS = {10: "pickup shotgun request", 12: "shoot user request", 15: "look at user request", 17: "grab item request", 19: "place item request", 22: "interact with item request", 24: "secondary item interaction request"}
 var port: Node
 var settings = Settings.new()
@@ -50,7 +50,6 @@ var theft_target = -1
 var busy = false
 var stages = {}
 var released = {}
-var covers = {}
 var hidden = {}
 var stock_digest = ""
 var expected_stock_digest = ""
@@ -474,7 +473,6 @@ func register_packets(manager: Node):
 	pending_shots.clear()
 	applied_outcomes.clear()
 	completed_actions.clear()
-	covers.clear()
 	hidden.clear()
 	rules.reset()
 	if is_instance_valid(ui): ui.queue_free()
@@ -497,7 +495,6 @@ func scene_exiting(reference: WeakRef):
 	ui = null
 	stages.clear()
 	released.clear()
-	covers.clear()
 	hidden.clear()
 	pending_shots.clear()
 
@@ -603,18 +600,12 @@ func presentation():
 	if busy and local.is_stealing_item: busy = false
 	for p in game.instance_handler.instance_property_array:
 		if p == local:
-			if covers.has(p.socket_number):
-				if is_instance_valid(covers[p.socket_number]): covers[p.socket_number].queue_free()
-				covers.erase(p.socket_number)
 			for item in p.user_inventory_instance_array:
 				if is_instance_valid(item) and hidden.has(item.get_instance_id()):
 					item.visible = hidden[item.get_instance_id()]
 					hidden.erase(item.get_instance_id())
 			continue
-		if not covers.has(p.socket_number) or not is_instance_valid(covers[p.socket_number]):
-			if p.item_manager.is_node_ready() and p.item_manager.item_spawn_parent_local.is_inside_tree(): create_cover(p)
 		var reveal = local.is_stealing_item and p.socket_number == theft_target
-		if covers.has(p.socket_number) and is_instance_valid(covers[p.socket_number]): covers[p.socket_number].visible = not reveal
 		for item in p.user_inventory_instance_array:
 			if is_instance_valid(item):
 				if not hidden.has(item.get_instance_id()): hidden[item.get_instance_id()] = item.visible
@@ -624,27 +615,6 @@ func presentation():
 	for p in game.instance_handler.instance_property_array:
 		var held = p.item_interaction.active_item_parent
 		if is_instance_valid(held): held.visible = true
-
-func create_cover(p: Node):
-	# ItemManager._ready clears the inventory container. Keep visual covers in
-	# a sibling so late client initialization cannot delete them with the items.
-	var inventory = p.item_manager.item_spawn_parent_local
-	var holder = Node3D.new()
-	holder.name = "ChallengePackProtectors"
-	holder.transform = inventory.transform
-	inventory.get_parent().add_child(holder)
-	var cover = load(port.mod_directory.path_join("assets/protectors.res")).instantiate()
-	holder.add_child(cover)
-	cover.position = Vector3(0, -4, 0)
-	cover.rotate_y(PI)
-	covers[p.socket_number] = holder
-	var sound = AudioStreamPlayer3D.new()
-	sound.stream = load("res://audio/main compartment show items.ogg")
-	cover.add_child(sound)
-	sound.play()
-	var tween = cover.create_tween()
-	tween.tween_property(cover, "position:y", 0.0, 1.1).set_trans(Tween.TRANS_CUBIC)
-	tween.tween_callback(sound.stop)
 
 func generate_sequence(_round_manager: Node):
 	if not host(): return
@@ -831,7 +801,10 @@ func punish(socket: int):
 	execute_failure(data)
 
 func shell_material(branch: Node, type: String, examining: bool):
-	var mat = branch.mat_live_default.duplicate()
+	var mat = branch.mat_blank_default.duplicate()
+	# Multiplying the live shell's red/black texture by green makes its hull
+	# almost black, particularly on the ejected shell. Tint the hull directly.
+	mat.albedo_texture = null
 	mat.albedo_color = Color("299940") if type == "heal" else Color("111117")
 	if GlobalVariables.colorblind:
 		mat.albedo_color = Color("f4d35e") if type == "heal" else Color("432172")
