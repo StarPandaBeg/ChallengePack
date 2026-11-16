@@ -116,7 +116,7 @@ func button(parent: Node) -> Button:
 	return result
 
 func refresh():
-	var values = port.settings.values
+	var values = options.controller.values()
 	title.text = port.localization.text("CP_CONTRACT_EDITOR_TITLE", [values.contract_pool.size(), checks.size()])
 	for id in checks:
 		checks[id].text = port.localization.text(port.challenges.contract_key(id))
@@ -131,8 +131,7 @@ func refresh():
 	empty_label.visible = values.contract_pool.is_empty()
 	close_button.text = port.localization.text("CP_DONE")
 
-func save():
-	var result = port.settings.save_settings()
+func save(result: Error = OK):
 	refresh()
 	options.refresh()
 	if result != OK:
@@ -140,26 +139,16 @@ func save():
 		empty_label.show()
 
 func toggle(pressed: bool, id: int):
-	var pool = port.settings.values.contract_pool.duplicate()
-	if pressed and not id in pool:
-		pool.append(id)
-	elif not pressed:
-		pool.erase(id)
-	pool.sort()
-	port.settings.values.contract_pool = pool
-	save()
+	save(options.controller.toggle_contract(pressed, id))
 
 func choose_all():
-	port.settings.values.contract_pool = port.challenges.ALL_IDS.duplicate()
-	save()
+	save(options.controller.select_all(true))
 
 func choose_none():
-	port.settings.values.contract_pool = []
-	save()
+	save(options.controller.select_all(false))
 
 func change_chance(value: float):
-	port.settings.values.contract_chance = roundi(value)
-	save()
+	save(options.controller.set_value("contract_chance", roundi(value)))
 
 func open():
 	if shown:

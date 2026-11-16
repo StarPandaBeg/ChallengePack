@@ -6,10 +6,12 @@ var test_members = [11, 22]
 var outbox = []
 var stopped = ""
 var rejected = []
-var penalties = 0
+var penalties: int:
+	get: return gameplay.penalties
 var queued_stage = ""
 var drain_count = 0
-var native_outbox = []
+var native_outbox: Array:
+	get: return gameplay.native_outbox
 
 func drain_packets():
 	drain_count += 1
@@ -20,7 +22,7 @@ func drain_packets():
 			released[queued_stage] = true
 		queued_stage = ""
 
-func broadcast_native(data: Dictionary): native_outbox.append(data.duplicate(true))
+
 
 func host() -> bool: return local_host
 func ids() -> Array: return test_members
@@ -33,4 +35,12 @@ func fail(reason: String):
 	stopped = reason
 
 func reject_peer(id: int): rejected.append(id)
-func execute_failure(_data: Dictionary): penalties += 1
+
+
+class TestGameplay extends "../ChallengePack/src/multiplayer/gameplay.gd":
+	var penalties = 0
+	var native_outbox = []
+	func execute_failure(_data: Dictionary): penalties += 1
+	func broadcast_native(data: Dictionary): native_outbox.append(data.duplicate(true))
+
+func _init(): gameplay = TestGameplay.new(self)

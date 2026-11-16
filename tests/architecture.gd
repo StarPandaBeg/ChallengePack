@@ -18,9 +18,15 @@ func run():
 	# or game state is written. The previous implementation indexes charge here.
 	session.apply_snapshot({"players": {}, "health": {}})
 	check(session.rules.charge == 0, "Malformed snapshot cannot change the charge")
-	var Model = load(directory.path_join("multiplayer/snapshot_model.gd"))
+	check(session.current(session.epoch, session.rules.charge), "Current operation may continue")
+	check(not session.current(session.epoch - 1, session.rules.charge), "Previous scene operation is cancelled")
+	check(not session.current(session.epoch, session.rules.charge + 1), "Different charge operation is cancelled")
+	session.blocked = true
+	check(not session.current(session.epoch, session.rules.charge), "Blocked session cannot resume an operation")
+	session.blocked = false
+	var Model = load(directory.path_join("multiplayer/rules.gd"))
 	var snapshot = {"charge": 1, "turn": 1, "players": {0: {"contract": 0, "used": 0, "history": [], "failed": false}}, "health": {0: 3}, "inventories": {0: [0, 0, 0, 0, 0, 0, 0, 0]}, "last_actor": 0, "current": 0, "direction": "CW", "sawed": false}
-	check(Model.valid(snapshot, {0: 4}), "Valid snapshot accepted")
+	check(Model.valid_snapshot(snapshot, {0: 4}), "Valid snapshot accepted")
 	for invalid in ["short", "health", "contract", "history", "direction"]:
 		var bad = snapshot.duplicate(true)
 		match invalid:
@@ -29,7 +35,7 @@ func run():
 			"contract": bad.players[0].contract = 999
 			"history": bad.players[0].history = ["beer"]
 			"direction": bad.direction = "invalid"
-		check(not Model.valid(bad, {0: 4}), "Reject malformed snapshot: " + invalid)
+		check(not Model.valid_snapshot(bad, {0: 4}), "Reject malformed snapshot: " + invalid)
 	session.free()
 	game.free()
 	print("CP_ARCHITECTURE: failures=", failures)

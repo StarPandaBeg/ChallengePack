@@ -17,25 +17,7 @@ func _init():
 	settings["first_player"] = 0
 
 static func validate(value) -> bool:
-	if not value is Dictionary or value.size() != LIMITS.size() + 4:
-		return false
-	for key in LIMITS:
-		if not value.has(key) or typeof(value[key]) != TYPE_INT or value[key] < 0 or value[key] >= LIMITS[key]:
-			return false
-	if typeof(value.get("first_player")) != TYPE_INT or value.first_player < 0:
-		return false
-	if typeof(value.get("contract_chance")) != TYPE_INT or value.contract_chance < 0 or value.contract_chance > 100:
-		return false
-	if typeof(value.get("heal_chance")) != TYPE_INT or value.heal_chance < 0 or value.heal_chance > 100:
-		return false
-	if not value.get("contract_pool") is Array:
-		return false
-	var seen = []
-	for id in value.contract_pool:
-		if typeof(id) != TYPE_INT or not id in Catalog.ALL_IDS or id in seen:
-			return false
-		seen.append(id)
-	return true
+	return Defaults.validate(value, true)
 
 func reset():
 	players.clear()
@@ -102,7 +84,9 @@ func target(socket: int, selected: int, alive: Array) -> int:
 	return socket if others.is_empty() else others[rng.randi_range(0, others.size() - 1)]
 
 func shot_effect(socket: int, actual: int, shell: String, saw: bool, hp: int, maximum: int) -> Dictionary:
-	return preload("../domain/mode_policy.gd").multiplayer_effect(state(socket).contract, socket, actual, shell, saw, hp, maximum)
+	var Shells = preload("../domain/shell_rules.gd")
+	var strength = Shells.strength(2 if saw else 1, state(socket).contract == Catalog.Contract.TWO_FOR_ONE)
+	return {"target": actual, "strength": strength, "health": Shells.health_after(shell, hp, maximum, strength), "keep_turn": actual == socket and shell in ["blank", "heal"]}
 
 func sequences(original: Array) -> Dictionary:
 	var shown = original.duplicate()
@@ -158,3 +142,33 @@ func mirror_pool(resources: Array, count: int, wanted: int) -> Array:
 		result.append(item)
 		counts[item] = counts.get(item, 0) + 1
 	return result
+
+static func snapshot_shape(data: Dictionary) -> bool:
+	for key in ["charge", "turn", "last_actor", "current"]:
+		if typeof(data.get(key)) != TYPE_INT: return false
+	for key in ["players", "health", "inventories"]:
+		if not data.get(key) is Dictionary: return false
+	return data.charge >= 0 and data.turn >= 0 and data.get("direction") in ["CW", "CCW"] and typeof(data.get("sawed")) == TYPE_BOOL
+
+static func valid_snapshot(data: Dictionary, roster: Dictionary) -> bool:
+	if not snapshot_shape(data): return false
+	if data.health.size() != roster.size() or data.inventories.size() != roster.size(): return false
+	if data.current != -1 and not roster.has(data.current): return false
+	if data.last_actor != -1 and not roster.has(data.last_actor): return false
+	for socket in roster:
+		var hp = data.health.get(socket)
+		if typeof(hp) != TYPE_INT or hp < 0 or hp > roster[socket]: return false
+		var inventory = data.inventories.get(socket)
+		if not inventory is Array or inventory.size() != 8: return false
+		for item in inventory:
+			if typeof(item) != TYPE_INT or item < 0 or item > 10: return false
+	for socket in data.players:
+		if not roster.has(socket): return false
+		var player = data.players[socket]
+		if not player is Dictionary: return false
+		if typeof(player.get("contract")) != TYPE_INT or not Catalog.CATALOG.has(player.contract): return false
+		if typeof(player.get("used")) != TYPE_INT or player.used < 0: return false
+		if typeof(player.get("failed")) != TYPE_BOOL or not player.get("history") is Array: return false
+		for item in player.history:
+			if typeof(item) != TYPE_INT or item < 1 or item > 10: return false
+	return true

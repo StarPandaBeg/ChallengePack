@@ -58,8 +58,7 @@ func prepare(directory: String) -> bool:
 		if script == null: return fail("Cannot compile multiplayer adapter: " + key)
 		scripts[path] = script
 		proof += source.sha256_text() + body.sha256_text()
-	for file in ["rules.gd", "session.gd", "settings.gd", "menu.gd", "contract_hud.gd", "contract_nameplates.gd", "../challenge_hud.gd", "../challenges.gd", "../heal_bullets.gd", "../heal_editor.gd", "../contract_effects.gd", "../challengepack.gd", "../patch_factory.gd", "../online_guard.gd"]:
-		proof += FileAccess.get_file_as_string(directory.path_join("multiplayer/" + file)).replace("\r\n", "\n").sha256_text()
+	proof += module_proof(directory)
 	fingerprint = proof.sha256_text()
 	return true
 
@@ -98,7 +97,7 @@ func make_body(key: String, source: String) -> String:
 			return "\nfunc StartMainGame():\n\tif await cp_port.mp.stage(\"scene\"):\n\t\tawait super()\n"
 		"round":
 			var gen = method(source, "GenerateRandomSequence")
-			gen += "\tcp_port.mp.generate_sequence(self)\n"
+			gen += "\tcp_port.mp.gameplay.generate_sequence(self)\n"
 			var load_routine = method(source, "LoadShotgun")
 			load_routine = replace(load_routine, '\tintermed.intermed_properties.cam.BeginLerp("sequence socket_" + str(intermed.intermed_properties.socket_number), true)', '\tif cp_port.mp.rules.settings.shells != 2:\n\t\tintermed.intermed_properties.cam.BeginLerp("sequence socket_" + str(intermed.intermed_properties.socket_number), true)')
 			load_routine = replace(load_routine, 'create_timer(game_state.MAIN_sequence_visible_duration, false)', 'create_timer(.25 if cp_port.mp.rules.settings.shells == 2 else game_state.MAIN_sequence_visible_duration, false)')
@@ -110,31 +109,31 @@ func make_body(key: String, source: String) -> String:
 			load_routine = replace(load_routine, '\tanimator_shell_sequence_machine.play_backwards("move up")', '\tif cp_port.mp.rules.settings.shells != 2:\n\t\tanimator_shell_sequence_machine.play_backwards("move up")')
 			load_routine = replace(load_routine, '\tPassTurn(game_state.MAIN_active_first_turn_socket)', '\tif not await cp_port.mp.stage("load-%s" % cp_port.mp.rules.charge): return\n\tPassTurn(game_state.MAIN_active_first_turn_socket)')
 			var begin = method(source, "BeginItemGrabbingForSockets")
-			begin = replace(begin, '\tif socket_number_array == []:', '\tif cp_port.mp.rules.settings.mirror == 1:\n\t\tsocket_number_array = cp_port.mp.prepare_mirror(self)\n\tif socket_number_array == []:')
-			return gen + load_routine + begin + "\nfunc PassTurn(socket: int):\n\tcp_port.mp.on_turn(socket)\n\tsuper(socket)\n"
+			begin = replace(begin, '\tif socket_number_array == []:', '\tif cp_port.mp.rules.settings.mirror == 1:\n\t\tsocket_number_array = cp_port.mp.gameplay.prepare_mirror(self)\n\tif socket_number_array == []:')
+			return gen + load_routine + begin + "\nfunc PassTurn(socket: int):\n\tcp_port.mp.gameplay.on_turn(socket)\n\tsuper(socket)\n"
 		"state":
-			return "\nfunc GetItemToGrab(property, incrementing: bool = false):\n\tif cp_port.mp.rules.settings.mirror == 1:\n\t\treturn cp_port.mp.mirror_item(property, incrementing)\n\treturn super(property, incrementing)\n\nfunc CheckIfShooterEndingTurnAfterShot(target: int, shooter: int, shell: String, saw: bool, left: int):\n\tif shell == \"heal\":\n\t\treturn target != shooter or left == 0\n\treturn super(target, shooter, \"live\" if shell == \"lethal\" else shell, saw, left)\n"
+			return "\nfunc GetItemToGrab(property, incrementing: bool = false):\n\tif cp_port.mp.rules.settings.mirror == 1:\n\t\treturn null\n\treturn super(property, incrementing)\n\nfunc CheckIfShooterEndingTurnAfterShot(target: int, shooter: int, shell: String, saw: bool, left: int):\n\tif shell == \"heal\":\n\t\treturn target != shooter or left == 0\n\treturn super(target, shooter, \"live\" if shell == \"lethal\" else shell, saw, left)\n"
 		"verify":
-			return "\nfunc VerifyPacket(data):\n\treturn cp_port.mp.verify(self, data)\n\nfunc PacketSort(data: Dictionary):\n\tif data.get(\"packet alias\") == \"shoot user request\":\n\t\tcp_port.mp.resolve_shot(self, data)\n\telif data.get(\"packet alias\") == \"interact with item request\":\n\t\tcp_port.mp.resolve_item(self, data)\n\telse:\n\t\tsuper(data)\n"
+			return "\nfunc VerifyPacket(data):\n\treturn cp_port.mp.gameplay.verify(self, data)\n\nfunc PacketSort(data: Dictionary):\n\tif data.get(\"packet alias\") == \"shoot user request\":\n\t\tcp_port.mp.gameplay.resolve_shot(self, data)\n\telif data.get(\"packet alias\") == \"interact with item request\":\n\t\tcp_port.mp.gameplay.resolve_item(self, data)\n\telse:\n\t\tsuper(data)\n"
 		"shoot":
 			var receive = method(source, "ReceivePacket_Shoot")
 			receive = replace(receive, '\tproperties.is_on_secondary_interaction = false', '\tintermediary.game_state.StopTimeoutForSocket("turn", packet_dictionary.shooter_socket_self)\n\tproperties.is_on_secondary_interaction = false')
-			receive = replace(receive, '\tvar sent_from =', '\tactive_shooter_shotgun_damage = packet_dictionary.get("cp_strength", active_shooter_shotgun_damage)\n\tcp_port.mp.pending_shots[properties.socket_number] = packet_dictionary.duplicate(true)\n\tvar sent_from =')
+			receive = replace(receive, '\tvar sent_from =', '\tactive_shooter_shotgun_damage = packet_dictionary.get("cp_strength", active_shooter_shotgun_damage)\n\tcp_port.mp.gameplay.pending_shots[properties.socket_number] = packet_dictionary.duplicate(true)\n\tvar sent_from =')
 			var outcome = method(source, "ShootingOutcome")
-			outcome = replace(outcome, '\tawait get_tree().create_timer(.1, false).timeout', '\tif not cp_port.mp.claim_outcome(self): return\n\tawait get_tree().create_timer(.1, false).timeout')
+			outcome = replace(outcome, '\tawait get_tree().create_timer(.1, false).timeout', '\tif not cp_port.mp.gameplay.claim_outcome(self): return\n\tawait get_tree().create_timer(.1, false).timeout')
 			outcome = outcome.replace('current_shell == "live"', 'current_shell in ["live", "lethal"]')
 			outcome = outcome.replace('current_shell == "blank"', 'current_shell in ["blank", "heal"]')
-			outcome = replace(outcome, '\t\t\t\tinstance.health_current -= active_shooter_shotgun_damage', '\t\t\t\tinstance.health_current = cp_port.mp.pending_shots[properties.socket_number].cp_health')
-			outcome = replace(outcome, '\tRemoveFirstShellFromSequence()', '\tif current_shell == "heal": cp_port.mp.apply_heal(self)\n\tif not cp_port.mp.pending_shots[properties.socket_number].get("cp_penalty", false):\n\t\tRemoveFirstShellFromSequence()')
-			var ending = "\nfunc CheckIfEndingTurn(packet_dictionary: Dictionary):\n\tawait cp_port.mp.finish_shot(self, packet_dictionary)\n"
+			outcome = replace(outcome, '\t\t\t\tinstance.health_current -= active_shooter_shotgun_damage', '\t\t\t\tinstance.health_current = cp_port.mp.gameplay.pending_shots[properties.socket_number].cp_health')
+			outcome = replace(outcome, '\tRemoveFirstShellFromSequence()', '\tif current_shell == "heal": cp_port.mp.gameplay.apply_heal(self)\n\tif not cp_port.mp.gameplay.pending_shots[properties.socket_number].get("cp_penalty", false):\n\t\tRemoveFirstShellFromSequence()')
+			var ending = "\nfunc CheckIfEndingTurn(packet_dictionary: Dictionary):\n\tawait cp_port.mp.gameplay.finish_shot(self, packet_dictionary)\n"
 			return receive + outcome + ending
 		"item":
 			var change = method(source, "ChangeGameStateWithItem")
 			change = replace(change, 'if shell_in_chamber == "live": properties.intermediary.game_state.MAIN_active_sequence_dict.sequence_in_shotgun[0] = "blank"\n\t\t\t\telse: properties.intermediary.game_state.MAIN_active_sequence_dict.sequence_in_shotgun[0] = "live"', 'properties.intermediary.game_state.MAIN_active_sequence_dict.sequence_in_shotgun[0] = cp_port.heal_bullets.invert(shell_in_chamber)')
 			change = replace(change, "properties.health_current += 1", 'properties.health_current = packet.get("cp_health", properties.health_current)')
-			return change + "\nfunc EndItemInteraction(packet: Dictionary):\n\tawait cp_port.mp.finish_item(self, packet)\n"
+			return change + "\nfunc EndItemInteraction(packet: Dictionary):\n\tawait cp_port.mp.gameplay.finish_item(self, packet)\n"
 		"shell":
-			return "\nfunc SetState(type: String):\n\tif type in [\"heal\", \"lethal\"]:\n\t\tcp_port.mp.shell_material(self, type, false)\n\telse: super(type)\n\nfunc SetState_Inspecting(type: String):\n\tif type in [\"heal\", \"lethal\"]:\n\t\tcp_port.mp.shell_material(self, type, true)\n\telse: super(type)\n"
+			return "\nfunc SetState(type: String):\n\tif type in [\"heal\", \"lethal\"]:\n\t\tcp_port.mp.gameplay.shell_material(self, type, false)\n\telse: super(type)\n\nfunc SetState_Inspecting(type: String):\n\tif type in [\"heal\", \"lethal\"]:\n\t\tcp_port.mp.gameplay.shell_material(self, type, true)\n\telse: super(type)\n"
 		"loader":
 			var spawn = method(source, "SpawnShells")
 			spawn = replace(spawn, '\tfor i in range(sequence.size()):', '\tif cp_port.mp.rules.settings.shells == 2: return\n\tfor i in range(sequence.size()):')
@@ -147,7 +146,7 @@ func make_body(key: String, source: String) -> String:
 		"lobby_ui":
 			return "\nfunc CheckStartButton():\n\tsuper()\n\tui_button_start_game.visible = ui_button_start_game.visible and cp_port.mp.can_start()\n"
 		"health":
-			return "\nfunc _ready():\n\tsuper()\n\tcp_port.mp.health_visibility(self)\n\nfunc _process(_delta):\n\tcp_port.mp.health_visibility(self)\n\nfunc EnableDisplay():\n\tsuper()\n\tcp_port.mp.health_visibility(self)\n"
+			return "\nfunc _ready():\n\tsuper()\n\tcp_port.mp.gameplay.health_visibility(self)\n\nfunc _process(_delta):\n\tcp_port.mp.gameplay.health_visibility(self)\n\nfunc EnableDisplay():\n\tsuper()\n\tcp_port.mp.gameplay.health_visibility(self)\n"
 		"jammer":
 			return "\nfunc ConfirmButton():\n\tif not selected_target_is_valid: return\n\tawait super()\n"
 	return ""
@@ -164,5 +163,20 @@ func guard_async(body: String) -> String:
 		result += line + "\n"
 		if line.strip_edges().begins_with("await ") or line.strip_edges().begins_with("await("):
 			var indentation = line.substr(0, line.length() - line.lstrip("\t").length())
-			result += indentation + "if cp_epoch != cp_port.mp.epoch or cp_charge != cp_port.mp.rules.charge or cp_port.mp.blocked: return\n"
+			result += indentation + "if not cp_port.mp.current(cp_epoch, cp_charge): return\n"
 	return result
+
+func module_proof(directory: String, prefix: String = "") -> String:
+	var access = DirAccess.open(directory.path_join(prefix))
+	if access == null: return ""
+	var entries = Array(access.get_files()) + Array(access.get_directories())
+	entries.sort()
+	var proof = ""
+	for name in entries:
+		if name.begins_with(".") or name == "whats_new.gd": continue
+		var path = prefix.path_join(name)
+		if access.dir_exists(name):
+			proof += module_proof(directory, path)
+		elif name.ends_with(".gd") or name.ends_with(".gd.txt"):
+			proof += path + FileAccess.get_file_as_string(directory.path_join(path)).replace("\r\n", "\n").sha256_text()
+	return proof

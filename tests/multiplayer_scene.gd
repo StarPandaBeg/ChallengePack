@@ -102,7 +102,7 @@ func run():
 		players.append({"socket_number": i, "user_id": steam.STEAM_ID if i == 0 else i, "user_name": "Fixture %s" % i, "cpu_enabled": false})
 	handler.SetupInstances_test(players)
 	port.mp.rules.settings.items = 1
-	port.mp.presentation()
+	port.mp.gameplay.presentation()
 	await process_frame
 	await process_frame
 	for p in handler.instance_property_array:
@@ -134,40 +134,40 @@ func run():
 	jammer_actor.is_viewing_jammer = true
 	jammer_actor.is_on_secondary_interaction = true
 	jammer_actor.is_interacting_with_item = true
-	port.mp.busy = true
+	port.mp.gameplay.busy = true
 	check(port.mp.before_pipe(port.mp.packets, {"packet category": "MP_UserInstanceProperties", "packet alias": "timeout exceeded", "timeout_type": "jammer", "socket_number": 0, "ending_turn_after_timeout": false}), "Native jammer timeout accepted")
-	check(not port.mp.busy and jammer_actor.has_turn, "Jammer timeout releases the host action lock")
+	check(not port.mp.gameplay.busy and jammer_actor.has_turn, "Jammer timeout releases the host action lock")
 	check(not jammer_actor.is_viewing_jammer and not jammer_actor.is_on_secondary_interaction and not jammer_actor.is_on_jammer_selection, "Jammer timeout clears selection flags")
 	port.mp.rules.settings.health = 0
-	for p in handler.instance_property_array: port.mp.health_visibility(p.health_counter)
+	for p in handler.instance_property_array: port.mp.gameplay.health_visibility(p.health_counter)
 	game.MAIN_active_round_index = 0
 	port.mp.rules.settings.mirror = 1
 	game.MAIN_active_num_of_items_to_grab = 4
-	port.mp.prepare_mirror(game.round_manager)
+	port.mp.gameplay.prepare_mirror(game.round_manager)
 	var expected = handler.instance_property_array[0].user_inventory
 	for p in handler.instance_property_array:
 		check(p.user_inventory == expected, "Mirrored inventories match")
 		check(p.shotgun.has_meta("challengepack_hooked"), "Shotgun adapter attached")
 	port.mp.rules.settings.items = 1
-	port.mp.presentation()
+	port.mp.gameplay.presentation()
 	for local_socket in 4:
 		for p in handler.instance_property_array: p.is_active = p.socket_number == local_socket
-		port.mp.presentation()
+		port.mp.gameplay.presentation()
 		check(current_scene.find_children("ChallengePackProtectors*", "Node3D", true, false).is_empty(), "No multiplayer covers from seat %s" % local_socket)
 		for p in handler.instance_property_array:
 			for item in p.user_inventory_instance_array:
 				if is_instance_valid(item) and not p.is_active:
 					check(not item.visible, "Rival inventory stays hidden without covers")
 	for p in handler.instance_property_array: p.is_active = p.socket_number == 0
-	port.mp.presentation()
+	port.mp.gameplay.presentation()
 	var thief = handler.instance_property_array[0]
 	thief.is_stealing_item = true
-	port.mp.theft_target = 1
-	port.mp.presentation()
+	port.mp.gameplay.theft_target = 1
+	port.mp.gameplay.presentation()
 	for item in handler.instance_property_array[1].user_inventory_instance_array:
-		if is_instance_valid(item): check(item.visible == port.mp.hidden[item.get_instance_id()], "Theft reveals the target inventory without covers")
+		if is_instance_valid(item): check(item.visible == port.mp.gameplay.hidden[item.get_instance_id()], "Theft reveals the target inventory without covers")
 	thief.is_stealing_item = false
-	port.mp.presentation()
+	port.mp.gameplay.presentation()
 	for item in handler.instance_property_array[1].user_inventory_instance_array:
 		if is_instance_valid(item): check(not item.visible, "Ending theft hides the target inventory again")
 	port.mp.rules.state(0).contract = port.mp.rules.Catalog.Contract.NO_INVERSION
@@ -220,7 +220,7 @@ func run():
 	port.mp.rules.settings.heal = 1
 	port.mp.rules.settings.heal_chance = 100
 	port.mp.rules.settings.shuffle = 1
-	port.mp.generate_sequence(game.round_manager)
+	port.mp.gameplay.generate_sequence(game.round_manager)
 	check(game.MAIN_active_sequence_dict.sequence_in_shotgun.has("heal"), "Healing shell in host charge")
 	check(not game.MAIN_active_sequence_dict_send.has("sequence_in_shotgun"), "Hidden order not broadcast")
 	check(game.MAIN_active_sequence_dict_send.sequence_visible.is_empty(), "Hidden charge redacted")
@@ -250,7 +250,7 @@ func run():
 	port.mp.rules.state(0).used = 2
 	port.mp.rules.last_actor = 0
 	game.MAIN_active_sequence_dict.sequence_in_shotgun = ["heal", "blank", "live"]
-	port.mp.resolve_shot(null, {"sent_from_socket": 0, "socket_to_shoot": 0})
+	port.mp.gameplay.resolve_shot(null, {"sent_from_socket": 0, "socket_to_shoot": 0})
 	await create_timer(4.4).timeout
 	check(actor.health_current == 3, "Actual green shot heals twice")
 	check(actor.has_turn, "Actual healing self-shot preserves turn")
@@ -259,12 +259,12 @@ func run():
 	var rival = handler.instance_property_array[1]
 	rival.health_current = 3
 	game.MAIN_active_sequence_dict.sequence_in_shotgun = ["lethal", "blank", "live"]
-	port.mp.resolve_shot(null, {"sent_from_socket": 0, "socket_to_shoot": 1})
+	port.mp.gameplay.resolve_shot(null, {"sent_from_socket": 0, "socket_to_shoot": 1})
 	await create_timer(4.4).timeout
 	check(rival.health_current == 0, "Actual black shot kills immediately")
 	check(game.MAIN_active_sequence_dict.sequence_in_shotgun == ["blank", "live"], "Black shot consumes once")
 	var remaining = game.MAIN_active_sequence_dict.sequence_in_shotgun.duplicate()
-	port.mp.punish(2)
+	port.mp.gameplay.punish(2)
 	await create_timer(5.5).timeout
 	check(handler.instance_property_array[2].health_current == 0, "Contract penalty kills violator")
 	check(game.MAIN_active_sequence_dict.sequence_in_shotgun == remaining, "Contract penalty preserves charge")

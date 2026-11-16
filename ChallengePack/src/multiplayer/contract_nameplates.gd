@@ -3,9 +3,9 @@ extends Node
 var labels = {}
 var texture: Texture2D
 
-func setup(directory: String):
-	var image = Image.load_from_file(directory.path_join("assets/contracts/c4.png"))
-	if image != null: texture = ImageTexture.create_from_image(image)
+func setup(directory: String, cache = null):
+	var resources = cache if cache != null else preload("../runtime/resource_cache.gd").new()
+	texture = resources.texture(directory.path_join("assets/contracts/c4.png"))
 
 func refresh(players: Array, rows: Array):
 	var active = []

@@ -1,6 +1,7 @@
 extends VBoxContainer
 
 const Card = preload("../challenge_hud.gd")
+var resources
 var directory: String
 var cards = {}
 var counter: PanelContainer
@@ -13,7 +14,8 @@ func _init():
 	add_theme_constant_override("separation", 4)
 	hide()
 
-func setup(mod_directory: String):
+func setup(mod_directory: String, cache = null):
+	resources = cache
 	directory = mod_directory
 	counter = Card.new()
 	add_child(counter)
@@ -25,7 +27,7 @@ func make_card() -> PanelContainer:
 	var card = Card.new()
 	card.custom_minimum_size.x = 264
 	add_child(card)
-	card.setup(directory)
+	card.setup(directory, resources)
 	var column = card.get_child(0)
 	var heading = HBoxContainer.new()
 	heading.mouse_filter = Control.MOUSE_FILTER_IGNORE

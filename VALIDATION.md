@@ -130,17 +130,27 @@ To replace the screenshot placeholders, put PNG files in `ChallengePack/src/asse
 
 ### Running checks
 
-Run the installer and engine checks from the repository root:
+Run the complete regression suite from the repository root:
 
 ```powershell
-python -m unittest discover -s tests -p test_installer.py -v
-$repoPath = (Get-Location).Path
-foreach ($scenario in @('probe', 'settings_rules', 'localization', 'smoke', 'gameplay', 'challenges', 'contract_hud', 'heal_bullets', 'failure_screen', 'contract_chance', 'protectors', 'hidden_items', 'lethal_bullets', 'whats_new', 'contract_effects', 'contract_rules', 'shot_contracts', 'contract_editor')) {
-    python tools/run_godot.py --path ../game --script "$repoPath/tests/$scenario.gd"
-    if ($LASTEXITCODE -ne 0) { throw "Check failed: $scenario" }
-}
+python tools/check.py
 ```
 
-For checks against the installed game's embedded resources, pass `--game-exe "D:/.../Buckshot Roulette.exe"` to the runner and omit `--path ../game`. Checks do not install the mod. Logs are written under `tests/.scratch/`, and runs time out automatically.
+This runs 23 engine scenarios and the installer suite. Logs and a JSON summary are written to `tests/.scratch/check/`. A focused run accepts scenario names, for example `python tools/check.py multiplayer multiplayer_protocol multiplayer_scene --skip-installer`.
+
+Use `--game-exe "D:/.../Buckshot Roulette.exe"` to check installed Steam resources instead of the extracted project. These fixtures do not install the mod or join real Steam lobbies. Each engine scenario has a 240-second deadline.
 
 Compatibility hashes pin the supported game scripts. Update them with `python tools/update_compatibility.py` only after reviewing changes and adapting the mod. See the coverage and manual acceptance checks above.
+
+
+### Refactoring checks
+
+The network implementation has two working components: `multiplayer/session.gd` owns transport, lobby and synchronization; `multiplayer/gameplay.gd` owns actions and their game state. Adapters call their actual owner directly. Forwarding components and the unused second barrier mechanism have been removed. Cancellation checks use the originating scene generation and charge after asynchronous waits. Presentation no longer releases action locks.
+
+Independent catalogs and shell calculations remain in `domain/`; patch compilation preserves game-script properties through `runtime/patch_builder.gd`. Both menus use the same small settings command controller. Settings are copied at UI boundaries, and network snapshots are fully validated before game state changes. Shared image/audio caches retain import-free loading. No performance improvement is claimed without measurements.
+
+The deterministic `behavior_trace` fixture compares seeded results against the pre-refactoring baseline. Protocol and scene tests cover duplicates, stale messages, sender validation, malformed snapshots, all nine settings, three languages and scene recreation. These automated checks do not replace physical-controller, visual/audio or 2–4-client Steam acceptance.
+
+Refactoring verification on 2026-11-16: all 23 Godot 4.1.1 scenarios and seven installer cases passed. Production GDScript decreased from 4,391 lines in 35 files at `86b383b` to 4,243 lines in 31 files. This is still 161 lines above the 4,082-line pre-refactoring baseline; the refactor is not presented as a completed reduction below that baseline. User screenshots, prepared resources and news-preview parameters were unchanged.
+
+The extracted release also passed `release_probe.gd` through the installed Steam executable: all solo/network adapters compiled and import-free mod assets loaded (`CP_RELEASE_OK`). No real multi-client Steam match was run.

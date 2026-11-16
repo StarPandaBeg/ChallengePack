@@ -8,11 +8,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SCENARIOS = (
-    "settings_rules", "localization", "contract_rules", "contract_chance",
+    "settings_rules", "localization", "probe", "gameplay", "contract_rules", "contract_chance",
     "contract_editor", "challenges", "shot_contracts", "heal_bullets",
     "lethal_bullets", "hidden_items", "protectors", "failure_screen",
     "contract_hud", "contract_effects", "whats_new", "smoke",
-    "multiplayer", "multiplayer_protocol", "multiplayer_scene", "behavior_trace",
+    "multiplayer", "multiplayer_protocol", "multiplayer_scene", "behavior_trace", "architecture",
 )
 
 
@@ -27,7 +27,7 @@ def main():
     results = []
     commands = []
     for name in args.scenarios or SCENARIOS:
-        command = [sys.executable, str(ROOT / "tools/run_godot.py")]
+        command = [sys.executable, str(ROOT / "tools/run_godot.py"), "--timeout", "240"]
         command += (["--game-exe", args.game_exe] if args.game_exe
                     else ["--path", str(ROOT.parent / "game")])
         command += ["--script", str(ROOT / f"tests/{name}.gd")]

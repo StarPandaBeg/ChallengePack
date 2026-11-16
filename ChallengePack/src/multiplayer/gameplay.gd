@@ -1,7 +1,15 @@
 extends RefCounted
 
-# Explicit session dependency; native adapters keep their stable facade.
+# Game interactions and their local presentation; networking stays in Session.
 var owner: Node
+var busy = false
+var mirror: Array = []
+var mirror_offsets: Dictionary = {}
+var pending_shots: Dictionary = {}
+var applied_outcomes: Dictionary = {}
+var completed_actions: Dictionary = {}
+var theft_target: int = -1
+var hidden: Dictionary = {}
 
 func _init(session: Node):
 	owner = session
@@ -10,12 +18,12 @@ func apply_contracts(data: Dictionary):
 	owner.rules.players = data.players.duplicate(true)
 	owner.rules.charge = data.charge
 	owner.rules.last_actor = -1
-	owner.announce_contracts()
+	announce_contracts()
 
 func apply_mirror(items: Array):
 	if not is_instance_valid(owner.game): return
-	owner.mirror = items.duplicate()
-	owner.mirror_offsets.clear()
+	mirror = items.duplicate()
+	mirror_offsets.clear()
 	for socket in owner.alive():
 		var p = owner.property_for(socket)
 		for item in p.user_inventory_instance_array:
@@ -24,10 +32,10 @@ func apply_mirror(items: Array):
 		owner.game.Global_ClearInventoryDictionaries(socket)
 	for socket in owner.alive():
 		var p = owner.property_for(socket)
-		for i in range(owner.mirror.size()):
-			p.item_manager.Debug_SpawnItemSeparately(owner.mirror[i], i)
-			p.user_inventory[i] = {"item_id": owner.mirror[i], "item_local_grid_index": i}
-	owner.recount_items()
+		for i in range(mirror.size()):
+			p.item_manager.Debug_SpawnItemSeparately(mirror[i], i)
+			p.user_inventory[i] = {"item_id": mirror[i], "item_local_grid_index": i}
+	recount_items()
 
 func recount_items():
 	owner.game.SetupEmptyGlobalItemCount()
@@ -48,11 +56,16 @@ func execute_failure(data: Dictionary):
 		user.permissions.SetMainPermission(false)
 		user.has_turn = false
 	var cue = AudioStreamPlayer.new()
-	cue.stream = owner.Effects.load_pcm(owner.port.mod_directory.path_join("assets/contracts/breach.wav"))
+	cue.stream = owner.port.resources.sound(owner.port.mod_directory.path_join("assets/contracts/breach.wav"))
 	owner.add_child(cue)
+	var generation = owner.epoch
+	var charge = owner.rules.charge
 	cue.play()
 	await owner.get_tree().create_timer(1.0, false).timeout
-	if not is_instance_valid(p) or owner.blocked:
+	if not is_instance_valid(owner):
+		if is_instance_valid(cue): cue.queue_free()
+		return
+	if not is_instance_valid(p) or owner.blocked or not owner.current(generation, charge):
 		cue.queue_free()
 		return
 	p.shotgun.SetShotgunVisible_Global(false)
@@ -88,7 +101,7 @@ func generate_sequence(_round_manager: Node):
 	if fixed_socket == -1: fixed_socket = host_socket
 	owner.game.MAIN_active_first_turn_socket = owner.rules.starter(owner.alive(), host_socket, owner.game.MAIN_active_turn_order, owner.game.MAIN_active_first_turn_socket, fixed_socket)
 	owner.send("contracts", {"players": owner.rules.players, "charge": owner.rules.charge})
-	owner.announce_contracts()
+	announce_contracts()
 
 func announce_contracts():
 	var any = false
@@ -96,14 +109,14 @@ func announce_contracts():
 		if owner.rules.players[s].contract != 0: any = true
 	if any:
 		var sound = AudioStreamPlayer.new()
-		sound.stream = owner.Effects.load_pcm(owner.port.mod_directory.path_join("assets/contracts/armed.wav"))
+		sound.stream = owner.port.resources.sound(owner.port.mod_directory.path_join("assets/contracts/armed.wav"))
 		owner.add_child(sound)
 		sound.finished.connect(sound.queue_free)
 		sound.play()
 
 func on_turn(socket: int):
 	owner.rules.begin_turn(socket)
-	owner.busy = false
+	busy = false
 
 func prepare_mirror(_round_manager: Node) -> Array:
 	if owner.host():
@@ -117,11 +130,8 @@ func prepare_mirror(_round_manager: Node) -> Array:
 			resources.append({"id": r.id, "enabled": r.distribution_enabled, "per_player": r.max_amount_on_table, "global_max": r.max_amount_on_table_global - retained.get(r.id, 0)})
 		var items = owner.rules.mirror_pool(resources, owner.alive().size(), owner.game.MAIN_active_num_of_items_to_grab)
 		owner.send("mirror", {"items": items})
-		owner.apply_mirror(items)
+		apply_mirror(items)
 	return []
-
-func mirror_item(_property: Node, _incrementing: bool):
-	return null
 
 func verify(_verifier: Node, data: Dictionary) -> Dictionary:
 	if owner.blocked or not data.has("packet_id") or not data.has("sent_from_socket"): return {}
@@ -131,24 +141,24 @@ func verify(_verifier: Node, data: Dictionary) -> Dictionary:
 	var active = owner.game.MAIN_active_current_turn_socket == p.socket_number and p.has_turn
 	match data.packet_id:
 		10:
-			if not active or owner.busy or p.is_holding_shotgun: return {}
+			if not active or busy or p.is_holding_shotgun: return {}
 		12:
 			var target = owner.property_for(data.get("socket_to_shoot", -1))
-			if not active or owner.busy or not p.is_holding_shotgun or target == null or target.health_current <= 0: return {}
+			if not active or busy or not p.is_holding_shotgun or target == null or target.health_current <= 0: return {}
 			if owner.game.MAIN_active_sequence_dict.get("sequence_in_shotgun", []).is_empty(): return {}
 			if owner.rules.state(p.socket_number).contract == owner.Rules.Catalog.Contract.NO_SELF_SHOTS and target == p:
-				owner.punish(p.socket_number)
+				punish(p.socket_number)
 				return {}
 		15:
 			if not active or not p.is_holding_shotgun: return {}
 			if not data.get("direction_to_look") in ["self", "forward", "left", "right"]: return {}
 		17:
-			if owner.busy or not p.is_grabbing_items or p.is_holding_item_to_place: return {}
+			if busy or not p.is_grabbing_items or p.is_holding_item_to_place: return {}
 		19:
 			var grid = data.get("local_grid_index", -1)
 			if not p.is_grabbing_items or not p.is_holding_item_to_place or typeof(grid) != TYPE_INT or grid < 0 or grid > 7 or not p.user_inventory[grid].is_empty(): return {}
 		22:
-			if not active or (owner.busy and not p.is_stealing_item): return {}
+			if not active or (busy and not p.is_stealing_item): return {}
 			var socket = data.get("item_socket_number", -1)
 			var grid = data.get("local_grid_index", -1)
 			if typeof(grid) != TYPE_INT or grid < 0 or grid > 7 or owner.property_for(socket) == null: return {}
@@ -161,11 +171,11 @@ func verify(_verifier: Node, data: Dictionary) -> Dictionary:
 			elif socket != p.socket_number: return {}
 			var result = owner.rules.item_result(p.socket_number, entry.item_id, stolen)
 			if result == "contract":
-				owner.punish(p.socket_number)
+				punish(p.socket_number)
 				return {}
 			if result != "ok":
 				owner.send("reject", {"socket": p.socket_number}, p.user_id)
-				owner.restore_permissions(p.socket_number)
+				restore_permissions(p.socket_number)
 				return {}
 		24:
 			var target = owner.property_for(data.get("item_selected_socket_number", -1))
@@ -173,7 +183,7 @@ func verify(_verifier: Node, data: Dictionary) -> Dictionary:
 			if target == null or target == p or target.health_current <= 0 or target.is_jammed:
 				# The UI locks while confirmation travels to the host. Return the
 				# consumed jammer through the regular synchronized exit animation.
-				owner.broadcast_native({"packet category": "MP_UserInstanceProperties", "packet alias": "secondary item interaction", "sent_from": "host", "packet_id": 25, "socket_number": p.socket_number, "item_id": 3, "has_exit_animation": true, "item_selected_socket_number": -1, "item_selected_local_grid_index": 0, "ending_turn_after_item_use": false})
+				broadcast_native({"packet category": "MP_UserInstanceProperties", "packet alias": "secondary item interaction", "sent_from": "host", "packet_id": 25, "socket_number": p.socket_number, "item_id": 3, "has_exit_animation": true, "item_selected_socket_number": -1, "item_selected_local_grid_index": 0, "ending_turn_after_item_use": false})
 				return {}
 			data["has_exit_animation"] = true
 			data["item_selected_local_grid_index"] = 0
@@ -203,14 +213,14 @@ func resolve_shot(_verifier: Node, data: Dictionary):
 	var hp = effect.health
 	var left = owner.game.MAIN_active_sequence_dict.sequence_in_shotgun.size() - 1
 	var ending = not effect.keep_turn or left == 0 or owner.property_for(socket).user_id in owner.game.MAIN_active_user_id_exceeded_secondary_timeout_array
-	owner.busy = true
-	owner.broadcast_native({"packet category": "MP_UserInstanceProperties", "packet alias": "shoot user", "sent_from": "host", "packet_id": 13, "shooter_socket_self": socket, "shooter_socket_target": actual, "shooter_shell": shell, "shooter_sequence_length_after_eject": left, "shooter_socket_target_direction": owner.game.round_manager.GetDirection(socket, actual), "barrel_sawed_off": owner.game.MAIN_barrel_sawed_off, "sent_from_socket": socket, "ending_turn_after_shot": ending, "cp_selected_target": data.socket_to_shoot, "cp_strength": strength, "cp_health": hp})
+	busy = true
+	broadcast_native({"packet category": "MP_UserInstanceProperties", "packet alias": "shoot user", "sent_from": "host", "packet_id": 13, "shooter_socket_self": socket, "shooter_socket_target": actual, "shooter_shell": shell, "shooter_sequence_length_after_eject": left, "shooter_socket_target_direction": owner.game.round_manager.GetDirection(socket, actual), "barrel_sawed_off": owner.game.MAIN_barrel_sawed_off, "sent_from_socket": socket, "ending_turn_after_shot": ending, "cp_selected_target": data.socket_to_shoot, "cp_strength": strength, "cp_health": hp})
 
 func resolve_item(_verifier: Node, data: Dictionary):
 	var socket = data.sent_from_socket
 	var p = owner.property_for(socket)
 	owner.rules.accept_item(socket, data.item_id, data.stealing_item)
-	owner.busy = true
+	busy = true
 	var packet = {"packet category": "MP_UserInstanceProperties", "packet alias": "interact with item", "sent_from": "host", "packet_id": 23, "item_socket_number": data.item_socket_number, "local_grid_index": data.local_grid_index, "item_id": data.item_id, "socket_number": socket, "stealing_item": data.stealing_item, "ending_turn_after_item_use": owner.game.CheckIfEndingTurnAfterItemUse(data.item_id, socket), "cp_health": mini(p.health_current + 1, p.health_on_round_start) if data.item_id == 4 else p.health_current, "current_shell_in_chamber": "unknown", "phone_verbal_shell": "", "phone_verbal_index": "", "cp_players": owner.rules.players.duplicate(true)}
 	var private_packet = packet.duplicate(true)
 	if data.item_id in [2, 5, 9]: private_packet.current_shell_in_chamber = owner.game.MAIN_active_sequence_dict.sequence_in_shotgun[0]
@@ -225,7 +235,7 @@ func resolve_item(_verifier: Node, data: Dictionary):
 	owner.packets.PipeData(private_packet)
 
 func apply_heal(shoot: Node):
-	var packet = owner.pending_shots[shoot.properties.socket_number]
+	var packet = pending_shots[shoot.properties.socket_number]
 	var target = owner.property_for(packet.shooter_socket_target)
 	if target == null: return
 	target.health_counter.healing_health = packet.cp_health > target.health_current
@@ -234,21 +244,36 @@ func apply_heal(shoot: Node):
 
 func claim_outcome(shoot: Node) -> bool:
 	var socket = shoot.properties.socket_number
-	var packet = owner.pending_shots.get(socket, {})
+	var packet = pending_shots.get(socket, {})
 	if packet.get("shooter_socket_self", -1) != socket: return false
 	var token = "%s:%s:%s" % [owner.rules.charge, socket, packet.get("cp_event", 0)]
-	if owner.applied_outcomes.has(token): return false
-	owner.applied_outcomes[token] = true
+	if applied_outcomes.has(token): return false
+	applied_outcomes[token] = true
 	return true
 
 
 
 func punish(socket: int):
-	if owner.rules.state(socket).failed or owner.busy: return
-	owner.busy = true
+	if owner.rules.state(socket).failed or busy: return
+	busy = true
 	var data = {"socket": socket, "left": owner.game.MAIN_active_sequence_dict.sequence_in_shotgun.size(), "event": owner.event_counter + 1}
 	owner.send("failure", data)
-	owner.execute_failure(data)
+	execute_failure(data)
+
+func advance_interaction():
+	if not is_instance_valid(owner.game) or owner.rules.settings.items != 1: return
+	var local = null
+	for player in owner.game.instance_handler.instance_property_array:
+		if player.is_active: local = player
+	if local == null: return
+	if not local.is_stealing_item: theft_target = -1
+	# Adrenaline's selection is a continuation, not a second locked action.
+	if busy and local.is_stealing_item: busy = false
+	for player in owner.game.instance_handler.instance_property_array:
+		if player == local: continue
+		for item in player.user_inventory_instance_array:
+			if is_instance_valid(item) and item.get_child_count() > 1 and local.is_stealing_item:
+				item.get_child(1).interactionAllowed = player.socket_number == theft_target and local.has_turn
 
 func continue_turn(socket: int, after_shot: bool = false):
 	var p = owner.property_for(socket)
@@ -275,18 +300,20 @@ func finish_jammer_selection(socket: int, resume: bool):
 	if p.is_active: p.jammer_manager.SetJammerControllerPrompts(false)
 	if resume and owner.game.MAIN_active_current_turn_socket == socket and p.health_current > 0:
 		p.has_turn = true
-	owner.busy = false
+	busy = false
 	print("[ChallengePack MP] jammer selection finished; socket=", socket, "; resume=", resume)
 
 func finish_shot(shoot: Node, packet: Dictionary):
 	var token = "shot-%s" % packet.get("cp_event", 0)
-	if owner.completed_actions.has(token): return
-	owner.completed_actions[token] = true
-	var captured_epoch = owner.epoch
+	if completed_actions.has(token): return
+	completed_actions[token] = true
+	var generation = owner.epoch
+	var charge = owner.rules.charge
 	if not await owner.stage(token): return
-	if captured_epoch != owner.epoch or not is_instance_valid(shoot): return
+	if not is_instance_valid(owner): return
+	if not owner.current(generation, charge) or not is_instance_valid(shoot): return
 	if packet.get("cp_penalty", false): owner.notice("CP_MP_CONTRACT_FAILED", [shoot.properties.user_name])
-	owner.busy = false
+	busy = false
 	if not owner.host(): return
 	var socket = packet.shooter_socket_self
 	var winner = shoot.CheckIfUserHasWon()
@@ -298,19 +325,21 @@ func finish_shot(shoot: Node, packet: Dictionary):
 		owner.game.round_manager.UserEndTurn_Packet(socket, hand_over, empty, winner)
 	else:
 		owner.send("continue", {"socket": socket, "shot": true})
-		owner.continue_turn(socket, true)
+		continue_turn(socket, true)
 
 func finish_item(interaction: Node, packet: Dictionary):
 	var token = "item-%s" % packet.get("cp_event", 0)
-	if owner.completed_actions.has(token): return
-	owner.completed_actions[token] = true
-	var captured_epoch = owner.epoch
+	if completed_actions.has(token): return
+	completed_actions[token] = true
+	var generation = owner.epoch
+	var charge = owner.rules.charge
 	if not await owner.stage(token): return
-	if captured_epoch != owner.epoch or not is_instance_valid(interaction): return
+	if not is_instance_valid(owner): return
+	if not owner.current(generation, charge) or not is_instance_valid(interaction): return
 	var p = interaction.properties
 	p.is_interacting_with_item = false
-	if packet.item_id == 3: owner.finish_jammer_selection(p.socket_number, not packet.ending_turn_after_item_use)
-	owner.busy = false
+	if packet.item_id == 3: finish_jammer_selection(p.socket_number, not packet.ending_turn_after_item_use)
+	busy = false
 	if not owner.host(): return
 	owner.flush_snapshots()
 	owner.send("digest", {"digest": owner.public_digest()})
@@ -318,5 +347,60 @@ func finish_item(interaction: Node, packet: Dictionary):
 		owner.game.round_manager.UserEndTurn_Packet(p.socket_number, true, owner.game.MAIN_active_sequence_dict.sequence_in_shotgun.is_empty(), -1)
 	else:
 		owner.send("continue", {"socket": p.socket_number})
-		owner.continue_turn(p.socket_number)
+		continue_turn(p.socket_number)
+
+func presentation():
+	if owner.rules.settings.items != 1: return
+	var local = null
+	for p in owner.game.instance_handler.instance_property_array:
+		if p.is_active: local = p
+	if local == null: return
+	for p in owner.game.instance_handler.instance_property_array:
+		if p == local:
+			for item in p.user_inventory_instance_array:
+				if is_instance_valid(item) and hidden.has(item.get_instance_id()):
+					item.visible = hidden[item.get_instance_id()]
+					hidden.erase(item.get_instance_id())
+			continue
+		var reveal = local.is_stealing_item and p.socket_number == theft_target
+		for item in p.user_inventory_instance_array:
+			if is_instance_valid(item):
+				if not hidden.has(item.get_instance_id()): hidden[item.get_instance_id()] = item.visible
+				item.visible = hidden[item.get_instance_id()] if reveal else false
+	for p in owner.game.instance_handler.instance_property_array:
+		var held = p.item_interaction.active_item_parent
+		if is_instance_valid(held): held.visible = true
+
+func shell_material(branch: Node, type: String, examining: bool):
+	var mat = branch.mat_blank_default.duplicate()
+	# Multiplying the live shell's red/black texture by green makes its hull
+	# almost black, particularly on the ejected shell. Tint the hull directly.
+	mat.albedo_texture = null
+	mat.albedo_color = Color("299940") if type == "heal" else Color("111117")
+	if GlobalVariables.colorblind:
+		mat.albedo_color = Color("f4d35e") if type == "heal" else Color("432172")
+		mat.emission_enabled = type == "heal"
+		mat.emission = Color("715000")
+	if examining: mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	branch.shell.set_surface_override_material(1, mat)
+
+func health_visibility(counter: Node):
+	var concealed = owner.rules.settings.health == 1
+	# Hide stable HP parents, so EnableDisplay and jammer flicker cannot reveal
+	# individual charges. The round indicator belongs to a separate branch.
+	for charges in [counter.ui_charge_array, counter.ui_charge_array_temp, counter.ui_charge_array_side_left, counter.ui_charge_array_side_right]:
+		if charges.is_empty(): continue
+		var group = charges[0].get_parent()
+		if concealed:
+			if not group.has_meta("cp_health_visible"): group.set_meta("cp_health_visible", group.visible)
+			group.hide()
+		elif group.has_meta("cp_health_visible"):
+			group.visible = group.get_meta("cp_health_visible")
+			group.remove_meta("cp_health_visible")
+	if concealed and counter.properties.health_current > 0 and not counter.ui_parent_winner.visible:
+		var round_index = owner.game.MAIN_active_round_index
+		if round_index >= 0 and not counter.pos_array_rounds.is_empty():
+			counter.ui_round_indicator_selector.position = counter.pos_array_rounds[mini(round_index, counter.pos_array_rounds.size() - 1)].position
+			counter.ui_round_indicator_base.show()
+			counter.ui_round_indicator_selector.show()
 

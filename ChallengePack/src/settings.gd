@@ -57,4 +57,4 @@ func save_settings(path: String = "") -> Error:
 	return cfg.save(storage_path if path.is_empty() else path)
 
 func snapshot() -> Dictionary:
-	return preload("domain/settings_snapshot.gd").new(values).to_dictionary()
+	return values.duplicate(true)

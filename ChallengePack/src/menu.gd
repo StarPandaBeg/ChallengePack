@@ -1,17 +1,8 @@
 extends CanvasLayer
 
 const ContractEditor = preload("contract_editor.gd")
-const LABELS = {
-	"shells": ["CP_SHELL_VISIBILITY", ["CP_DEFAULT", "CP_QUANTITY", "CP_HIDDEN"]],
-	"items": ["CP_ITEM_VISIBILITY", ["CP_DEFAULT", "CP_HIDDEN"]],
-	"shuffle": ["CP_SHUFFLE", ["YES", "NO"]],
-	"turn": ["CP_FIRST_TURN", ["CP_ALWAYS_FIRST", "CP_ROUND_ROBIN", "CP_RANDOM"]],
-	"health": ["CP_HEALTH_VISIBILITY", ["CP_DEFAULT", "CP_HIDDEN"]],
-	"mirror": ["CP_MIRROR_ITEMS", ["NO", "YES"]],
-	"pocket": ["CP_LIMITED_POCKET", ["CP_UNLIMITED", "CP_ONE_ITEM", "CP_TWO_ITEMS"]],
-	"contract": ["CP_ROUND_CONTRACT", ["CP_OFF", "CP_ON"]],
-	"heal": ["CP_HEAL_BULLETS", ["NO", "YES"]]
-}
+const LABELS = preload("domain/settings_schema.gd").LABELS
+var controller: RefCounted
 var port: Node
 var manager: Node
 var panel: Control
@@ -29,6 +20,7 @@ var heal_editor: CanvasLayer
 
 func setup(owner_port: Node, menu_manager: Node):
 	port = owner_port
+	controller = preload("ui/settings_controller.gd").new(port.settings.snapshot, port.save_preferences, port.settings.LIMITS)
 	manager = menu_manager
 	layer = 110
 	panel = Control.new()
@@ -144,7 +136,7 @@ func configure_focus():
 		start_button.focus_previous = start_button.get_path_to(heal_edit_button)
 
 func open_heal_editor():
-	if shown and port.settings.values.heal == 1:
+	if shown and controller.values().heal == 1:
 		heal_editor.open()
 		manager.controller.previousFocus = heal_editor.slider
 
@@ -153,15 +145,14 @@ func close_heal_editor():
 	manager.controller.previousFocus = heal_edit_button
 
 func set_heal_chance(value: int):
-	port.settings.values.heal_chance = value
-	var result = port.settings.save_settings()
+	var result = controller.set_value("heal_chance", value)
 	refresh()
 	if result != OK:
 		status.text = port.localization.text("CP_SAVE_ERROR", [result])
 		status.show()
 
 func open_editor():
-	if shown and port.settings.values.contract == 1:
+	if shown and controller.values().contract == 1:
 		editor.open()
 
 func make_button(column: Control, text: String) -> Button:
@@ -188,24 +179,25 @@ func refresh():
 	return_button.text = tr("RETURN")
 	start_button.tooltip_text = port.localization.text("CP_TIP_START")
 	return_button.tooltip_text = port.localization.text("CP_TIP_RETURN")
-	var chance_percent = port.settings.values.contract_chance
+	var preferences = controller.values()
+	var chance_percent = preferences.contract_chance
 	for key in buttons:
 		var values = LABELS[key][1]
-		var value_key = values[port.settings.values[key]]
+		var value_key = values[preferences[key]]
 		var value = port.localization.text(value_key) if value_key.begins_with("CP_") else tr(value_key)
 		var caption = port.localization.text(LABELS[key][0])
 		if key == "contract":
 			caption += " (%d%%)" % chance_percent
-		if key == "heal" and port.settings.values.heal == 1:
-			caption += " (%d%%)" % port.settings.values.heal_chance
+		if key == "heal" and preferences.heal == 1:
+			caption += " (%d%%)" % preferences.heal_chance
 		buttons[key].text = caption + ":\n" + value
 		buttons[key].tooltip_text = port.localization.text("CP_TIP_" + key.to_upper(), [chance_percent] if key == "contract" else [])
 	edit_button.text = port.localization.text("CP_EDIT_CONTRACTS")
 	edit_button.tooltip_text = port.localization.text("CP_TIP_EDIT_CONTRACTS")
-	edit_button.visible = port.settings.values.contract == 1
+	edit_button.visible = preferences.contract == 1
 	heal_edit_button.text = port.localization.text("CP_EDIT_CONTRACTS")
-	heal_edit_button.visible = port.settings.values.heal == 1
-	heal_editor.refresh(port.settings.values.heal_chance)
+	heal_edit_button.visible = preferences.heal == 1
+	heal_editor.refresh(preferences.heal_chance)
 	configure_focus()
 	start_button.disabled = not port.compatible
 	status.text = "" if port.compatible else port.localization.text("CP_CANNOT_START", [port.compatibility_message()])
@@ -216,7 +208,7 @@ func _notification(what):
 		refresh()
 
 func change(key: String):
-	var result = port.settings.cycle(key)
+	var result = controller.cycle(key)
 	refresh()
 	if result != OK:
 		status.text = port.localization.text("CP_SAVE_ERROR", [result])

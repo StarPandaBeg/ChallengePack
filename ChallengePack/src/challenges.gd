@@ -26,7 +26,7 @@ func mode(key: String) -> int:
 func state(manager: Node) -> Dictionary:
 	var id = manager.get_instance_id()
 	if not managers.has(id):
-		managers[id] = {"ref": weakref(manager), "used": 0, "contract": 0, "failed": false, "started": false, "has_items": false, "paused_contract": 0, "used_items": []}
+		preload("runtime/node_registry.gd").track(manager, managers, {"used": 0, "contract": 0, "failed": false, "started": false, "has_items": false, "paused_contract": 0, "used_items": []})
 	return managers[id]
 
 func track(manager: Node):
@@ -39,7 +39,7 @@ func reset_pocket(manager: Node):
 func shot_strength(manager: Node) -> int:
 	# A contract supplies the same strength as a saw, without changing the barrel
 	# or persisting into the next charge. Combining both never multiplies again.
-	return preload("domain/mode_policy.gd").solo_strength(state(manager).contract, manager.currentShotgunDamage)
+	return preload("domain/shell_rules.gd").strength(manager.currentShotgunDamage, state(manager).contract == Contract.TWO_FOR_ONE)
 
 func player_target(manager: Node, selected: String) -> String:
 	if state(manager).contract == Contract.LEAKY_GUN:
@@ -160,6 +160,4 @@ func hud_data() -> Dictionary:
 	return {"contract": entry.contract, "paused": entry.paused_contract, "limit": limit, "remaining": maxi(0, limit - entry.used), "hud_key": hud_key(id, entry.used_items)}
 
 func prune():
-	for id in managers.keys():
-		if managers[id].ref.get_ref() == null:
-			managers.erase(id)
+	preload("runtime/node_registry.gd").prune(managers)

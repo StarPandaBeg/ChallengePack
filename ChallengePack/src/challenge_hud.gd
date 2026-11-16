@@ -48,10 +48,9 @@ func _init():
 	bomb.hide()
 	hide()
 
-func setup(directory: String):
-	var image = Image.load_from_file(directory.path_join("assets/contracts/c4.png"))
-	if image != null:
-		bomb.texture = ImageTexture.create_from_image(image)
+func setup(directory: String, cache = null):
+	var resources = cache if cache != null else preload("runtime/resource_cache.gd").new()
+	bomb.texture = resources.texture(directory.path_join("assets/contracts/c4.png"))
 
 func label(parent: Node, font_size: int, color: Color) -> Label:
 	var result = Label.new()

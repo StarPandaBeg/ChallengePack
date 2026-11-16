@@ -198,12 +198,12 @@ func run():
 	host.stamp_request(forged_alias)
 	check(not host.valid_action(forged_alias, 11), "Packet ID cannot disguise another operation")
 	host.sender = 11
-	check(not host.verify(null, request).is_empty(), "Valid living target")
+	check(not host.gameplay.verify(null, request).is_empty(), "Valid living target")
 	request.socket_to_shoot = 3
-	check(host.verify(null, request).is_empty(), "Missing target rejected")
+	check(host.gameplay.verify(null, request).is_empty(), "Missing target rejected")
 	request.socket_to_shoot = 1
 	rival.health_current = 0
-	check(host.verify(null, request).is_empty(), "Dead target rejected")
+	check(host.gameplay.verify(null, request).is_empty(), "Dead target rejected")
 	rival.health_current = 3
 	var event = {"packet category": "MP_RoundManager", "packet alias": "pass turn"}
 	host.in_game = true
@@ -228,21 +228,21 @@ func run():
 	check(client.penalties == 1, "Penalty notification applies once")
 	state.MAIN_inventory_by_socket[0][0] = {"item_id": 2}
 	var item = {"packet alias": "interact with item request", "packet_id": 22, "sent_from_socket": 0, "item_socket_number": 0, "local_grid_index": 0, "item_id": 2, "stealing_item": false}
-	check(not host.verify(null, item).is_empty(), "Owned grid slot accepted")
+	check(not host.gameplay.verify(null, item).is_empty(), "Owned grid slot accepted")
 	item.item_id = 3
-	check(host.verify(null, item).is_empty(), "Forged item ID rejected")
+	check(host.gameplay.verify(null, item).is_empty(), "Forged item ID rejected")
 	item.local_grid_index = 8
-	check(host.verify(null, item).is_empty(), "Invalid grid slot rejected")
+	check(host.gameplay.verify(null, item).is_empty(), "Invalid grid slot rejected")
 	actor.is_viewing_jammer = true
 	var jam = {"packet alias": "secondary item interaction request", "packet_id": 24, "sent_from_socket": 0, "item_id": 3, "item_selected_socket_number": 1}
 	# Use the alias registered by the game rather than trusting a client string.
 	jam["packet alias"] = host.REQUESTS[24]
-	check(not host.verify(null, jam).is_empty(), "Living jammer target accepted")
+	check(not host.gameplay.verify(null, jam).is_empty(), "Living jammer target accepted")
 	rival.is_jammed = true
-	check(host.verify(null, jam).is_empty(), "Already jammed target rejected")
+	check(host.gameplay.verify(null, jam).is_empty(), "Already jammed target rejected")
 	check(host.native_outbox.size() == 1 and host.native_outbox[0].item_selected_socket_number == -1, "Stale jammer target receives synchronized cancellation")
 	actor.is_viewing_jammer = false
-	host.verify(null, jam)
+	host.gameplay.verify(null, jam)
 	check(host.native_outbox.size() == 1, "Duplicate jammer confirmation cannot exit twice")
 	steam.STEAM_ID = previous_me
 	steam.HOST_ID = previous_host

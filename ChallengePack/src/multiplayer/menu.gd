@@ -3,7 +3,8 @@ extends CanvasLayer
 const GREEN = Color(0, 1, 0)
 const DIM_GREEN = Color(0, 0.42, 0)
 
-const Labels = preload("../menu.gd").LABELS
+const Labels = preload("../domain/settings_schema.gd").LABELS
+var controller: RefCounted
 var session: Node
 var panel: PanelContainer
 var editor: PanelContainer
@@ -41,6 +42,7 @@ func text(key: String, args: Array = []) -> String:
 
 func setup(owner_session: Node):
 	session = owner_session
+	controller = preload("../ui/settings_controller.gd").new(session.preferences, session.commit_preferences, session.rules.LIMITS)
 	layer = 112
 	open_button = Button.new()
 	open_button.position = Vector2(18, 16) if session.in_game else Vector2(127, 345)
@@ -92,10 +94,10 @@ func setup(owner_session: Node):
 	add_child(backdrop)
 	hud = preload("contract_hud.gd").new()
 	add_child(hud)
-	hud.setup(session.port.mod_directory)
+	hud.setup(session.port.mod_directory, session.port.resources)
 	nameplates = preload("contract_nameplates.gd").new()
 	add_child(nameplates)
-	nameplates.setup(session.port.mod_directory)
+	nameplates.setup(session.port.mod_directory, session.port.resources)
 	theft_targets = HBoxContainer.new()
 	theft_targets.position = Vector2(18, 160)
 	theft_targets.theme = open_button.theme
@@ -235,7 +237,7 @@ func refresh():
 	var connected = available()
 	if not connected and shown: toggle()
 	open_button.visible = connected and not session.in_game
-	var values = session.rules.settings
+	var values = controller.values()
 	var editable = connected and session.host() and not session.in_game and not session.loading
 	edit_button.text = text("CP_EDIT_CONTRACTS")
 	edit_button.visible = values.contract != 0
@@ -289,7 +291,7 @@ func refresh():
 	var own_contracts = []
 	if session.in_game and is_instance_valid(session.game):
 		for p in session.game.instance_handler.instance_property_array:
-			var entry = session.rules.state(p.socket_number)
+			var entry = session.rules.players.get(p.socket_number, {"contract": 0, "used": 0, "history": [], "failed": false})
 			if entry.contract == 0: continue
 			var name = contract_text(entry.contract)
 			var hint_key = session.rules.Catalog.contract_key(entry.contract).replace("CP_", "CP_MP_BRIEF_")
@@ -305,7 +307,7 @@ func refresh():
 		for p in session.game.instance_handler.instance_property_array:
 			if p.is_active: local = p
 	var limit = values.pocket if local != null else 0
-	var remaining = maxi(0, limit - session.rules.state(local.socket_number).used) if local != null else 0
+	var remaining = maxi(0, limit - session.rules.players.get(local.socket_number, {}).get("used", 0)) if local != null else 0
 	hud.refresh_multiplayer(own_contracts, remaining, limit, session.port.localization)
 	nameplates.refresh(session.game.instance_handler.instance_property_array if session.in_game and is_instance_valid(session.game) else [], contracts)
 	theft_targets.position.y = hud.position.y + hud.size.y + 12 if hud.visible else 8
@@ -319,46 +321,33 @@ func refresh():
 		for socket in candidates:
 			var button = Button.new()
 			button.text = text("CP_MP_REVEAL") + ": " + session.property_for(socket).user_name
-			button.pressed.connect(func(): session.theft_target = socket)
+			button.pressed.connect(func(): session.gameplay.theft_target = socket)
 			theft_targets.add_child(button)
 			connect_button_audio(button)
 		if not candidates.is_empty():
-			session.theft_target = candidates[0]
+			session.gameplay.theft_target = candidates[0]
 			if local.cursor.controller_active: theft_targets.get_children().back().grab_focus()
 	theft_targets.visible = not candidates.is_empty() and not shown
 	if session.host() and is_instance_valid(session.lobby_ui) and not session.in_game:
 		session.lobby_ui.ui_button_start_game.visible = session.can_start()
 
 func cycle(key: String):
-	var values = session.rules.settings.duplicate(true)
-	values[key] = (values[key] + 1) % session.rules.LIMITS[key]
-	session.change_settings(values)
+	controller.cycle(key)
 	refresh()
 
 func select_player(index: int):
-	var values = session.rules.settings.duplicate(true)
-	values.first_player = first_player.get_item_metadata(index)
-	session.change_settings(values)
+	controller.set_value("first_player", first_player.get_item_metadata(index))
 
 func select_contract(pressed: bool, id: int):
-	var values = session.rules.settings.duplicate(true)
-	if pressed and not id in values.contract_pool: values.contract_pool.append(id)
-	if not pressed: values.contract_pool.erase(id)
-	values.contract_pool.sort()
-	session.change_settings(values)
+	controller.toggle_contract(pressed, id)
 	refresh()
 
 func select_all(all: bool):
-	if not session.host() or session.in_game: return
-	var values = session.rules.settings.duplicate(true)
-	values.contract_pool = session.rules.Catalog.ALL_IDS.duplicate() if all else []
-	session.change_settings(values)
+	controller.select_all(all)
 	refresh()
 
 func set_chance(value: float):
-	var values = session.rules.settings.duplicate(true)
-	values.contract_chance = roundi(value)
-	session.change_settings(values)
+	controller.set_value("contract_chance", roundi(value))
 	refresh()
 
 func open_editor():
@@ -375,10 +364,7 @@ func close_heal_editor():
 	heal_edit_button.grab_focus()
 
 func set_heal_chance(value: int):
-	if not session.host() or session.in_game or session.loading: return
-	var values = session.rules.settings.duplicate(true)
-	values.heal_chance = value
-	session.change_settings(values)
+	controller.set_value("heal_chance", value)
 	refresh()
 
 func toggle():

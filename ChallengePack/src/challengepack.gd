@@ -15,6 +15,7 @@ const WhatsNew = preload("whats_new.gd")
 const ContractEffects = preload("contract_effects.gd")
 const MultiplayerSession = preload("multiplayer/session.gd")
 const MultiplayerFactory = preload("multiplayer/factory.gd")
+var resources = preload("runtime/resource_cache.gd").new()
 var mp
 var mp_factory = MultiplayerFactory.new()
 const VERSION = "2.2.0"
@@ -95,7 +96,7 @@ func _ready():
 	layer.add_child(notice_label)
 	challenge_hud = ChallengeHUD.new()
 	layer.add_child(challenge_hud)
-	challenge_hud.setup(mod_directory)
+	challenge_hud.setup(mod_directory, resources)
 	failure_screen = FailureScreen.new()
 	add_child(failure_screen)
 	failure_screen.setup(self)
@@ -129,7 +130,7 @@ func on_node_added(node: Node):
 	elif path == "res://scripts/ItemManager.gd" and compatible:
 		node.ready.connect(items_ready.bind(node), CONNECT_ONE_SHOT)
 	elif path == "res://scripts/ShellLoader.gd" and compatible:
-		states[node.get_instance_id()] = {"ref": weakref(node), "rules": Rules.new()}
+		preload("runtime/node_registry.gd").track(node, states, {"rules": Rules.new()})
 	elif path == "res://scripts/RoundManager.gd" and compatible:
 		challenges.track(node)
 
@@ -162,6 +163,11 @@ func menu_ready(manager: Node):
 			multiplayer.disconnect("is_pressed", manager.StartMultiplayer)
 		multiplayer.connect("is_pressed", online_notice)
 
+func save_preferences(values: Dictionary) -> Error:
+	if not Settings.Schema.validate(values): return ERR_INVALID_DATA
+	settings.values = values.duplicate(true)
+	return settings.save_settings()
+
 func open_options(_manager: Node):
 	if is_instance_valid(news) and news.shown:
 		return
@@ -182,6 +188,7 @@ func next_starter(loader: Node) -> int:
 	return state(loader).next_starter(active.turn)
 
 func loading_phrase(loader: Node):
+	var origin = weakref(loader)
 	if loader.roundManager.playerData.numberOfDialogueRead >= 3:
 		return
 	var phrases = ["CP_SOME_LIVE", "CP_REAL_GAME"]
@@ -190,14 +197,18 @@ func loading_phrase(loader: Node):
 	loader.dialogue.ShowText_ForDuration(localization.text(phrases[loader.diaindex % 2]), 3)
 	loader.diaindex += 1
 	await get_tree().create_timer(3, false).timeout
+	if origin.get_ref() == null or not loader.is_inside_tree(): return
 	loader.roundManager.playerData.numberOfDialogueRead += 1
 
 func dealer_turn(loader: Node):
+	var origin = weakref(loader)
 	await get_tree().create_timer(0.6, false).timeout
+	if origin.get_ref() == null or not loader.is_inside_tree(): return
 	var rules = state(loader)
 	if not rules.dealer_message_shown:
 		loader.dialogue.ShowText_Forever(localization.text("CP_DEALER_FIRST"))
 		await get_tree().create_timer(1.9, false).timeout
+		if origin.get_ref() == null or not loader.is_inside_tree(): return
 		loader.dialogue.HideText()
 		rules.dealer_message_shown = true
 	loader.dealerAI.BeginDealerTurn()
@@ -225,7 +236,7 @@ func items_ready(manager: Node):
 	cover.set_script(Protectors)
 	cover.item_manager = manager
 	parent.add_child(cover)
-	covers[manager.get_instance_id()] = {"ref": weakref(manager), "cover": weakref(cover)}
+	preload("runtime/node_registry.gd").track(manager, covers, {"cover": weakref(cover)})
 
 func set_covers(manager: Node, visible: bool):
 	var entry = covers.get(manager.get_instance_id())
@@ -302,9 +313,5 @@ func _process(_delta):
 	if challenge_hud != null:
 		challenge_hud.refresh(challenges.hud_data(), localization)
 	challenges.prune()
-	for id in states.keys():
-		if states[id].ref.get_ref() == null:
-			states.erase(id)
-	for id in covers.keys():
-		if covers[id].ref.get_ref() == null:
-			covers.erase(id)
+	preload("runtime/node_registry.gd").prune(states)
+	preload("runtime/node_registry.gd").prune(covers)

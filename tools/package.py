@@ -7,7 +7,8 @@ from pathlib import Path
 root = Path(__file__).resolve().parents[1]
 dist = root / "dist"
 dist.mkdir(exist_ok=True)
-target = dist / "ChallengePack-2.2.0-win64.zip"
+version = re.search(r'^const VERSION = "([^"\n]+)"', (root / "ChallengePack/src/challengepack.gd").read_text(encoding="utf-8"), re.MULTILINE).group(1)
+target = dist / f"ChallengePack-{version}-win64.zip"
 assets = root / "ChallengePack" / "src" / "assets" / "protectors.res"
 if not assets.is_file():
     raise SystemExit("Build assets first: see README.md")
