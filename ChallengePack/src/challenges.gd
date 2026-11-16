@@ -2,7 +2,8 @@ extends RefCounted
 
 enum Contract { NONE, NO_HEALING, NO_SELF_SHOTS, NO_CUFFS, NO_HINTS, UNTOUCHABLE_CHARGE, FAIR_CALIBER, NO_STEALING, DRY_LAW, NO_INVERSION, NO_INSURANCE, TWO_FOR_ONE, LEAKY_GUN }
 # IDs and setting values are append-only: old saved choices keep their meaning.
-const SETTING_COUNT = Contract.LEAKY_GUN + 2
+const LEGACY_SETTING_COUNT = Contract.LEAKY_GUN + 2
+const ALL_IDS = [Contract.NO_HEALING, Contract.NO_SELF_SHOTS, Contract.NO_CUFFS, Contract.NO_HINTS, Contract.UNTOUCHABLE_CHARGE, Contract.FAIR_CALIBER, Contract.NO_STEALING, Contract.DRY_LAW, Contract.NO_INVERSION, Contract.NO_INSURANCE, Contract.TWO_FOR_ONE, Contract.LEAKY_GUN]
 const CATALOG = {
 	Contract.NONE: {"key": "CP_OFF", "hud": "CP_OFF", "detail": "CP_TIP_CONTRACT", "items": [], "requires_items": false},
 	Contract.NO_HEALING: {"key": "CP_NO_HEALING", "hud": "CP_HUD_NO_HEALING", "detail": "CP_HUD_HEALING_DETAIL", "items": ["cigarettes", "expired medicine"], "requires_items": true},
@@ -18,19 +19,10 @@ const CATALOG = {
 	Contract.TWO_FOR_ONE: {"key": "CP_TWO_FOR_ONE", "hud": "CP_HUD_TWO_FOR_ONE", "detail": "CP_DETAIL_TWO_FOR_ONE", "items": [], "requires_items": false},
 	Contract.LEAKY_GUN: {"key": "CP_LEAKY_GUN", "hud": "CP_HUD_LEAKY_GUN", "detail": "CP_DETAIL_LEAKY_GUN", "items": [], "requires_items": false}
 }
-const CONTRACT_CHANCE = 0.30
-var activation_chance = CONTRACT_CHANCE
 var port: Node
 var managers = {}
 var current: WeakRef
 var rng = RandomNumberGenerator.new()
-
-static func menu_keys() -> Array:
-	var result = ["CP_OFF", "CP_RANDOM"]
-	for id in CATALOG:
-		if id != Contract.NONE:
-			result.append(CATALOG[id].key)
-	return result
 
 static func contract_key(id: int) -> String:
 	return CATALOG[id].key
@@ -74,15 +66,14 @@ func player_target(manager: Node, selected: String) -> String:
 	return selected
 
 func select_contract(has_items: bool = true) -> int:
-	var selection = mode("contract")
-	if selection == 0:
+	if mode("contract") == 0:
 		return 0
 	var candidates = []
-	for id in CATALOG:
-		if id != Contract.NONE and (has_items or not CATALOG[id].requires_items):
-			if selection == 1 or id == selection - 1:
-				candidates.append(id)
-	if candidates.is_empty() or rng.randf() >= activation_chance:
+	var pool = port.active.get("contract_pool", ALL_IDS)
+	for id in ALL_IDS:
+		if id in pool and (has_items or not CATALOG[id].requires_items):
+			candidates.append(id)
+	if candidates.is_empty() or rng.randf() >= float(port.active.get("contract_chance", 30)) / 100.0:
 		return 0
 	return candidates[rng.randi_range(0, candidates.size() - 1)]
 
@@ -94,8 +85,8 @@ func begin_round(manager: Node):
 	entry.started = true
 	entry.has_items = manager.roundArray[manager.currentRound].usingItems
 	entry.contract = select_contract(entry.has_items)
-	var fixed = mode("contract") - 1
-	entry.paused_contract = fixed if fixed > 0 and not entry.has_items and CATALOG[fixed].requires_items else 0
+	var pool = port.active.get("contract_pool", ALL_IDS)
+	entry.paused_contract = pool[0] if mode("contract") != 0 and pool.size() == 1 and not entry.has_items and CATALOG[pool[0]].requires_items else 0
 	if entry.contract == 0:
 		return
 	port.contract_effects.announce(manager)

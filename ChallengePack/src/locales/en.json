@@ -131,5 +131,14 @@
   "CP_DETAIL_TWO_FOR_ONE": "Both sides deal 2 damage or heal 2 HP.\nA handsaw does not boost this again.",
   "CP_LEAKY_GUN": "LEAKY SHOTGUN",
   "CP_HUD_LEAKY_GUN": "Reversed targets",
-  "CP_DETAIL_LEAKY_GUN": "Your shots swap targets:\nchoose the dealer to shoot yourself, and vice versa."
+  "CP_DETAIL_LEAKY_GUN": "Your shots swap targets:\nchoose the dealer to shoot yourself, and vice versa.",
+  "CP_ON": "ON",
+  "CP_EDIT_CONTRACTS": "Edit",
+  "CP_TIP_EDIT_CONTRACTS": "Choose available contracts\nand their activation chance.",
+  "CP_CONTRACT_EDITOR_TITLE": "Contracts (%s / %s)",
+  "CP_SELECT_ALL": "Select all",
+  "CP_CONTRACT_CHANCE": "Chance per charge: %s%%",
+  "CP_CONTRACT_EMPTY": "No contracts selected. No contracts will appear.",
+  "CP_DONE": "Done",
+  "CP_SELECT_NONE": "Deselect all"
 }

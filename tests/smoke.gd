@@ -32,13 +32,13 @@ func run():
 	await process_frame
 	check(port.options.buttons.size() == 9)
 	var viewport_rect = root.get_visible_rect()
-	check(port.options.buttons.items.position.x > port.options.buttons.shells.position.x, "Settings are not in two columns")
-	check(is_equal_approx(port.options.buttons.items.position.y, port.options.buttons.shells.position.y))
+	check(port.options.buttons.items.global_position.x > port.options.buttons.shells.global_position.x, "Settings are not in two columns")
+	check(is_equal_approx(port.options.buttons.items.global_position.y, port.options.buttons.shells.global_position.y))
 	var saved_values = port.settings.snapshot()
 	for language in ["en", "ru"]:
 		TranslationServer.set_locale(language)
 		for key in port.options.buttons:
-			var arguments = [roundi(port.challenges.activation_chance * 100)] if key == "contract" else []
+			var arguments = [port.settings.values.contract_chance] if key == "contract" else []
 			check(port.options.buttons[key].get_tooltip().begins_with(port.localization.text("CP_TIP_" + key.to_upper(), arguments)), "Missing or stale setting tooltip: " + key)
 		check(port.options.start_button.get_tooltip() == port.localization.text("CP_TIP_START"))
 		check(port.options.return_button.get_tooltip() == port.localization.text("CP_TIP_RETURN"))
@@ -46,23 +46,23 @@ func run():
 			for value in range(port.Settings.LIMITS[key]):
 				port.settings.values[key] = value
 				port.options.refresh()
-				if key == "contract" and value > 1:
-					check(port.options.buttons.contract.tooltip_text.contains(port.localization.text(port.challenges.CATALOG[value - 1].detail)), "Contract tooltip omits its rule")
+				if key == "contract":
+					check(port.options.edit_button.visible == (value == 1), "Edit button visibility does not follow On/Off")
 				await process_frame
 				await process_frame
 				for button in port.options.buttons.values() + [port.options.start_button, port.options.return_button]:
 					check(viewport_rect.encloses(button.get_global_rect()), "Two-column menu overflows: " + button.text)
 	port.settings.values = saved_values
-	var previous_chance = port.challenges.activation_chance
+	var previous_chance = port.settings.values.contract_chance
 	for language in ["en", "ru"]:
 		TranslationServer.set_locale(language)
-		for chance in [0.0, 0.30, 1.0]:
-			port.challenges.activation_chance = chance
+		for chance in [0, 30, 100]:
+			port.settings.values.contract_chance = chance
 			port.options.refresh()
-			var percent = "%d%%" % roundi(chance * 100)
+			var percent = "%d%%" % chance
 			check(port.options.buttons.contract.text.contains(percent), "Contract caption has a stale probability")
 			check(port.options.buttons.contract.tooltip_text.contains(percent), "Contract tooltip has a stale probability")
-	port.challenges.activation_chance = previous_chance
+	port.settings.values.contract_chance = previous_chance
 	port.options.refresh()
 	check(port.options.buttons.shells.get_node(port.options.buttons.shells.focus_neighbor_right) == port.options.buttons.items)
 	check(port.options.buttons.shells.get_node(port.options.buttons.shells.focus_neighbor_bottom) == port.options.buttons.shuffle)

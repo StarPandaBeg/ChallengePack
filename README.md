@@ -70,15 +70,15 @@ Combine nine independent settings in the standard game and Double or Nothing. Ne
 
 #### Round Contract:
 
-<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _Off / Random / Selected Contract_ - Twelve contracts restrict actions or change the shotgun. Each charge has a 30% chance, with a beep and bomb icon. Breaking a contract triggers a self-shot and ends the run. Item rules pause without items.
+<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _Off / On_ - Enable contracts, then open **Edit** to choose which of the twelve rules can appear. Selected contracts are picked randomly; the chance slider ranges from 0–100% (30% by default). **Select all** and **Deselect all** change every checkbox. A beep and bomb announce a contract; breaking a restriction ends the run. Item rules pause without items.
 
-No Safety Net allows a magnifying glass or handcuffs, but never both in one charge. Two for the Price of One gives both sides double damage and healing, without stacking with a saw. Leaky Shotgun reverses only the player’s shot targets. Both new shotgun contracts also work without items. Hover over your selection for its rule.
+No Safety Net allows a magnifying glass or handcuffs, but never both in one charge. Two for the Price of One gives both sides double damage and healing, without stacking with a saw. Leaky Shotgun reverses only the player’s shot targets. Both new shotgun contracts also work without items. Hover over a checkbox for its rule.
 
 #### Heal Bullets:
 
 <img src=".github/icon_1.png" alt="*" width="16" height="16" /> _No / Yes_ - Replace one blank per charge with a green shell that heals its target by 1 HP (2 with a saw or Two for the Price of One). Shooting yourself keeps your turn — for both you and the dealer. An inverter swaps green shells with black instant-kill shells; black shells never spawn naturally.
 
-Your choices are saved between launches. The two-column menu supports mouse, keyboard and controller navigation. Hover over an option for a brief explanation. English and Russian mod text is included.
+Choices, selected contracts and probability persist between launches; an empty selection produces no contracts. Old fixed selections migrate to a single checked contract. The two-column menu supports mouse, keyboard and controller navigation. Hover over an option for a brief explanation. English and Russian mod text is included.
 
 ## Installation
 
@@ -156,7 +156,7 @@ Run the installer and engine checks from the repository root:
 ```powershell
 python -m unittest discover -s tests -p test_installer.py -v
 $repoPath = (Get-Location).Path
-foreach ($scenario in @('probe', 'settings_rules', 'localization', 'smoke', 'gameplay', 'challenges', 'contract_hud', 'heal_bullets', 'failure_screen', 'contract_chance', 'protectors', 'hidden_items', 'lethal_bullets', 'whats_new', 'contract_effects', 'contract_rules', 'shot_contracts')) {
+foreach ($scenario in @('probe', 'settings_rules', 'localization', 'smoke', 'gameplay', 'challenges', 'contract_hud', 'heal_bullets', 'failure_screen', 'contract_chance', 'protectors', 'hidden_items', 'lethal_bullets', 'whats_new', 'contract_effects', 'contract_rules', 'shot_contracts', 'contract_editor')) {
     python tools/run_godot.py --path ../game --script "$repoPath/tests/$scenario.gd"
     if ($LASTEXITCODE -ne 0) { throw "Check failed: $scenario" }
 }

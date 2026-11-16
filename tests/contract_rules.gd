@@ -32,7 +32,7 @@ func run():
 	root.add_child(effects)
 	port.contract_effects = effects
 	port.active = port.Settings.DEFAULTS.duplicate()
-	check(port.challenges.menu_keys().slice(0, 5) == ["CP_OFF", "CP_RANDOM", "CP_NO_HEALING", "CP_NO_SELF_SHOTS", "CP_NO_CUFFS"], "Legacy contract IDs/settings changed")
+	check(port.challenges.contract_key(1) == "CP_NO_HEALING" and port.challenges.contract_key(2) == "CP_NO_SELF_SHOTS" and port.challenges.contract_key(3) == "CP_NO_CUFFS", "Legacy contract IDs changed")
 	var f = fixture()
 	root.add_child(f.root)
 	f.items.set_process(false)
@@ -105,7 +105,7 @@ func run():
 	# The real charge-start handler clears history, including a silent/off charge.
 	Engine.time_scale = 100
 	port.active.pocket = 0
-	port.active.contract = 11
+	choose_contract(11)
 	entry.failed = false
 	arm_contract()
 	await port.challenges.begin_round(f.rm)

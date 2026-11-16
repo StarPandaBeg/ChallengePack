@@ -20,8 +20,8 @@ func run():
 		TranslationServer.set_locale(language)
 		for has_items in [false, true]:
 			f.rm.roundArray[0].usingItems = has_items
-			for selection in range(port.Settings.LIMITS.contract):
-				port.active.contract = selection
+			for selection in range(port.challenges.LEGACY_SETTING_COUNT):
+				choose_contract(selection)
 				port.active.pocket = 2
 				var before = f.loader.dialogue.texts.size()
 				port.contract_effects.armed.stop()
@@ -54,7 +54,7 @@ func run():
 	for i in range(100):
 		check(port.challenges.select_contract(false) in [0, 2, 11, 12])
 	# The suspended fixed rule returns when the same manager enters an item round.
-	port.active.contract = 2
+	choose_contract(2)
 	f.rm.roundArray[0].usingItems = false
 	arm_contract()
 	await port.challenges.begin_round(f.rm)

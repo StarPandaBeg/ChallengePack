@@ -25,12 +25,17 @@ func child(parent: Node, node: Node) -> Node:
 	parent.add_child(node)
 	return node
 
+func choose_contract(selection: int):
+	# Legacy fixture notation: 0=off, 1=all, 2..13=one selected checkbox.
+	port.active.contract = 0 if selection == 0 else 1
+	port.active.contract_pool = port.challenges.ALL_IDS.duplicate() if selection <= 1 else [selection - 1]
+
 func arm_contract():
 	# Use the production chance, with a deterministic successful roll in fixtures.
 	var probe = RandomNumberGenerator.new()
 	for candidate in range(100):
 		probe.seed = candidate
-		if probe.randf() < port.challenges.activation_chance:
+		if probe.randf() < float(port.active.contract_chance) / 100.0:
 			port.challenges.rng.seed = candidate
 			return
 	check(false, "Cannot find a successful contract roll")

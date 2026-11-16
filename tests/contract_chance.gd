@@ -18,10 +18,10 @@ func run():
 	check(port.compatible, port.compatibility_error)
 	factory = port.factory
 	# Exercise release probability even when the developer forces local contracts.
-	port.challenges.activation_chance = 0.30
+	port.active.contract_chance = 30
 	for has_items in [false, true]:
-		for selection in range(port.Settings.LIMITS.contract):
-			port.active.contract = selection
+		for selection in range(port.challenges.LEGACY_SETTING_COUNT):
+			choose_contract(selection)
 			port.challenges.rng.seed = 82371
 			var active_count = 0
 			var seen = {}
@@ -48,7 +48,7 @@ func run():
 	f.items.set_process(false)
 	f.rm.roundArray[0].usingItems = true
 	port.active = port.Settings.DEFAULTS.duplicate()
-	port.active.contract = 2
+	choose_contract(2)
 	arm_contract()
 	await port.challenges.begin_round(f.rm)
 	check(port.challenges.state(f.rm).contract == 1)
@@ -56,7 +56,7 @@ func run():
 	var probe = RandomNumberGenerator.new()
 	for candidate in range(100):
 		probe.seed = candidate
-		if probe.randf() >= port.challenges.activation_chance:
+		if probe.randf() >= float(port.active.contract_chance) / 100.0:
 			port.challenges.rng.seed = candidate
 			break
 	var dialogue_count = f.dialogue.texts.size()

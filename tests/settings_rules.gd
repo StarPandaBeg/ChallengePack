@@ -14,18 +14,18 @@ func run():
 	var settings = settings_script.new()
 	var test_path = ProjectSettings.globalize_path("res://../ChallengePack/tests/.scratch/settings.cfg")
 	DirAccess.make_dir_recursive_absolute(test_path.get_base_dir())
-	settings.values.merge({"shells": 2, "items": 1, "shuffle": 1, "turn": 2, "health": 1, "mirror": 1, "pocket": 2, "contract": 4, "heal": 1}, true)
+	settings.values.merge({"shells": 2, "items": 1, "shuffle": 1, "turn": 2, "health": 1, "mirror": 1, "pocket": 2, "contract": 1, "heal": 1}, true)
 	check(settings.save_settings(test_path) == OK)
 	var reloaded = settings_script.new()
 	reloaded.load_settings(test_path)
 	check(reloaded.values == settings.values)
-	check(settings_script.LIMITS.contract == 14)
-	for choice in range(14):
+	check(settings_script.LIMITS.contract == 2)
+	for choice in range(2):
 		settings.values.contract = choice
 		check(settings.save_settings(test_path) == OK)
 		reloaded.load_settings(test_path)
 		check(reloaded.values.contract == choice, "Old/new contract selection changed after reload")
-	settings.values.contract = 4
+	settings.values.contract = 1
 	reloaded.values = settings.snapshot()
 	var snapshot = reloaded.snapshot()
 	check(reloaded.cycle("shells", test_path) == OK)

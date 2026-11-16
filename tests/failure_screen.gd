@@ -36,7 +36,7 @@ func run():
 		for contract in [1, 2, 3]:
 			TranslationServer.set_locale(language)
 			port.active = port.Settings.DEFAULTS.duplicate()
-			port.active.contract = contract + 1
+			choose_contract(contract + 1)
 			var f = fixture()
 			root.add_child(f.root)
 			current_scene = f.root

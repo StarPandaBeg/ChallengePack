@@ -1,5 +1,6 @@
 extends CanvasLayer
 
+const ContractEditor = preload("contract_editor.gd")
 const LABELS = {
 	"shells": ["CP_SHELL_VISIBILITY", ["CP_DEFAULT", "CP_QUANTITY", "CP_HIDDEN"]],
 	"items": ["CP_ITEM_VISIBILITY", ["CP_DEFAULT", "CP_HIDDEN"]],
@@ -8,7 +9,7 @@ const LABELS = {
 	"health": ["CP_HEALTH_VISIBILITY", ["CP_DEFAULT", "CP_HIDDEN"]],
 	"mirror": ["CP_MIRROR_ITEMS", ["NO", "YES"]],
 	"pocket": ["CP_LIMITED_POCKET", ["CP_UNLIMITED", "CP_ONE_ITEM", "CP_TWO_ITEMS"]],
-	"contract": ["CP_ROUND_CONTRACT", []], # Values come from the shared contract catalog.
+	"contract": ["CP_ROUND_CONTRACT", ["CP_OFF", "CP_ON"]],
 	"heal": ["CP_HEAL_BULLETS", ["NO", "YES"]]
 }
 var port: Node
@@ -21,6 +22,8 @@ var title: Label
 var version: Label
 var return_button: Button
 var shown = false
+var edit_button: Button
+var editor: CanvasLayer
 
 func setup(owner_port: Node, menu_manager: Node):
 	port = owner_port
@@ -37,39 +40,58 @@ func setup(owner_port: Node, menu_manager: Node):
 	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	panel.add_child(center)
 	var column = VBoxContainer.new()
-	column.custom_minimum_size = Vector2(880, 0)
-	column.add_theme_constant_override("separation", 6)
+	column.custom_minimum_size = Vector2(840, 0)
+	column.add_theme_constant_override("separation", 5)
 	var font = load("res://fonts/fake receipt.otf")
 	if font != null:
 		column.theme = Theme.new()
 		column.theme.default_font = font
-		column.theme.default_font_size = 20
+		column.theme.default_font_size = 18
 	center.add_child(column)
 	title = Label.new()
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_font_size_override("font_size", 28)
+	title.add_theme_font_size_override("font_size", 24)
 	column.add_child(title)
 	var grid = GridContainer.new()
 	grid.columns = 2
-	grid.add_theme_constant_override("h_separation", 24)
-	grid.add_theme_constant_override("v_separation", 8)
+	grid.add_theme_constant_override("h_separation", 20)
+	grid.add_theme_constant_override("v_separation", 6)
 	column.add_child(grid)
 	for key in LABELS:
-		var button = make_button(grid, "")
-		button.custom_minimum_size = Vector2(428, 54)
+		var cell = HBoxContainer.new()
+		cell.custom_minimum_size.x = 410
+		cell.add_theme_constant_override("separation", 4)
+		grid.add_child(cell)
+		var button = make_button(cell, "")
+		button.custom_minimum_size = Vector2(0, 48)
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		button.pressed.connect(change.bind(key))
 		buttons[key] = button
+		if key == "contract":
+			edit_button = make_button(cell, "")
+			edit_button.add_theme_font_size_override("font_size", 16)
+			edit_button.pressed.connect(open_editor)
 	status = Label.new()
 	status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	status.custom_minimum_size = Vector2(880, 24)
+	status.custom_minimum_size = Vector2(840, 0)
 	status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	status.add_theme_font_size_override("font_size", 18)
+	status.add_theme_font_size_override("font_size", 16)
 	column.add_child(status)
 	start_button = make_button(column, "")
 	start_button.pressed.connect(start)
 	return_button = make_button(column, "")
 	return_button.pressed.connect(close)
+	version = Label.new()
+	version.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	version.add_theme_font_size_override("font_size", 14)
+	column.add_child(version)
+	editor = ContractEditor.new()
+	add_child(editor)
+	editor.setup(port, self)
+	panel.hide()
+	refresh()
+
+func configure_focus():
 	var choices = buttons.values()
 	for i in range(choices.size()):
 		var button = choices[i]
@@ -91,18 +113,26 @@ func setup(owner_port: Node, menu_manager: Node):
 		var button = navigation[i]
 		button.focus_previous = button.get_path_to(navigation[(i - 1 + navigation.size()) % navigation.size()])
 		button.focus_next = button.get_path_to(navigation[(i + 1) % navigation.size()])
-	version = Label.new()
-	version.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	version.add_theme_font_size_override("font_size", 16)
-	column.add_child(version)
-	panel.hide()
-	refresh()
+	if edit_button.visible:
+		buttons.contract.focus_neighbor_right = buttons.contract.get_path_to(edit_button)
+		edit_button.focus_neighbor_left = edit_button.get_path_to(buttons.contract)
+		edit_button.focus_neighbor_right = edit_button.get_path_to(buttons.pocket)
+		edit_button.focus_neighbor_top = edit_button.get_path_to(buttons.mirror)
+		edit_button.focus_neighbor_bottom = edit_button.get_path_to(start_button)
+		edit_button.focus_previous = edit_button.get_path_to(buttons.contract)
+		edit_button.focus_next = edit_button.get_path_to(buttons.heal)
+		buttons.contract.focus_next = buttons.contract.get_path_to(edit_button)
+		buttons.heal.focus_previous = buttons.heal.get_path_to(edit_button)
+
+func open_editor():
+	if shown and port.settings.values.contract == 1:
+		editor.open()
 
 func make_button(column: Control, text: String) -> Button:
 	var button = Button.new()
 	button.text = text
 	button.flat = true
-	button.custom_minimum_size.y = 30
+	button.custom_minimum_size.y = 28
 	button.focus_mode = Control.FOCUS_ALL
 	column.add_child(button)
 	button.mouse_entered.connect(button.grab_focus)
@@ -122,9 +152,9 @@ func refresh():
 	return_button.text = tr("RETURN")
 	start_button.tooltip_text = port.localization.text("CP_TIP_START")
 	return_button.tooltip_text = port.localization.text("CP_TIP_RETURN")
-	var chance_percent = roundi(port.challenges.activation_chance * 100)
+	var chance_percent = port.settings.values.contract_chance
 	for key in buttons:
-		var values = port.challenges.menu_keys() if key == "contract" else LABELS[key][1]
+		var values = LABELS[key][1]
 		var value_key = values[port.settings.values[key]]
 		var value = port.localization.text(value_key) if value_key.begins_with("CP_") else tr(value_key)
 		var caption = port.localization.text(LABELS[key][0])
@@ -132,10 +162,13 @@ func refresh():
 			caption += " (%d%%)" % chance_percent
 		buttons[key].text = caption + ":\n" + value
 		buttons[key].tooltip_text = port.localization.text("CP_TIP_" + key.to_upper(), [chance_percent] if key == "contract" else [])
-		if key == "contract" and port.settings.values[key] > 1:
-			buttons[key].tooltip_text += "\n" + port.localization.text(port.challenges.CATALOG[port.settings.values[key] - 1].detail)
+	edit_button.text = port.localization.text("CP_EDIT_CONTRACTS")
+	edit_button.tooltip_text = port.localization.text("CP_TIP_EDIT_CONTRACTS")
+	edit_button.visible = port.settings.values.contract == 1
+	configure_focus()
 	start_button.disabled = not port.compatible
 	status.text = "" if port.compatible else port.localization.text("CP_CANNOT_START", [port.compatibility_message()])
+	status.visible = not port.compatible
 
 func _notification(what):
 	if what == NOTIFICATION_TRANSLATION_CHANGED and is_instance_valid(version) and port != null:
@@ -146,6 +179,7 @@ func change(key: String):
 	refresh()
 	if result != OK:
 		status.text = port.localization.text("CP_SAVE_ERROR", [result])
+		status.show()
 
 func open():
 	if shown:
@@ -160,6 +194,9 @@ func open():
 	manager.controller.previousFocus = buttons.shells
 
 func close():
+	if editor.shown:
+		editor.close()
+		return
 	if not shown:
 		return
 	shown = false
@@ -170,7 +207,7 @@ func close():
 	manager.ResetButtons()
 
 func start():
-	if not port.compatible:
+	if not port.compatible or editor.shown:
 		return
 	port.active = port.settings.snapshot()
 	shown = false
@@ -179,6 +216,8 @@ func start():
 	manager.cp_start_game()
 
 func _input(event):
+	if editor.shown:
+		return
 	if shown and (event.is_action_pressed("ui_cancel") or event.is_action_pressed("exit game")):
 		close()
 		get_viewport().set_input_as_handled()

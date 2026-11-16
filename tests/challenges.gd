@@ -77,9 +77,10 @@ func run():
 	for hidden in range(2):
 		for mirror in range(2):
 			for pocket in range(3):
-				for contract in range(port.Settings.LIMITS.contract):
+				for contract in range(port.challenges.LEGACY_SETTING_COUNT):
 					port.active = port.Settings.DEFAULTS.duplicate()
-					port.active.merge({"health": hidden, "mirror": mirror, "pocket": pocket, "contract": contract}, true)
+					port.active.merge({"health": hidden, "mirror": mirror, "pocket": pocket}, true)
+					choose_contract(contract)
 					var f = fixture()
 					root.add_child(f.root)
 					f.items.set_process(false)
@@ -132,7 +133,8 @@ func run():
 	# Full inventories and consecutive mirrored distributions must neither grow
 	# beyond eight slots nor retain queued dealer items from the previous copy.
 	port.active = port.Settings.DEFAULTS.duplicate()
-	port.active.merge({"health": 1, "mirror": 1, "pocket": 2, "items": 1, "contract": 4}, true)
+	port.active.merge({"health": 1, "mirror": 1, "pocket": 2, "items": 1}, true)
+	choose_contract(4)
 	var full = fixture()
 	root.add_child(full.root)
 	full.items.set_process(false)
@@ -186,7 +188,7 @@ func run():
 	# Forbidden actions are intercepted by the actual shooting adapter before
 	# ejection, damage, animation, or any of its unassigned exports are touched.
 	port.active = port.Settings.DEFAULTS.duplicate()
-	port.active.contract = 3
+	choose_contract(3)
 	var f = fixture()
 	root.add_child(f.root)
 	f.items.set_process(false)
