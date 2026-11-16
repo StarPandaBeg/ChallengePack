@@ -9,7 +9,7 @@ var panel: PanelContainer
 var editor: PanelContainer
 var grid: GridContainer
 var status: Label
-var hud: PanelContainer
+var hud: VBoxContainer
 var ready_button: Button
 var open_button: Button
 var edit_button: Button
@@ -21,7 +21,6 @@ var chance_label: Label
 var shown = false
 var theft_targets: HBoxContainer
 var target_ids = []
-var bomb: TextureRect
 var blocked_raycast: WeakRef
 var raycast_state = false
 var member_signature = ""
@@ -68,10 +67,9 @@ func setup(owner_session: Node):
 	backdrop.color = Color(0, 0, 0, 0.98)
 	backdrop.hide()
 	add_child(backdrop)
-	hud = preload("../challenge_hud.gd").new()
+	hud = preload("contract_hud.gd").new()
 	add_child(hud)
 	hud.setup(session.port.mod_directory)
-	bomb = hud.bomb
 	theft_targets = HBoxContainer.new()
 	theft_targets.position = Vector2(18, 160)
 	theft_targets.theme = open_button.theme
@@ -242,11 +240,12 @@ func refresh():
 			var entry = session.rules.state(p.socket_number)
 			if entry.contract == 0: continue
 			var name = contract_text(entry.contract)
+			var hint_key = session.rules.Catalog.contract_key(entry.contract).replace("CP_", "CP_MP_BRIEF_")
 			if entry.contract == session.rules.Catalog.Contract.NO_INSURANCE:
-				if 2 in entry.history: name = text("CP_MP_NO_JAMMER")
-				if 3 in entry.history: name = text("CP_MP_NO_GLASS")
+				if 2 in entry.history: hint_key = "CP_MP_BRIEF_NO_JAMMER"
+				if 3 in entry.history: hint_key = "CP_MP_BRIEF_NO_GLASS"
 			if entry.failed: name += " / " + text("CP_MP_FAILED")
-			var row = ("> " if p.is_active else "") + p.user_name + ": " + name
+			var row = {"id": p.socket_number, "owner": p.user_name, "title": name, "hint": text(hint_key), "own": p.is_active, "failed": entry.failed}
 			if p.is_active: own_contracts.append(row)
 			else: contracts.append(row)
 	var local = null

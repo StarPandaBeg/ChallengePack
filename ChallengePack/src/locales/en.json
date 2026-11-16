@@ -173,5 +173,19 @@
   "CP_MP_NOT_ENOUGH": "Too few players remain. Returning to the lobby.",
   "CP_MP_NO_GLASS": "No magnifying glass",
   "CP_MP_FAILED": "contract broken",
-  "CP_MP_UNAVAILABLE": "Multiplayer is unavailable: %s"
+  "CP_MP_UNAVAILABLE": "Multiplayer is unavailable: %s",
+  "CP_MP_BRIEF_NO_HEALING": "No cigarettes or medicine",
+  "CP_MP_BRIEF_NO_SELF_SHOTS": "Never shoot yourself",
+  "CP_MP_BRIEF_NO_CUFFS": "No jammers",
+  "CP_MP_BRIEF_NO_HINTS": "No glass or phone",
+  "CP_MP_BRIEF_UNTOUCHABLE_CHARGE": "No beer or inverter",
+  "CP_MP_BRIEF_FAIR_CALIBER": "Do not use a saw",
+  "CP_MP_BRIEF_NO_STEALING": "Do not use adrenaline",
+  "CP_MP_BRIEF_DRY_LAW": "Do not drink beer",
+  "CP_MP_BRIEF_NO_INVERSION": "Do not use an inverter",
+  "CP_MP_BRIEF_NO_INSURANCE": "Glass or jammer, never both",
+  "CP_MP_BRIEF_TWO_FOR_ONE": "Your damage and healing ×2",
+  "CP_MP_BRIEF_LEAKY_GUN": "Rival → you; you → random rival",
+  "CP_MP_BRIEF_NO_JAMMER": "Do not use a jammer",
+  "CP_MP_BRIEF_NO_GLASS": "Do not use a magnifying glass"
 }

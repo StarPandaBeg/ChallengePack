@@ -107,9 +107,27 @@ func run():
 	port.mp.rules.state(1).contract = port.mp.rules.Catalog.Contract.NO_INVERSION
 	port.mp.ui.refresh()
 	await process_frame
-	check(port.mp.ui.bomb.visible and port.mp.ui.bomb.size == Vector2(18, 18), "Contract bomb uses the compact solo HUD layout")
-	check(root.get_visible_rect().encloses(port.mp.ui.bomb.get_global_rect()), "Contract icon stays within screen")
-	check(port.mp.ui.hud.has_theme_stylebox_override("panel"), "Public contracts use the solo HUD panel")
+	var contract_card = port.mp.ui.hud.cards[1]
+	check(contract_card.bomb.visible and contract_card.bomb.size == Vector2(14, 14), "Contract card keeps a small bomb icon")
+	check(root.get_visible_rect().encloses(contract_card.bomb.get_global_rect()), "Contract icon stays within screen")
+	check(contract_card.has_theme_stylebox_override("panel"), "Each contract has its own panel")
+	check(not contract_card.get_meta("hint_label").text.is_empty(), "Contract card includes a short reminder")
+	for p in handler.instance_property_array: port.mp.rules.state(p.socket_number).contract = port.mp.rules.Catalog.Contract.NO_INSURANCE
+	for language in ["en", "ru", "pl"]:
+		TranslationServer.set_locale(language)
+		port.mp.ui.refresh()
+		await process_frame
+		check(port.mp.ui.hud.cards.size() == 4, "Separate card for each personal contract")
+		check(port.mp.ui.hud.get_child(0) == port.mp.ui.hud.cards[0], "Own contract appears first")
+		check(root.get_visible_rect().encloses(port.mp.ui.hud.get_global_rect()), "Four contract cards fit " + language)
+		var before_hint = port.mp.ui.hud.cards[0].get_meta("hint_label").text
+		port.mp.rules.state(0).history = [2]
+		port.mp.ui.refresh()
+		check(port.mp.ui.hud.cards[0].get_meta("hint_label").text != before_hint, "Insurance reminder updates after first item")
+		port.mp.rules.state(0).history = []
+	for p in handler.instance_property_array: port.mp.rules.state(p.socket_number).contract = 0
+	port.mp.ui.refresh()
+	check(port.mp.ui.hud.cards.is_empty(), "Expired contract cards are removed")
 	port.mp.rules.state(1).contract = 0
 	port.mp.rules.settings.shells = 2
 	game.MAIN_active_sequence_dict = {"sequence": ["live", "blank", "blank"], "sequence_visible": ["live", "blank", "blank"], "sequence_in_shotgun": ["live", "blank", "blank"]}

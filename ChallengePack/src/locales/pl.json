@@ -173,5 +173,19 @@
   "CP_MP_NOT_ENOUGH": "Zostało za mało graczy. Powrót do lobby.",
   "CP_MP_NO_GLASS": "Bez lupy",
   "CP_MP_FAILED": "kontrakt złamany",
-  "CP_MP_UNAVAILABLE": "Tryb wieloosobowy niedostępny: %s"
+  "CP_MP_UNAVAILABLE": "Tryb wieloosobowy niedostępny: %s",
+  "CP_MP_BRIEF_NO_HEALING": "Bez papierosów i leków",
+  "CP_MP_BRIEF_NO_SELF_SHOTS": "Nie strzelaj do siebie",
+  "CP_MP_BRIEF_NO_CUFFS": "Bez zakłócaczy",
+  "CP_MP_BRIEF_NO_HINTS": "Bez lupy i telefonu",
+  "CP_MP_BRIEF_UNTOUCHABLE_CHARGE": "Bez piwa i inwertera",
+  "CP_MP_BRIEF_FAIR_CALIBER": "Nie używaj piły",
+  "CP_MP_BRIEF_NO_STEALING": "Nie używaj adrenaliny",
+  "CP_MP_BRIEF_DRY_LAW": "Nie pij piwa",
+  "CP_MP_BRIEF_NO_INVERSION": "Nie używaj inwertera",
+  "CP_MP_BRIEF_NO_INSURANCE": "Lupa albo zakłócacz, nie oba",
+  "CP_MP_BRIEF_TWO_FOR_ONE": "Twoje obrażenia i leczenie ×2",
+  "CP_MP_BRIEF_LEAKY_GUN": "Rywal → ty; ty → losowy rywal",
+  "CP_MP_BRIEF_NO_JAMMER": "Nie używaj zakłócacza",
+  "CP_MP_BRIEF_NO_GLASS": "Nie używaj lupy"
 }

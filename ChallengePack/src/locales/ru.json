@@ -173,5 +173,19 @@
   "CP_MP_NOT_ENOUGH": "Осталось слишком мало игроков. Возвращаемся в лобби.",
   "CP_MP_NO_GLASS": "Без лупы",
   "CP_MP_FAILED": "контракт нарушен",
-  "CP_MP_UNAVAILABLE": "Мультиплеер недоступен: %s"
+  "CP_MP_UNAVAILABLE": "Мультиплеер недоступен: %s",
+  "CP_MP_BRIEF_NO_HEALING": "Без сигарет и лекарств",
+  "CP_MP_BRIEF_NO_SELF_SHOTS": "Не стрелять в себя",
+  "CP_MP_BRIEF_NO_CUFFS": "Без глушилки",
+  "CP_MP_BRIEF_NO_HINTS": "Без лупы и телефона",
+  "CP_MP_BRIEF_UNTOUCHABLE_CHARGE": "Без пива и инвертора",
+  "CP_MP_BRIEF_FAIR_CALIBER": "Не использовать пилу",
+  "CP_MP_BRIEF_NO_STEALING": "Не использовать адреналин",
+  "CP_MP_BRIEF_DRY_LAW": "Не использовать пиво",
+  "CP_MP_BRIEF_NO_INVERSION": "Не использовать инвертор",
+  "CP_MP_BRIEF_NO_INSURANCE": "Лупа или глушилка — не вместе",
+  "CP_MP_BRIEF_TWO_FOR_ONE": "Ваш урон и лечение ×2",
+  "CP_MP_BRIEF_LEAKY_GUN": "Врагу → себе; себе → случайному врагу",
+  "CP_MP_BRIEF_NO_JAMMER": "Не использовать глушилку",
+  "CP_MP_BRIEF_NO_GLASS": "Не использовать лупу"
 }

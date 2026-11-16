@@ -58,7 +58,7 @@ func prepare(directory: String) -> bool:
 		if script.reload() != OK: return fail("Cannot compile multiplayer adapter: " + key)
 		scripts[path] = script
 		proof += source.sha256_text() + body.sha256_text()
-	for file in ["rules.gd", "session.gd", "settings.gd", "menu.gd", "../challenge_hud.gd", "../challenges.gd", "../heal_bullets.gd", "../contract_effects.gd", "../challengepack.gd", "../patch_factory.gd", "../online_guard.gd"]:
+	for file in ["rules.gd", "session.gd", "settings.gd", "menu.gd", "contract_hud.gd", "../challenge_hud.gd", "../challenges.gd", "../heal_bullets.gd", "../contract_effects.gd", "../challengepack.gd", "../patch_factory.gd", "../online_guard.gd"]:
 		proof += FileAccess.get_file_as_string(directory.path_join("multiplayer/" + file)).replace("\r\n", "\n").sha256_text()
 	fingerprint = proof.sha256_text()
 	return true
