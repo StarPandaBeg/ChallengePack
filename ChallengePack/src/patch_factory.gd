@@ -57,6 +57,7 @@ func make_body(name: String, source: String) -> String:
 		return body
 	if name == "ShellSpawner":
 		var routine = method(source, "MainShellRoutine")
+		routine = replace_once(routine, "\t\tcamera.BeginLerp(\"health counter\")\n\t\tawait get_tree().create_timer(.5, false).timeout\n\t\thealthCounter.Bootup()\n\t\tawait get_tree().create_timer(1.4, false).timeout", "\t\tif cp_port.active.get(\"health\", 0) == 0:\n\t\t\tcamera.BeginLerp(\"health counter\")\n\t\t\tawait get_tree().create_timer(.5, false).timeout\n\t\thealthCounter.Bootup()\n\t\tif cp_port.active.get(\"health\", 0) == 0:\n\t\t\tawait get_tree().create_timer(1.4, false).timeout")
 		routine = replace_once(routine, '\tfinalstring = text_lives + " " + text_blanks', '\tfinalstring = text_lives + " " + text_blanks\n\tif sequenceArray.has("heal"):\n\t\tfinalstring = cp_port.heal_bullets.composition(sequenceArray)')
 		for animation in ["show shells", "hide shells"]:
 			routine = replace_once(routine, '\tanim_compartment.play("%s")' % animation, '\tif cp_port.active.shells != 2:\n\t\tanim_compartment.play("%s")' % animation)

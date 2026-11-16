@@ -136,7 +136,7 @@ Run the complete regression suite from the repository root:
 python tools/check.py
 ```
 
-This runs 24 engine scenarios and the installer suite. Logs and a JSON summary are written to `tests/.scratch/check/`. A focused run accepts scenario names, for example `python tools/check.py multiplayer multiplayer_protocol multiplayer_scene --skip-installer`.
+This runs 25 engine scenarios and the installer suite. Logs and a JSON summary are written to `tests/.scratch/check/`. A focused run accepts scenario names, for example `python tools/check.py multiplayer multiplayer_protocol multiplayer_scene --skip-installer`.
 
 Use `--game-exe "D:/.../Buckshot Roulette.exe"` to check installed Steam resources instead of the extracted project. These fixtures do not install the mod or join real Steam lobbies. Each engine scenario has a 240-second deadline.
 
@@ -158,3 +158,5 @@ The extracted release also passed `release_probe.gd` through the installed Steam
 Solo hidden-health fix: `hidden_health.gd` first reproduced the missing round indicator on the actual `main.tscn` scene. After the fix it passed in Godot 4.1.1 and through the Steam executable, covering normal/endless mode, HP group concealment after display updates, and unchanged native round-indicator visibility. The existing `challenges` matrix also passed.
 
 Solo hidden-health follow-up: the native `RoundIndicator()` shutdown and transparent RESET also needed handling. The regression fixture now runs the complete native routine and real display animations for all three stage positions, normal/endless and visible/hidden HP (12 cases). Hidden HP keeps a static opaque marker using a local material after the introduction; `DisableCounter()` clears it at batch end. Default behavior is unchanged. The fixture passed on extracted and installed Steam resources; the challenges matrix and adapter probe also passed.
+
+Hidden-health camera: `health_camera.gd` reproduces the native pre-charge HP-only focus. The adapter skips that camera movement and its two presentation waits only when HP is hidden, still calling Bootup once and preserving charge generation/reveal. The focused camera fixture passed against extracted and installed Steam resources; hidden-health round animation and the 36-case gameplay matrix also passed.
