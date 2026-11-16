@@ -135,6 +135,15 @@ func on_node_added(node: Node):
 
 func menu_ready(manager: Node):
 	returning_from_mp = false
+	var version_label = Label.new()
+	version_label.name = "ChallengePackVersion"
+	version_label.text = "ChallengePack " + VERSION
+	version_label.position = Vector2(18, manager.version.position.y - 24)
+	version_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	version_label.add_theme_font_override("font", load("res://fonts/fake receipt.otf"))
+	version_label.add_theme_font_size_override("font_size", 14)
+	version_label.modulate = Color(1, 1, 1, 0.56)
+	manager.parent_main.add_child(version_label)
 	options = Options.new()
 	manager.add_child(options)
 	options.setup(self, manager)
