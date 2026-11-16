@@ -9,7 +9,13 @@ func check(condition: bool, message: String = "Check failed"):
 
 func adapted(name: String, additions: String = "") -> Node:
 	var script = GDScript.new()
-	script.source_code = factory.scripts["res://scripts/%s.gd" % name].source_code + additions
+	var body = factory.scripts["res://scripts/%s.gd" % name].source_code
+	for line in additions.split("\n"):
+		if line.begins_with("func "):
+			var override_name = line.trim_prefix("func ").get_slice("(", 0)
+			if body.contains("func " + override_name + "("):
+				body = body.replace(factory.method(body, override_name), "")
+	script.source_code = body + additions
 	check(script.reload() == OK, "Cannot compile fixture " + name)
 	var node = script.new()
 	node.cp_port = port
@@ -196,16 +202,16 @@ func run():
 		TranslationServer.set_locale(language)
 		await phone.SendDialogue()
 		check(f.dialogue.texts.back().contains(port.localization.text("CP_HEAL_ROUND")))
-	# Exercise the real inverter branch; it changes only live/blank shells.
+	# Exercise both inverter pairs through the real item-use branch.
 	var interaction = adapted("ItemInteraction", '\nfunc PlaySound(_sound):\n\tpass\nfunc EnablePermissions():\n\tpass\nfunc CheckAchievement_koni():\n\tpass\nfunc CheckAchievement_full():\n\tpass\n')
 	interaction.roundManager = f.rm
 	interaction.amounts = child(f.root, load("res://scripts/ItemAmounts.gd").new())
 	interaction.animator_playerHands = animator(f.root, ["player use inverter"])
 	child(f.root, interaction)
-	for shell in ["heal", "blank", "live"]:
+	for shell in ["heal", "lethal", "blank", "live"]:
 		f.spawner.sequenceArray.assign([shell])
 		await interaction.InteractWith("inverter")
-		check(f.spawner.sequenceArray[0] == {"heal": "heal", "blank": "live", "live": "blank"}[shell], "Inverter mishandled " + shell)
+		check(f.spawner.sequenceArray[0] == {"heal": "lethal", "lethal": "heal", "blank": "live", "live": "blank"}[shell], "Inverter mishandled " + shell)
 	port.active.health = 1
 	var hidden_counter = health_counter(f)
 	port.heal_bullets.apply(f.rm, "player", hidden_counter)

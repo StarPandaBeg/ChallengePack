@@ -67,6 +67,12 @@ func replace_once(source: String, before: String, after: String) -> String:
 		return ""
 	return source.replace(before, after)
 
+func replace_count(source: String, before: String, after: String, count: int) -> String:
+	if source.count(before) != count:
+		fail("Adapter anchor mismatch: " + before.strip_edges(), "CP_ERROR_ANCHOR", [before.strip_edges()])
+		return ""
+	return source.replace(before, after)
+
 func make_body(name: String, source: String) -> String:
 	if name == "ShellLoader":
 		var body = method(source, "LoadShells")
@@ -117,45 +123,67 @@ func make_body(name: String, source: String) -> String:
 		return start_round + player_turn + "\nfunc BeginMainGame():\n\tcp_port.deploy_covers(self)\n\tsuper()\n"
 	if name == "ItemInteraction":
 		var interact = method(source, "InteractWith")
-		interact = replace_once(interact, '\t\t\telse: roundManager.shellSpawner.sequenceArray[0] = "live"', '\t\t\telif roundManager.shellSpawner.sequenceArray[0] == "blank": roundManager.shellSpawner.sequenceArray[0] = "live"')
+		interact = replace_once(interact, '\t\t\tif (roundManager.shellSpawner.sequenceArray[0] == "live"): roundManager.shellSpawner.sequenceArray[0] = "blank"\n\t\t\telse: roundManager.shellSpawner.sequenceArray[0] = "live"', '\t\t\troundManager.shellSpawner.sequenceArray[0] = cp_port.heal_bullets.invert(roundManager.shellSpawner.sequenceArray[0])')
 		return interact + "\nfunc PickupItemFromTable(itemParent: Node3D, passedItemName: String):\n\tif not cp_port.challenges.allow_pickup(self, passedItemName):\n\t\treturn\n\tcp_port.reveal_item(itemParent)\n\tawait super(itemParent, passedItemName)\n"
 	if name == "HandManager":
 		var pickup = method(source, "PickupItemFromTable")
 		return replace_once(pickup, "\tactiveIndex = activeInstance.get_child(0).dealerGridIndex", "\tcp_port.reveal_item(activeInstance)\n\tactiveIndex = activeInstance.get_child(0).dealerGridIndex")
 	if name == "ShotgunShooting":
 		var shoot = method(source, "Shoot")
+		shoot = replace_count(shoot, 'currentRoundInChamber == "live"', 'currentRoundInChamber in ["live", "lethal"]', 4)
+		shoot = replace_count(shoot, 'roundManager.currentShotgunDamage', 'cp_port.heal_bullets.damage(roundManager, "dealer" if who == "dealer" else "player")', 2)
 		shoot = replace_once(shoot, "\tdealerShotTrue = false", "\tif not cp_port.challenges.allow_shot(roundManager, who):\n\t\treturn\n\tdealerShotTrue = false")
 		shoot = replace_once(shoot, "\tPlayShootingSound()", '\tPlayShootingSound()\n\tif currentRoundInChamber == "heal":\n\t\tcp_port.heal_bullets.apply(roundManager, "player" if who == "self" else "dealer", healthCounter)\n\t\tplayerCanGoAgain = who == "self"')
 		shoot = replace_once(shoot, '\tif (currentRoundInChamber == "blank" && who == "self"):\n\t\tanimator_shotgun.play', '\tif (currentRoundInChamber in ["blank", "heal"] && who == "self"):\n\t\tanimator_shotgun.play')
 		shoot = replace_once(shoot, '\tif (currentRoundInChamber == "blank" && who == "dealer"): disablingDelayShit = true', '\tif (currentRoundInChamber in ["blank", "heal"] && who == "dealer"): disablingDelayShit = true')
 		var eject = method(source, "ShootingDealerEjection")
-		eject = replace_once(eject, '(currentRoundInChamberCopy == "blank" or currentRoundInChamberCopy == "live")', '(currentRoundInChamberCopy in ["blank", "live", "heal"])')
-		return shoot + eject
+		eject = replace_once(eject, '(currentRoundInChamberCopy == "blank" or currentRoundInChamberCopy == "live")', '(currentRoundInChamberCopy in ["blank", "live", "heal", "lethal"])')
+		var sound = method(source, "PlayShootingSound")
+		sound = replace_once(sound, 'currentRoundInChamber == "live"', 'currentRoundInChamber in ["live", "lethal"]')
+		var slowdown = method(source, "MainSlowDownRoutine")
+		slowdown = replace_once(slowdown, 'currentRoundInChamber == "live"', 'currentRoundInChamber in ["live", "lethal"]')
+		slowdown = replace_once(slowdown, 'roundManager.currentShotgunDamage', 'cp_port.heal_bullets.damage(roundManager, "dealer")')
+		var final_shot = method(source, "CheckIfFinalShot")
+		for target in ["dealer", "player"]:
+			var health = "opponent" if target == "dealer" else "player"
+			final_shot = replace_once(final_shot, 'roundManager.health_%s - roundManager.currentShotgunDamage' % health, 'roundManager.health_%s - cp_port.heal_bullets.damage(roundManager, "%s")' % [health, target])
+		return shoot + eject + sound + slowdown + final_shot
 	if name == "ShellExamine":
-		return '\nfunc SetupShell():\n\tsuper()\n\tif shellSpawner.sequenceArray[0] == "heal":\n\t\tmesh.set_surface_override_material(1, cp_port.heal_bullets.material(mat_blank))\n'
+		return '\nfunc SetupShell():\n\tsuper()\n\tif shellSpawner.sequenceArray[0] in ["heal", "lethal"]:\n\t\tmesh.set_surface_override_material(1, cp_port.heal_bullets.material(mat_blank, shellSpawner.sequenceArray[0]))\n'
 	if name == "ShellEjectManager":
 		var body = ""
 		for action in ["EjectShell", "BeerEjection_player", "BeerEjection_dealer", "DeathEjection"]:
 			var eject = method(source, action)
-			eject = replace_once(eject, '\telse: mesh.set_surface_override_material(1, mat_blank)', '\telif shellSpawner.sequenceArray[0] == "heal": mesh.set_surface_override_material(1, cp_port.heal_bullets.material(mat_blank))\n\telse: mesh.set_surface_override_material(1, mat_blank)')
+			eject = replace_once(eject, '\telse: mesh.set_surface_override_material(1, mat_blank)', '\telif shellSpawner.sequenceArray[0] in ["heal", "lethal"]: mesh.set_surface_override_material(1, cp_port.heal_bullets.material(mat_blank, shellSpawner.sequenceArray[0]))\n\telse: mesh.set_surface_override_material(1, mat_blank)')
+			if action in ["EjectShell", "DeathEjection"]:
+				eject = replace_once(eject, 'if (shellSpawner.sequenceArray[0] == "live"):\n', 'if shellSpawner.sequenceArray[0] in ["live", "lethal"]:\n')
 			body += eject
 		return body
 	if name == "BurnerPhone":
 		var phone = method(source, "SendDialogue")
-		return replace_once(phone, '\t\telse: secondpart = tr("LIVEROUND") % ""', '\t\telif sequence[randindex] == "heal": secondpart = cp_port.localization.text("CP_HEAL_ROUND")\n\t\telse: secondpart = tr("LIVEROUND") % ""')
+		return replace_once(phone, '\t\telse: secondpart = tr("LIVEROUND") % ""', '\t\telif sequence[randindex] == "heal": secondpart = cp_port.localization.text("CP_HEAL_ROUND")\n\t\telif sequence[randindex] == "lethal": secondpart = cp_port.localization.text("CP_LETHAL_ROUND")\n\t\telse: secondpart = tr("LIVEROUND") % ""')
 	if name == "DealerIntelligence":
 		var choice = method(source, "DealerChoice")
 		choice = replace_once(choice, '\t\t\tif (roundManager.shellSpawner.sequenceArray[0] == "blank"): \n\t\t\t\tknownShell = "blank"\n\t\t\t\tdealerTarget = "self"\n\t\t\telse: \n\t\t\t\tknownShell = "live"\n\t\t\t\tdealerTarget = "player"', '\t\t\tknownShell = shellSpawner.sequenceArray[0]\n\t\t\tdealerTarget = "player" if knownShell == "live" else "self"')
-		# Both the last-shell deduction and magnifier must remember all three types.
+		# Both the last-shell deduction and magnifier must remember every type.
 		var classify = 'if (shellSpawner.sequenceArray[0] == "live"): knownShell = "live" \n'
 		for indent in ["\t\t", "\t\t\t"]:
 			choice = replace_once(choice, indent + classify + indent + 'else: knownShell = "blank"', indent + 'knownShell = shellSpawner.sequenceArray[0]')
-		choice = replace_once(choice, 'knownShell != "live" && shellSpawner.sequenceArray.size() != 1', 'knownShell not in ["live", "heal"] && shellSpawner.sequenceArray.size() != 1')
-		choice = replace_once(choice, '&& knownShell != "blank"):', '&& knownShell not in ["blank", "heal"]):')
+		choice = replace_count(choice, 'knownShell == "live"', 'knownShell in ["live", "lethal"]', 4)
+		# A known lethal shell needs neither beer nor a handsaw.
+		choice = replace_once(choice, '&& knownShell in ["live", "lethal"]):', '&& knownShell == "live"):')
+		choice = replace_once(choice, 'knownShell != "live" && shellSpawner.sequenceArray.size() != 1', 'knownShell not in ["live", "heal", "lethal"] && shellSpawner.sequenceArray.size() != 1')
+		choice = replace_once(choice, '&& knownShell != "blank"):', '&& knownShell not in ["blank", "heal", "lethal"]):')
+		choice = replace_once(choice, '&& knownShell == "blank"):', '&& knownShell in ["blank", "heal"]):')
+		choice = replace_once(choice, '\t\t\tknownShell = "live"', '\t\t\tknownShell = cp_port.heal_bullets.invert(knownShell)')
+		choice = replace_once(choice, '\t\t\troundManager.shellSpawner.sequenceArray[0] = "live"', '\t\t\troundManager.shellSpawner.sequenceArray[0] = knownShell')
 		var shoot = method(source, "Shoot")
+		shoot = replace_count(shoot, 'currentRoundInChamber == "live"', 'currentRoundInChamber in ["live", "lethal"]', 2)
+		shoot = replace_count(shoot, 'roundManager.currentShotgunDamage', 'cp_port.heal_bullets.damage(roundManager, "dealer" if who == "self" else "player")', 2)
 		shoot = replace_once(shoot, "\t#SUBTRACT HEALTH. ASSIGN DEALER CAN GO AGAIN. RETURN IF DEAD", '\tif currentRoundInChamber == "heal":\n\t\tcp_port.heal_bullets.apply(roundManager, "dealer" if who == "self" else "player", healthCounter)\n\t\tdealerCanGoAgain = who == "self"\n\t#SUBTRACT HEALTH. ASSIGN DEALER CAN GO AGAIN. RETURN IF DEAD')
 		var coin = method(source, "CoinFlip")
 		coin = replace_once(coin, 'var c_blank = shellSpawner.sequenceArray.count("blank")', 'var c_blank = shellSpawner.sequenceArray.count("blank") + shellSpawner.sequenceArray.count("heal")')
+		coin = replace_once(coin, 'var c_live = shellSpawner.sequenceArray.count("live")', 'var c_live = shellSpawner.sequenceArray.count("live") + shellSpawner.sequenceArray.count("lethal")')
 		return choice + shoot + coin + '\nfunc FigureOutShell():\n\treturn cp_port.heal_bullets.infer_shell(self)\n'
 	if name == "MenuManager":
 		return "\nfunc Start():\n\tcp_port.open_options(self)\n\nfunc cp_start_game():\n\tawait super.Start()\n\nfunc StartMultiplayer():\n\tcp_port.online_notice()\n\nfunc _input(event):\n\tif cp_port.options_open():\n\t\tif event.is_action_pressed(\"ui_cancel\") or event.is_action_pressed(\"exit game\"):\n\t\t\tcp_port.close_options()\n\t\t\tget_viewport().set_input_as_handled()\n\t\treturn\n\tsuper(event)\n"

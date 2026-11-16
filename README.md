@@ -74,7 +74,7 @@ Combine nine independent settings in the standard game and Double or Nothing. Ne
 
 #### Heal Bullets:
 
-<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _No / Yes_ - Replace one blank per charge with a green shell that heals its target by 1 HP. Shooting yourself keeps your turn — for both you and the dealer.
+<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _No / Yes_ - Replace one blank per charge with a green shell that heals its target by 1 HP. Shooting yourself keeps your turn — for both you and the dealer. An inverter swaps green shells with black instant-kill shells; black shells never spawn naturally.
 
 Your choices are saved between launches. The two-column menu supports mouse, keyboard and controller navigation. Hover over an option for a brief explanation. English and Russian mod text is included.
 
@@ -146,7 +146,7 @@ Run the installer and engine checks from the repository root:
 ```powershell
 python -m unittest discover -s tests -p test_installer.py -v
 $repoPath = (Get-Location).Path
-foreach ($scenario in @('probe', 'settings_rules', 'localization', 'smoke', 'gameplay', 'challenges', 'contract_hud', 'heal_bullets', 'failure_screen', 'contract_chance', 'protectors', 'hidden_items')) {
+foreach ($scenario in @('probe', 'settings_rules', 'localization', 'smoke', 'gameplay', 'challenges', 'contract_hud', 'heal_bullets', 'failure_screen', 'contract_chance', 'protectors', 'hidden_items', 'lethal_bullets')) {
     python tools/run_godot.py --path ../game --script "$repoPath/tests/$scenario.gd"
     if ($LASTEXITCODE -ne 0) { throw "Check failed: $scenario" }
 }

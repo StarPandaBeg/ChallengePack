@@ -77,7 +77,8 @@
   "CP_TIP_MIRROR": "After distribution, the dealer gets\na copy of your items, including leftovers.",
   "CP_TIP_POCKET": "Limit your item uses per turn.\nAdrenaline and its stolen item count as one.",
   "CP_TIP_CONTRACT": "30% chance of a restriction per charge.\nBreak it and lose the challenge.",
-  "CP_TIP_HEAL": "One blank becomes a green shell: +1 HP\nto its target. A self-shot keeps your turn.",
+  "CP_TIP_HEAL": "Green shells heal their target by 1 HP.\nInverter: green ↔ black (instant kill).",
   "CP_TIP_START": "Start a game with the selected rules.",
-  "CP_TIP_RETURN": "Return to the main menu.\nYour choices stay saved."
+  "CP_TIP_RETURN": "Return to the main menu.\nYour choices stay saved.",
+  "CP_LETHAL_ROUND": "lethal round"
 }

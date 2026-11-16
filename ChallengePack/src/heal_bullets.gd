@@ -22,10 +22,18 @@ func seed_charge(spawner: Node):
 		var branch = spawner.spawnedShellObjectArray[index].get_child(0)
 		branch.mesh.set_surface_override_material(1, material(branch.mat_blank))
 
-func material(base: StandardMaterial3D) -> StandardMaterial3D:
+func material(base: StandardMaterial3D, shell: String = "heal") -> StandardMaterial3D:
 	var result = base.duplicate() as StandardMaterial3D
-	result.albedo_color = Color("37ba59")
+	result.albedo_color = Color("101010") if shell == "lethal" else Color("37ba59")
 	return result
+
+func invert(shell: String) -> String:
+	return {"live": "blank", "blank": "live", "heal": "lethal", "lethal": "heal"}.get(shell, shell)
+
+func damage(manager: Node, target: String) -> int:
+	if manager.shellSpawner.sequenceArray[0] == "lethal":
+		return maxi(1, manager.health_player if target == "player" else manager.health_opponent)
+	return manager.currentShotgunDamage
 
 func composition(sequence: Array) -> String:
 	return port.localization.text("CP_HEAL_COMPOSITION", [sequence.count("live"), sequence.count("blank"), sequence.count("heal")])
@@ -64,7 +72,7 @@ func infer_shell(ai: Node) -> bool:
 	if ai.sequenceArray_knownShell[0]:
 		return true
 	# Deduce only from the known composition and genuinely remembered shells.
-	var unseen = {"live": sequence.count("live"), "blank": sequence.count("blank"), "heal": sequence.count("heal")}
+	var unseen = {"live": sequence.count("live"), "blank": sequence.count("blank"), "heal": sequence.count("heal"), "lethal": sequence.count("lethal")}
 	for i in range(sequence.size()):
 		if ai.sequenceArray_knownShell[i]:
 			unseen[sequence[i]] -= 1
