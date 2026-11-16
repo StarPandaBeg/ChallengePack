@@ -77,11 +77,11 @@ func setup(owner_session: Node):
 	hud.add_theme_font_size_override("font_size", 15)
 	add_child(hud)
 	bomb = TextureRect.new()
+	bomb.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	bomb.texture = ImageTexture.create_from_image(Image.load_from_file(session.port.mod_directory.path_join("assets/contracts/c4.png")))
 	bomb.position = Vector2(298, 54)
 	bomb.size = Vector2(20, 20)
 	bomb.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	bomb.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	bomb.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	add_child(bomb)
 	theft_targets = HBoxContainer.new()

@@ -62,6 +62,9 @@ func run():
 	for i in 4:
 		players.append({"socket_number": i, "user_id": steam.STEAM_ID if i == 0 else i, "user_name": "Fixture %s" % i, "cpu_enabled": false})
 	handler.SetupInstances_test(players)
+	port.mp.rules.settings.items = 1
+	port.mp.presentation()
+	check(port.mp.covers.is_empty(), "Protectors wait for deferred player initialization")
 	await process_frame
 	await process_frame
 	for p in handler.instance_property_array:
@@ -79,6 +82,29 @@ func run():
 	port.mp.rules.settings.items = 1
 	port.mp.presentation()
 	check(port.mp.covers.size() == 3, "One protector pair per rival")
+	for local_socket in 4:
+		for p in handler.instance_property_array: p.is_active = p.socket_number == local_socket
+		port.mp.presentation()
+		check(port.mp.covers.size() == 3 and not port.mp.covers.has(local_socket), "Only rivals covered from seat %s" % local_socket)
+		for p in handler.instance_property_array:
+			if p.is_active: continue
+			var holder = port.mp.covers[p.socket_number]
+			check(holder.is_visible_in_tree(), "Protectors visible from seat %s" % local_socket)
+			check(holder.get_parent() == p.item_manager.item_spawn_parent_local.get_parent(), "Inventory cleanup cannot delete protectors")
+			check(holder.transform == p.item_manager.item_spawn_parent_local.transform, "Protector anchor matches seat transform")
+	for p in handler.instance_property_array: p.is_active = p.socket_number == 0
+	port.mp.presentation()
+	var removed_cover = port.mp.covers[1]
+	removed_cover.queue_free()
+	await process_frame
+	port.mp.presentation()
+	check(is_instance_valid(port.mp.covers[1]), "Deleted protector is recreated")
+	port.mp.rules.state(1).contract = port.mp.rules.Catalog.Contract.NO_INVERSION
+	port.mp.ui.refresh()
+	await process_frame
+	check(port.mp.ui.bomb.visible and port.mp.ui.bomb.size == Vector2(20, 20), "Contract bomb remains a 20px HUD icon")
+	check(root.get_visible_rect().encloses(port.mp.ui.bomb.get_global_rect()), "Contract icon stays within screen")
+	port.mp.rules.state(1).contract = 0
 	port.mp.rules.settings.shells = 2
 	game.MAIN_active_sequence_dict = {"sequence": ["live", "blank", "blank"], "sequence_visible": ["live", "blank", "blank"], "sequence_in_shotgun": ["live", "blank", "blank"]}
 	port.mp.rules.settings.heal = 1

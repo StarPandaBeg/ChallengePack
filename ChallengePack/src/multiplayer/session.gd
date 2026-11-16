@@ -602,8 +602,17 @@ func presentation():
 	if not local.is_stealing_item: theft_target = -1
 	if busy and local.is_stealing_item: busy = false
 	for p in game.instance_handler.instance_property_array:
-		if p == local: continue
-		if not covers.has(p.socket_number): create_cover(p)
+		if p == local:
+			if covers.has(p.socket_number):
+				if is_instance_valid(covers[p.socket_number]): covers[p.socket_number].queue_free()
+				covers.erase(p.socket_number)
+			for item in p.user_inventory_instance_array:
+				if is_instance_valid(item) and hidden.has(item.get_instance_id()):
+					item.visible = hidden[item.get_instance_id()]
+					hidden.erase(item.get_instance_id())
+			continue
+		if not covers.has(p.socket_number) or not is_instance_valid(covers[p.socket_number]):
+			if p.item_manager.is_node_ready() and p.item_manager.item_spawn_parent_local.is_inside_tree(): create_cover(p)
 		var reveal = local.is_stealing_item and p.socket_number == theft_target
 		if covers.has(p.socket_number) and is_instance_valid(covers[p.socket_number]): covers[p.socket_number].visible = not reveal
 		for item in p.user_inventory_instance_array:
@@ -617,11 +626,18 @@ func presentation():
 		if is_instance_valid(held): held.visible = true
 
 func create_cover(p: Node):
+	# ItemManager._ready clears the inventory container. Keep visual covers in
+	# a sibling so late client initialization cannot delete them with the items.
+	var inventory = p.item_manager.item_spawn_parent_local
+	var holder = Node3D.new()
+	holder.name = "ChallengePackProtectors"
+	holder.transform = inventory.transform
+	inventory.get_parent().add_child(holder)
 	var cover = load(port.mod_directory.path_join("assets/protectors.res")).instantiate()
-	p.item_manager.item_spawn_parent_local.add_child(cover)
+	holder.add_child(cover)
 	cover.position = Vector3(0, -4, 0)
 	cover.rotate_y(PI)
-	covers[p.socket_number] = cover
+	covers[p.socket_number] = holder
 	var sound = AudioStreamPlayer3D.new()
 	sound.stream = load("res://audio/main compartment show items.ogg")
 	cover.add_child(sound)
