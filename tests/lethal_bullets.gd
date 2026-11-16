@@ -11,6 +11,7 @@ func run():
 	check(port.compatible, port.compatibility_error)
 	factory = port.factory
 	port.active = port.Settings.DEFAULTS.duplicate()
+	port.active.heal_chance = 100 # This fixture checks shell kinds, not probability.
 	Engine.time_scale = 100
 	var f = fixture()
 	root.add_child(f.root)
