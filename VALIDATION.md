@@ -16,6 +16,7 @@ Target: Buckshot Roulette **2.2.0.6**, Steam Windows, Godot **4.1.1**.
 - Failure screen: all three contract violations in English/Russian, game pause, unchanged HP/shells, blocked repeat actions, dismissal input guard, mouse/accept/back through the viewport, menu transition and pause cleanup. Compact HUD bounds are checked at an 8-pixel top-left inset.
 - Contract frequency: 40,000 deterministic rolls cover the 30% activation rate in random/fixed modes, filtering without items, expiration and silent rounds. Existing rule/failure fixtures force successful rolls without changing the production probability.
 - Two-column menu: all setting values fit in English/Russian; horizontal/vertical focus neighbors and the path to Start are checked. Localized hover tooltips cover every setting and both action buttons, including live language changes. Healing sound playback is checked only when HP increases (not at full health, zero HP or with cut wires).
+- Retractable covers: initially hidden below the table; the real adapted room-entry method starts one rise and calls the original game method. Check intermediate/final positions, installed mechanical sound playback/stop, repeated-entry idempotence, theft during/after motion, direct-at-table startup, scene recreation and interruption cleanup. Geometry resources remain unchanged.
 - Bundled cover mesh, textures and materials load without editor import.
 
 Headless runs may emit unsupported cursor/mouse and dummy-renderer `mesh_get_surface_count` messages. These are not visual verification. The negative adapter test deliberately logs an anchor mismatch.
@@ -24,7 +25,7 @@ Headless runs may emit unsupported cursor/mouse and dummy-renderer `mesh_get_sur
 
 - Install the packaged archive beside the Steam executable, launch normally, uninstall, check other configuration entries.
 - Complete standard and Double or Nothing games, death/defibrillator, menu return and another game. Check dealer-first permissions, cuffs and actual AI/item interactions.
-- Visually inspect both covers from gameplay cameras; test theft completion/cancel/timeout and single-frame initial-charge leaks.
+- Visually inspect both covers rising during the room-entry camera animation and listen for the mechanism; test theft completion/cancel/timeout and single-frame initial-charge leaks.
 - Listen to Quantity/Hidden with normal/accelerated loading; confirm eight gestures/sounds in Hidden and language-specific hints/intro dialogue.
 - Test mouse, keyboard, physical controller, device switching, Escape/Back and restored focus.
 - Exercise phone, magnifying glass, inverter, beer and other information-changing actions in real play.

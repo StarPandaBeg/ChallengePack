@@ -134,6 +134,7 @@ func run():
 	var full = fixture()
 	root.add_child(full.root)
 	full.items.set_process(false)
+	await port.await_covers(full.rm)
 	supply_items(full, ["beer", "beer", "beer", "beer", "beer", "beer", "beer", "beer"])
 	full.items.GrabItems_Enemy()
 	full.items.GrabItems_Enemy()

@@ -143,6 +143,7 @@ func run():
 					var f = fixture()
 					root.add_child(f.root)
 					f.items.set_process(false)
+					await port.await_covers(f.rm)
 					# Cover both normal and accelerated loading, and main/endless state.
 					f.rm.shellLoadingSpedUp = shuffle == 0
 					f.rm.endless = items == 1
@@ -187,7 +188,7 @@ func run():
 					examine.free()
 					if items == 1:
 						var cover = f.table.get_node("Protectors")
-						check(cover.get_child_count() == 2 and cover.visible)
+						check(cover.find_children("*", "MeshInstance3D", true, false).size() == 2 and cover.visible)
 						await f.items.SetupItemSteal()
 						check(not cover.visible)
 						f.items.RevertItemSteal()

@@ -40,7 +40,7 @@ Combine nine independent settings in the standard game and Double or Nothing. Ne
 
 <img src=".github/icon_1.png" alt="*" width="16" height="16" /> _Default_ - Keep the dealer’s items visible.
 
-<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _Hidden_ - Hide the dealer’s items behind covers; reveal them when stealing.
+<img src=".github/icon_1.png" alt="*" width="16" height="16" /> _Hidden_ - Covers rise from the table with a mechanical sound as you enter, hiding the dealer’s items. Reveal them when stealing.
 
 #### Shuffle Bullets:
 
@@ -146,7 +146,7 @@ Run the installer and engine checks from the repository root:
 ```powershell
 python -m unittest discover -s tests -p test_installer.py -v
 $repoPath = (Get-Location).Path
-foreach ($scenario in @('probe', 'settings_rules', 'localization', 'smoke', 'gameplay', 'challenges', 'contract_hud', 'heal_bullets', 'failure_screen', 'contract_chance')) {
+foreach ($scenario in @('probe', 'settings_rules', 'localization', 'smoke', 'gameplay', 'challenges', 'contract_hud', 'heal_bullets', 'failure_screen', 'contract_chance', 'protectors')) {
     python tools/run_godot.py --path ../game --script "$repoPath/tests/$scenario.gd"
     if ($LASTEXITCODE -ne 0) { throw "Check failed: $scenario" }
 }

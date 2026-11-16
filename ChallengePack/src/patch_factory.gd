@@ -109,11 +109,12 @@ func make_body(name: String, source: String) -> String:
 		return routine + "\nfunc _ready():\n\tsuper()\n\tcp_port.challenges.hide_health(self)\n\nfunc _process(_delta):\n\tcp_port.challenges.hide_health(self)\n\nfunc UpdateDisplay():\n\tsuper()\n\tcp_port.challenges.hide_health(self)\n\nfunc FlickerLastDigit():\n\tif cp_port.active.get(\"health\", 0) == 0:\n\t\tsuper()\n"
 	if name == "RoundManager":
 		var start_round = method(source, "StartRound")
+		start_round = replace_once(start_round, "\t#USINGITEMS: SETUP ITEM GRIDS IF ROUND CLASS HAS SETUP ITEM GRIDS ENABLED", "\tif not await cp_port.await_covers(self):\n\t\treturn\n\t#USINGITEMS: SETUP ITEM GRIDS IF ROUND CLASS HAS SETUP ITEM GRIDS ENABLED")
 		var increment = "\tif (gettingNext && (currentRound +  1) != roundArray.size()): currentRound += 1"
 		start_round = replace_once(start_round, increment, increment + "\n\tawait cp_port.challenges.begin_round(self)")
 		var player_turn = method(source, "BeginPlayerTurn")
 		player_turn = replace_once(player_turn, "\tplayerCurrentTurnItemArray = []", "\tcp_port.challenges.reset_pocket(self)\n\tplayerCurrentTurnItemArray = []")
-		return start_round + player_turn
+		return start_round + player_turn + "\nfunc BeginMainGame():\n\tcp_port.deploy_covers(self)\n\tsuper()\n"
 	if name == "ItemInteraction":
 		var interact = method(source, "InteractWith")
 		interact = replace_once(interact, '\t\t\telse: roundManager.shellSpawner.sequenceArray[0] = "live"', '\t\t\telif roundManager.shellSpawner.sequenceArray[0] == "blank": roundManager.shellSpawner.sequenceArray[0] = "live"')

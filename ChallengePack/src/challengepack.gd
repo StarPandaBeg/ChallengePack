@@ -10,6 +10,7 @@ const Challenges = preload("challenges.gd")
 const ChallengeHUD = preload("challenge_hud.gd")
 const HealBullets = preload("heal_bullets.gd")
 const FailureScreen = preload("failure_screen.gd")
+const Protectors = preload("protectors.gd")
 const VERSION = "2.1.0"
 var settings = Settings.new()
 var factory = Factory.new()
@@ -168,6 +169,8 @@ func dealer_turn(loader: Node):
 func items_ready(manager: Node):
 	if active.items != 1:
 		return
+	if covers.has(manager.get_instance_id()):
+		return
 	var table = manager.get_tree().current_scene
 	# current_scene is not assigned until add_child/ready has completed.
 	if table == null or not table.is_ancestor_of(manager):
@@ -183,6 +186,7 @@ func items_ready(manager: Node):
 		abort_challenge("CP_ERROR_COVERS")
 		return
 	var cover = packed.instantiate()
+	cover.set_script(Protectors)
 	parent.add_child(cover)
 	covers[manager.get_instance_id()] = {"ref": weakref(manager), "cover": weakref(cover)}
 
@@ -191,7 +195,26 @@ func set_covers(manager: Node, visible: bool):
 	if entry != null:
 		var cover = entry.cover.get_ref()
 		if cover != null:
-			cover.visible = visible
+			cover.set_covered(visible)
+
+func room_covers(manager: Node):
+	for entry in covers.values():
+		var items = entry.ref.get_ref()
+		if items != null and items.roundManager == manager:
+			return entry.cover.get_ref()
+	return null
+
+func deploy_covers(manager: Node):
+	var cover = room_covers(manager)
+	if cover != null:
+		cover.deploy()
+
+func await_covers(manager: Node) -> bool:
+	var cover = room_covers(manager)
+	if cover != null:
+		# Also cover a scene that starts directly at the table, without the intro.
+		return await cover.wait_until_deployed()
+	return true
 
 func abort_challenge(key: String):
 	compatible = false
