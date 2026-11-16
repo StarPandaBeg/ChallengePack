@@ -71,7 +71,7 @@ func make_body(name: String, source: String) -> String:
 	if name == "HealthCounter":
 		var routine = method(source, "UpdateDisplayRoutine")
 		routine = replace_once(routine, "if (roundManager.health_player == 1 && !dialogueEntered_player && !roundManager.wireIsCut_player && !skipping_careful):", "if cp_port.active.get(\"health\", 0) == 0 and (roundManager.health_player == 1 && !dialogueEntered_player && !roundManager.wireIsCut_player && !skipping_careful):")
-		return routine + "\nfunc _ready():\n\tsuper()\n\tcp_port.challenges.hide_health(self)\n\nfunc _process(_delta):\n\tcp_port.challenges.hide_health(self)\n\nfunc UpdateDisplay():\n\tsuper()\n\tcp_port.challenges.hide_health(self)\n\nfunc FlickerLastDigit():\n\tif cp_port.active.get(\"health\", 0) == 0:\n\t\tsuper()\n"
+		return routine + "\nfunc _ready():\n\tsuper()\n\tcp_port.challenges.hide_health(self)\n\nfunc _process(_delta):\n\tcp_port.challenges.hide_health(self)\n\nfunc UpdateDisplay():\n\tsuper()\n\tcp_port.challenges.hide_health(self)\n\nfunc FlickerLastDigit():\n\tif cp_port.active.get(\"health\", 0) == 0:\n\t\tsuper()\n\nfunc DisableCounter():\n\tsuper()\n\tif cp_port.active.health == 1 and roundManager.roundIndicatorParent != null:\n\t\troundManager.roundIndicatorParent.hide()\n"
 	if name == "RoundManager":
 		var start_round = method(source, "StartRound")
 		start_round = replace_once(start_round, "\t#USINGITEMS: SETUP ITEM GRIDS IF ROUND CLASS HAS SETUP ITEM GRIDS ENABLED", "\tif not await cp_port.await_covers(self):\n\t\treturn\n\t#USINGITEMS: SETUP ITEM GRIDS IF ROUND CLASS HAS SETUP ITEM GRIDS ENABLED")
@@ -79,7 +79,7 @@ func make_body(name: String, source: String) -> String:
 		start_round = replace_once(start_round, increment, increment + "\n\tawait cp_port.challenges.begin_round(self)")
 		var player_turn = method(source, "BeginPlayerTurn")
 		player_turn = replace_once(player_turn, "\tplayerCurrentTurnItemArray = []", "\tcp_port.challenges.reset_pocket(self)\n\tplayerCurrentTurnItemArray = []")
-		return start_round + player_turn + "\nfunc BeginMainGame():\n\tcp_port.deploy_covers(self)\n\tsuper()\n"
+		return start_round + player_turn + "\nfunc BeginMainGame():\n\tcp_port.deploy_covers(self)\n\tsuper()\n\nfunc RoundIndicator():\n\tawait super()\n\tif cp_port.active.health == 1:\n\t\tanimator_roundIndicator.stop()\n\t\tvar material = roundIndicator.material_override.duplicate()\n\t\tmaterial.albedo_color.a = 1.0\n\t\troundIndicator.material_override = material\n\t\troundIndicator.show()\n\t\troundIndicatorParent.show()\n"
 	if name == "ItemInteraction":
 		var interact = method(source, "InteractWith")
 		interact = replace_once(interact, '\t\t\tif (roundManager.shellSpawner.sequenceArray[0] == "live"): roundManager.shellSpawner.sequenceArray[0] = "blank"\n\t\t\telse: roundManager.shellSpawner.sequenceArray[0] = "live"', '\t\t\troundManager.shellSpawner.sequenceArray[0] = cp_port.heal_bullets.invert(roundManager.shellSpawner.sequenceArray[0])')
