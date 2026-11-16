@@ -3,6 +3,7 @@ extends "gameplay.gd"
 func item_node(name: String, player: bool) -> Node3D:
 	var item = Node3D.new()
 	var indicator = stub("PickupIndicator", {})
+	indicator.isDealerItem = not player
 	item.add_child(indicator)
 	indicator.owner = item
 	var branch = load("res://scripts/InteractionBranch.gd").new()

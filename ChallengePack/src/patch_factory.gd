@@ -1,7 +1,7 @@
 extends RefCounted
 
 # Compile subclasses of the installed game, never ship copies of game methods.
-const TARGETS = ["ShellSpawner", "ShellLoader", "ItemManager", "MenuManager", "LeaderboardManager", "HealthCounter", "RoundManager", "ItemInteraction", "ShotgunShooting", "DealerIntelligence", "ShellEjectManager", "ShellExamine", "BurnerPhone"]
+const TARGETS = ["ShellSpawner", "ShellLoader", "ItemManager", "MenuManager", "LeaderboardManager", "HealthCounter", "RoundManager", "ItemInteraction", "ShotgunShooting", "DealerIntelligence", "ShellEjectManager", "ShellExamine", "BurnerPhone", "HandManager"]
 var scripts = {}
 var error = ""
 var error_key = ""
@@ -118,7 +118,10 @@ func make_body(name: String, source: String) -> String:
 	if name == "ItemInteraction":
 		var interact = method(source, "InteractWith")
 		interact = replace_once(interact, '\t\t\telse: roundManager.shellSpawner.sequenceArray[0] = "live"', '\t\t\telif roundManager.shellSpawner.sequenceArray[0] == "blank": roundManager.shellSpawner.sequenceArray[0] = "live"')
-		return interact + "\nfunc PickupItemFromTable(itemParent: Node3D, passedItemName: String):\n\tif not cp_port.challenges.allow_pickup(self, passedItemName):\n\t\treturn\n\tawait super(itemParent, passedItemName)\n"
+		return interact + "\nfunc PickupItemFromTable(itemParent: Node3D, passedItemName: String):\n\tif not cp_port.challenges.allow_pickup(self, passedItemName):\n\t\treturn\n\tcp_port.reveal_item(itemParent)\n\tawait super(itemParent, passedItemName)\n"
+	if name == "HandManager":
+		var pickup = method(source, "PickupItemFromTable")
+		return replace_once(pickup, "\tactiveIndex = activeInstance.get_child(0).dealerGridIndex", "\tcp_port.reveal_item(activeInstance)\n\tactiveIndex = activeInstance.get_child(0).dealerGridIndex")
 	if name == "ShotgunShooting":
 		var shoot = method(source, "Shoot")
 		shoot = replace_once(shoot, "\tdealerShotTrue = false", "\tif not cp_port.challenges.allow_shot(roundManager, who):\n\t\treturn\n\tdealerShotTrue = false")

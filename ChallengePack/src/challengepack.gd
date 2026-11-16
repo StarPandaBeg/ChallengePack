@@ -187,6 +187,7 @@ func items_ready(manager: Node):
 		return
 	var cover = packed.instantiate()
 	cover.set_script(Protectors)
+	cover.item_manager = manager
 	parent.add_child(cover)
 	covers[manager.get_instance_id()] = {"ref": weakref(manager), "cover": weakref(cover)}
 
@@ -196,6 +197,10 @@ func set_covers(manager: Node, visible: bool):
 		var cover = entry.cover.get_ref()
 		if cover != null:
 			cover.set_covered(visible)
+
+func reveal_item(item: Node3D):
+	if active.items == 1:
+		Protectors.reveal_item(item)
 
 func room_covers(manager: Node):
 	for entry in covers.values():
