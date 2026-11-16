@@ -30,12 +30,13 @@ func run():
 				var entry = port.challenges.state(f.rm)
 				check(port.contract_effects.armed.playing == (entry.contract != 0), "Arming sound did not match an actual contract")
 				if not has_items:
-					check(entry.contract == (2 if selection in [1, 3] else 0))
-					check(entry.paused_contract == (selection - 1 if selection > 1 and selection != 3 else 0))
-					check(f.loader.dialogue.texts.size() - before == (1 if selection in [1, 3] else 0), "Announced an irrelevant contract")
+					var eligible = selection in [1, 3, 12, 13]
+					check(entry.contract in [2, 11, 12] if selection == 1 else entry.contract == (selection - 1 if eligible else 0))
+					check(entry.paused_contract == (selection - 1 if selection > 1 and not eligible else 0))
+					check(f.loader.dialogue.texts.size() - before == (1 if eligible else 0), "Announced an irrelevant contract")
 				else:
 					check(entry.paused_contract == 0, "Item contract did not resume")
-					check(entry.contract in range(1, 11) if selection == 1 else entry.contract == maxi(0, selection - 1))
+					check(entry.contract in range(1, 13) if selection == 1 else entry.contract == maxi(0, selection - 1))
 				var data = port.challenges.hud_data()
 				if not data.is_empty():
 					check(data.limit == (2 if has_items else 0))
@@ -51,7 +52,7 @@ func run():
 	# No-item random selection must never return an item restriction.
 	port.active.contract = 1
 	for i in range(100):
-		check(port.challenges.select_contract(false) in [0, 2])
+		check(port.challenges.select_contract(false) in [0, 2, 11, 12])
 	# The suspended fixed rule returns when the same manager enters an item round.
 	port.active.contract = 2
 	f.rm.roundArray[0].usingItems = false

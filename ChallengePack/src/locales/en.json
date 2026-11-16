@@ -76,8 +76,8 @@
   "CP_TIP_HEALTH": "Hide both health displays.\nKeep track of HP yourself.",
   "CP_TIP_MIRROR": "After distribution, the dealer gets\na copy of your items, including leftovers.",
   "CP_TIP_POCKET": "Limit your item uses per turn.\nAdrenaline and its stolen item count as one.",
-  "CP_TIP_CONTRACT": "30% chance of a restriction per charge.\nBreak it and lose the challenge.",
-  "CP_TIP_HEAL": "Green shells heal their target by 1 HP.\nInverter: green ↔ black (instant kill).",
+  "CP_TIP_CONTRACT": "Contract chance per charge: %s%%.\nRules and effects last until the next charge.",
+  "CP_TIP_HEAL": "Green shells restore 1 HP, or 2 with\na handsaw or the double-shot contract.\nInverter: green ↔ black (instant kill).",
   "CP_TIP_START": "Start a game with the selected rules.",
   "CP_TIP_RETURN": "Return to the main menu.\nYour choices stay saved.",
   "CP_LETHAL_ROUND": "lethal round",
@@ -100,7 +100,7 @@
   "CP_NEWS_POCKET_TITLE": "Make every item count",
   "CP_NEWS_POCKET": "Limit how many items you can use in a turn. Save your best combination for the right moment.",
   "CP_NEWS_CONTRACT_TITLE": "A new clause at the table",
-  "CP_NEWS_CONTRACT": "Ten contracts change the rules: no hints, stealing, charge tampering and more. No Safety Net allows a magnifying glass or handcuffs, never both per charge. Break a contract for a self-shot and the end of your run.",
+  "CP_NEWS_CONTRACT": "Twelve contracts change the rules. Two for the Price of One doubles damage and healing for both sides. Leaky Shotgun reverses your targets. Item restrictions only apply in rounds with items.",
   "CP_NEWS_HEAL_TITLE": "Green means another chance",
   "CP_NEWS_HEAL": "Green shells restore 1 HP; shooting yourself keeps your turn. Invert one into a black shell for an instant kill. Black shells never spawn naturally.",
   "CP_NO_HINTS": "NO HINTS",
@@ -125,5 +125,11 @@
   "CP_HUD_NO_INSURANCE": "Glass or cuffs",
   "CP_DETAIL_NO_INSURANCE": "Use either the magnifying glass or handcuffs per charge.\nRepeating the same type is allowed.",
   "CP_HUD_INSURANCE_NO_CUFFS": "No handcuffs",
-  "CP_HUD_INSURANCE_NO_GLASS": "No magnifying glass"
+  "CP_HUD_INSURANCE_NO_GLASS": "No magnifying glass",
+  "CP_TWO_FOR_ONE": "TWO FOR THE PRICE OF ONE",
+  "CP_HUD_TWO_FOR_ONE": "Damage & healing ×2",
+  "CP_DETAIL_TWO_FOR_ONE": "Both sides deal 2 damage or heal 2 HP.\nA handsaw does not boost this again.",
+  "CP_LEAKY_GUN": "LEAKY SHOTGUN",
+  "CP_HUD_LEAKY_GUN": "Reversed targets",
+  "CP_DETAIL_LEAKY_GUN": "Your shots swap targets:\nchoose the dealer to shoot yourself, and vice versa."
 }

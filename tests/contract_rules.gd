@@ -4,7 +4,7 @@ var failures = 0
 const FORBIDDEN = {
 	1: ["cigarettes", "expired medicine"], 2: [], 3: ["handcuffs"],
 	4: ["magnifying glass", "burner phone"], 5: ["beer", "inverter"],
-	6: ["handsaw"], 7: ["adrenaline"], 8: ["beer"], 9: ["inverter"], 10: []
+	6: ["handsaw"], 7: ["adrenaline"], 8: ["beer"], 9: ["inverter"], 10: [], 11: [], 12: []
 }
 const ITEMS = ["beer", "cigarettes", "expired medicine", "handcuffs", "magnifying glass", "burner phone", "handsaw", "inverter", "adrenaline"]
 
@@ -127,5 +127,5 @@ func run():
 	effects.queue_free()
 	Engine.time_scale = 1
 	await process_frame
-	print("CP_CONTRACT_RULES: %s failures; ten contracts, 180 item/theft cases, both insurance orders, turns, pocket/adrenaline, expiry, cleanup" % failures)
+	print("CP_CONTRACT_RULES: %s failures; twelve contracts, 216 item/theft cases, both insurance orders, turns, pocket/adrenaline, expiry, cleanup" % failures)
 	quit(1 if failures else 0)

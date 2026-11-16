@@ -30,16 +30,16 @@ func run():
 				if contract != 0:
 					active_count += 1
 					seen[contract] = seen.get(contract, 0) + 1
-					check(contract in range(1, 11))
-					check(has_items or contract == 2, "No-item round received an item restriction")
+					check(contract in range(1, 13))
+					check(has_items or contract in [2, 11, 12], "No-item round received an item restriction")
 					check(selection == 1 or contract == selection - 1, "Fixed restriction changed its type")
-			var eligible = selection != 0 and (has_items or selection in [1, 3])
+			var eligible = selection != 0 and (has_items or selection in [1, 3, 12, 13])
 			if eligible:
 				check(active_count > 1000 and active_count < 1400, "Contract frequency is outside 25–35%: " + str(active_count))
-				check(seen.size() == (10 if selection == 1 and has_items else 1))
+				check(seen.size() == ((12 if has_items else 3) if selection == 1 else 1))
 				if selection == 1 and has_items:
 					for count in seen.values():
-						check(count > 70 and count < 180, "Random contract weighting is uneven")
+						check(count > 55 and count < 150, "Random contract weighting is uneven")
 			else:
 				check(active_count == 0)
 	Engine.time_scale = 100
@@ -70,5 +70,5 @@ func run():
 	port.queue_free()
 	Engine.time_scale = 1
 	await process_frame
-	print("CP_CONTRACT_CHANCE: %s failures; 96000 rolls at 30%%, ten equally weighted contracts, fixed modes, no-item filtering, expiry and silent rounds" % failures)
+	print("CP_CONTRACT_CHANCE: %s failures; 112000 rolls at 30%%, twelve equally weighted contracts, fixed modes, no-item filtering, expiry and silent rounds" % failures)
 	quit(1 if failures else 0)

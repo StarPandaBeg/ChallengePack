@@ -1,8 +1,8 @@
 extends RefCounted
 
-enum Contract { NONE, NO_HEALING, NO_SELF_SHOTS, NO_CUFFS, NO_HINTS, UNTOUCHABLE_CHARGE, FAIR_CALIBER, NO_STEALING, DRY_LAW, NO_INVERSION, NO_INSURANCE }
+enum Contract { NONE, NO_HEALING, NO_SELF_SHOTS, NO_CUFFS, NO_HINTS, UNTOUCHABLE_CHARGE, FAIR_CALIBER, NO_STEALING, DRY_LAW, NO_INVERSION, NO_INSURANCE, TWO_FOR_ONE, LEAKY_GUN }
 # IDs and setting values are append-only: old saved choices keep their meaning.
-const SETTING_COUNT = Contract.NO_INSURANCE + 2
+const SETTING_COUNT = Contract.LEAKY_GUN + 2
 const CATALOG = {
 	Contract.NONE: {"key": "CP_OFF", "hud": "CP_OFF", "detail": "CP_TIP_CONTRACT", "items": [], "requires_items": false},
 	Contract.NO_HEALING: {"key": "CP_NO_HEALING", "hud": "CP_HUD_NO_HEALING", "detail": "CP_HUD_HEALING_DETAIL", "items": ["cigarettes", "expired medicine"], "requires_items": true},
@@ -14,7 +14,9 @@ const CATALOG = {
 	Contract.NO_STEALING: {"key": "CP_NO_STEALING", "hud": "CP_HUD_NO_STEALING", "detail": "CP_DETAIL_NO_STEALING", "items": ["adrenaline"], "requires_items": true},
 	Contract.DRY_LAW: {"key": "CP_DRY_LAW", "hud": "CP_HUD_DRY_LAW", "detail": "CP_DETAIL_DRY_LAW", "items": ["beer"], "requires_items": true},
 	Contract.NO_INVERSION: {"key": "CP_NO_INVERSION", "hud": "CP_HUD_NO_INVERSION", "detail": "CP_DETAIL_NO_INVERSION", "items": ["inverter"], "requires_items": true},
-	Contract.NO_INSURANCE: {"key": "CP_NO_INSURANCE", "hud": "CP_HUD_NO_INSURANCE", "detail": "CP_DETAIL_NO_INSURANCE", "items": [], "requires_items": true}
+	Contract.NO_INSURANCE: {"key": "CP_NO_INSURANCE", "hud": "CP_HUD_NO_INSURANCE", "detail": "CP_DETAIL_NO_INSURANCE", "items": [], "requires_items": true},
+	Contract.TWO_FOR_ONE: {"key": "CP_TWO_FOR_ONE", "hud": "CP_HUD_TWO_FOR_ONE", "detail": "CP_DETAIL_TWO_FOR_ONE", "items": [], "requires_items": false},
+	Contract.LEAKY_GUN: {"key": "CP_LEAKY_GUN", "hud": "CP_HUD_LEAKY_GUN", "detail": "CP_DETAIL_LEAKY_GUN", "items": [], "requires_items": false}
 }
 const CONTRACT_CHANCE = 0.30
 var activation_chance = CONTRACT_CHANCE
@@ -60,6 +62,16 @@ func track(manager: Node):
 
 func reset_pocket(manager: Node):
 	state(manager).used = 0
+
+func shot_strength(manager: Node) -> int:
+	# A contract supplies the same strength as a saw, without changing the barrel
+	# or persisting into the next charge. Combining both never multiplies again.
+	return maxi(2, manager.currentShotgunDamage) if state(manager).contract == Contract.TWO_FOR_ONE else manager.currentShotgunDamage
+
+func player_target(manager: Node, selected: String) -> String:
+	if state(manager).contract == Contract.LEAKY_GUN:
+		return {"self": "dealer", "dealer": "self"}.get(selected, selected)
+	return selected
 
 func select_contract(has_items: bool = true) -> int:
 	var selection = mode("contract")

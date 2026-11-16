@@ -33,7 +33,7 @@ func invert(shell: String) -> String:
 func damage(manager: Node, target: String) -> int:
 	if manager.shellSpawner.sequenceArray[0] == "lethal":
 		return maxi(1, manager.health_player if target == "player" else manager.health_opponent)
-	return manager.currentShotgunDamage
+	return port.challenges.shot_strength(manager)
 
 func composition(sequence: Array) -> String:
 	return port.localization.text("CP_HEAL_COMPOSITION", [sequence.count("live"), sequence.count("blank"), sequence.count("heal")])
@@ -60,7 +60,7 @@ func apply(manager: Node, target: String, counter: Node):
 	var health: int = manager.get(health_key)
 	var maximum: int = manager.roundArray[0].startingHealth
 	if health > 0 and not wire_cut and health < maximum:
-		manager.set(health_key, mini(maximum, health + 1))
+		manager.set(health_key, mini(maximum, health + port.challenges.shot_strength(manager)))
 		counter.UpdateDisplay()
 		if counter.speaker_beep != null:
 			counter.speaker_beep.play()

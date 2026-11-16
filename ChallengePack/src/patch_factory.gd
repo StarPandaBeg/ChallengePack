@@ -132,7 +132,7 @@ func make_body(name: String, source: String) -> String:
 		var shoot = method(source, "Shoot")
 		shoot = replace_count(shoot, 'currentRoundInChamber == "live"', 'currentRoundInChamber in ["live", "lethal"]', 4)
 		shoot = replace_count(shoot, 'roundManager.currentShotgunDamage', 'cp_port.heal_bullets.damage(roundManager, "dealer" if who == "dealer" else "player")', 2)
-		shoot = replace_once(shoot, "\tdealerShotTrue = false", "\tif not cp_port.challenges.allow_shot(roundManager, who):\n\t\treturn\n\tdealerShotTrue = false")
+		shoot = replace_once(shoot, "\tdealerShotTrue = false", "\tif not cp_port.challenges.allow_shot(roundManager, who):\n\t\treturn\n\twho = cp_port.challenges.player_target(roundManager, who)\n\tdealerShotTrue = false")
 		shoot = replace_once(shoot, "\tPlayShootingSound()", '\tPlayShootingSound()\n\tif currentRoundInChamber == "heal":\n\t\tcp_port.heal_bullets.apply(roundManager, "player" if who == "self" else "dealer", healthCounter)\n\t\tplayerCanGoAgain = who == "self"')
 		shoot = replace_once(shoot, '\tif (currentRoundInChamber == "blank" && who == "self"):\n\t\tanimator_shotgun.play', '\tif (currentRoundInChamber in ["blank", "heal"] && who == "self"):\n\t\tanimator_shotgun.play')
 		shoot = replace_once(shoot, '\tif (currentRoundInChamber == "blank" && who == "dealer"): disablingDelayShit = true', '\tif (currentRoundInChamber in ["blank", "heal"] && who == "dealer"): disablingDelayShit = true')

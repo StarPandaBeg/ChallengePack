@@ -100,7 +100,7 @@ func run():
 	var counter = child(f.root, stub("HealthCounter", {"UpdateDisplay": "calls += 1"}, "var calls = 0\n"))
 	counter.speaker_beep = child(f.root, AudioStreamPlayer3D.new())
 	counter.speaker_beep.stream = AudioStreamGenerator.new()
-	# Test health limits, saw independence, severed wires and no resurrection.
+	# Test health limits, doubled saw healing, severed wires and no resurrection.
 	f.rm.currentShotgunDamage = 2
 	for player in [false, true]:
 		var key = "health_player" if player else "health_opponent"
@@ -111,9 +111,10 @@ func run():
 				f.rm.set(wire, cut)
 				counter.speaker_beep.stop()
 				port.heal_bullets.apply(f.rm, "player" if player else "dealer", counter)
-				check(f.rm.get(key) == (health + 1 if health > 0 and health < 4 and not cut else health), "Healing bypassed a limit")
+				check(f.rm.get(key) == (mini(4, health + 2) if health > 0 and health < 4 and not cut else health), "Healing bypassed a limit")
 				check(counter.speaker_beep.playing == (health > 0 and health < 4 and not cut), "Healing sound did not match restored HP")
 		f.rm.set(wire, false)
+	f.rm.currentShotgunDamage = 1
 	# Player shot: real adapted Shoot and ejection; stub only presentation/final turn.
 	var eject = ejector(f)
 	var shooting = adapted("ShotgunShooting", '\nvar finishes = []\nvar cp_eject\nfunc MainSlowDownRoutine(_who, _from_dealer):\n\tpass\nfunc PlayShootingSound():\n\tpass\nfunc FinalizeShooting(again, _place, _revive, _delay):\n\tfinishes.append(again)\n\tcp_eject.EjectShell()\n')

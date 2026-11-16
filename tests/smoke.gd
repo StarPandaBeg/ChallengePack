@@ -38,7 +38,8 @@ func run():
 	for language in ["en", "ru"]:
 		TranslationServer.set_locale(language)
 		for key in port.options.buttons:
-			check(port.options.buttons[key].get_tooltip().begins_with(port.localization.text("CP_TIP_" + key.to_upper())), "Missing or stale setting tooltip: " + key)
+			var arguments = [roundi(port.challenges.activation_chance * 100)] if key == "contract" else []
+			check(port.options.buttons[key].get_tooltip().begins_with(port.localization.text("CP_TIP_" + key.to_upper(), arguments)), "Missing or stale setting tooltip: " + key)
 		check(port.options.start_button.get_tooltip() == port.localization.text("CP_TIP_START"))
 		check(port.options.return_button.get_tooltip() == port.localization.text("CP_TIP_RETURN"))
 		for key in port.options.buttons:
@@ -52,6 +53,16 @@ func run():
 				for button in port.options.buttons.values() + [port.options.start_button, port.options.return_button]:
 					check(viewport_rect.encloses(button.get_global_rect()), "Two-column menu overflows: " + button.text)
 	port.settings.values = saved_values
+	var previous_chance = port.challenges.activation_chance
+	for language in ["en", "ru"]:
+		TranslationServer.set_locale(language)
+		for chance in [0.0, 0.30, 1.0]:
+			port.challenges.activation_chance = chance
+			port.options.refresh()
+			var percent = "%d%%" % roundi(chance * 100)
+			check(port.options.buttons.contract.text.contains(percent), "Contract caption has a stale probability")
+			check(port.options.buttons.contract.tooltip_text.contains(percent), "Contract tooltip has a stale probability")
+	port.challenges.activation_chance = previous_chance
 	port.options.refresh()
 	check(port.options.buttons.shells.get_node(port.options.buttons.shells.focus_neighbor_right) == port.options.buttons.items)
 	check(port.options.buttons.shells.get_node(port.options.buttons.shells.focus_neighbor_bottom) == port.options.buttons.shuffle)

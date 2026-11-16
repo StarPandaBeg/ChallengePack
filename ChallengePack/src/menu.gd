@@ -122,15 +122,16 @@ func refresh():
 	return_button.text = tr("RETURN")
 	start_button.tooltip_text = port.localization.text("CP_TIP_START")
 	return_button.tooltip_text = port.localization.text("CP_TIP_RETURN")
+	var chance_percent = roundi(port.challenges.activation_chance * 100)
 	for key in buttons:
 		var values = port.challenges.menu_keys() if key == "contract" else LABELS[key][1]
 		var value_key = values[port.settings.values[key]]
 		var value = port.localization.text(value_key) if value_key.begins_with("CP_") else tr(value_key)
 		var caption = port.localization.text(LABELS[key][0])
 		if key == "contract":
-			caption += " (%d%%)" % roundi(port.challenges.activation_chance * 100)
+			caption += " (%d%%)" % chance_percent
 		buttons[key].text = caption + ":\n" + value
-		buttons[key].tooltip_text = port.localization.text("CP_TIP_" + key.to_upper())
+		buttons[key].tooltip_text = port.localization.text("CP_TIP_" + key.to_upper(), [chance_percent] if key == "contract" else [])
 		if key == "contract" and port.settings.values[key] > 1:
 			buttons[key].tooltip_text += "\n" + port.localization.text(port.challenges.CATALOG[port.settings.values[key] - 1].detail)
 	start_button.disabled = not port.compatible

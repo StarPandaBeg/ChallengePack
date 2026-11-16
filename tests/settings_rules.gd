@@ -19,8 +19,8 @@ func run():
 	var reloaded = settings_script.new()
 	reloaded.load_settings(test_path)
 	check(reloaded.values == settings.values)
-	check(settings_script.LIMITS.contract == 12)
-	for choice in range(12):
+	check(settings_script.LIMITS.contract == 14)
+	for choice in range(14):
 		settings.values.contract = choice
 		check(settings.save_settings(test_path) == OK)
 		reloaded.load_settings(test_path)
@@ -43,7 +43,7 @@ func run():
 	malformed.set_value("rules", "items", -1)
 	malformed.set_value("rules", "shuffle", 2)
 	malformed.set_value("rules", "turn", 2.0)
-	malformed.set_value("rules", "contract", 12)
+	malformed.set_value("rules", "contract", 14)
 	check(malformed.save(test_path) == OK)
 	reloaded.load_settings(test_path)
 	check(reloaded.values == settings_script.DEFAULTS)
