@@ -11,6 +11,7 @@ const ChallengeHUD = preload("challenge_hud.gd")
 const HealBullets = preload("heal_bullets.gd")
 const FailureScreen = preload("failure_screen.gd")
 const Protectors = preload("protectors.gd")
+const WhatsNew = preload("whats_new.gd")
 const VERSION = "2.1.0"
 var settings = Settings.new()
 var factory = Factory.new()
@@ -24,6 +25,8 @@ var compatibility_error = ""
 var compatibility_key = ""
 var compatibility_args = []
 var options: CanvasLayer
+var news: CanvasLayer
+var news_checked = false # Once per application launch, including forced previews.
 var states = {} # WeakRefs: never retain a dead scene through a manager reference.
 var covers = {}
 var mod_directory: String
@@ -117,6 +120,9 @@ func menu_ready(manager: Node):
 	options = Options.new()
 	manager.add_child(options)
 	options.setup(self, manager)
+	news = WhatsNew.new()
+	manager.add_child(news)
+	news.setup(self, manager)
 	# Incompatible game builds must also lose the original Start connection.
 	if not compatible:
 		var button = manager.buttons[0]
@@ -129,6 +135,8 @@ func menu_ready(manager: Node):
 		multiplayer.connect("is_pressed", online_notice)
 
 func open_options(_manager: Node):
+	if is_instance_valid(news) and news.shown:
+		return
 	if is_instance_valid(options):
 		options.open()
 

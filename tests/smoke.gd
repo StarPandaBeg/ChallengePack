@@ -15,6 +15,7 @@ func run():
 	directory = get_script().resource_path.get_base_dir().get_base_dir().path_join("ChallengePack/src")
 	port = load(directory.path_join("challengepack.gd")).new()
 	port.name = "ChallengePack"
+	port.news_checked = true # News has its own first-launch fixture.
 	root.add_child(port)
 	check(port.compatible, port.compatibility_error)
 	change_scene_to_file("res://scenes/menu.tscn")

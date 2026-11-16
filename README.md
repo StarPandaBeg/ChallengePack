@@ -139,6 +139,14 @@ Mod-specific text follows the language selected in the game. Russian is included
 
 Translation catalogs are UTF-8 JSON files in `ChallengePack/src/locales/`: `en.json` contains the base messages, and `ru.json` contains Russian translations. To add a language, copy the keys into `<language>.json` using its lowercase language code (for example, `de.json`). Keep `%s` placeholders in the same order. Missing or empty entries fall back to English. Regional locales such as `ru_RU` use their language catalog. Restart the game after editing a catalog; switching the game's language updates the menu automatically.
 
+### What's new screen
+
+The first visit to the main menu shows a scrollable introduction to the challenges, once per mod version. Close it with the button or Escape/Back. Mouse wheel, Tab and controller/arrow navigation can browse the cards. Its read state is saved separately in `user://challengepack_news.cfg`.
+
+For testing, set `const FORCE_SHOW = 1` at the top of `ChallengePack/src/whats_new.gd`. The screen will appear on every game launch, even if already read; returning to the menu during the same launch does not reopen it. Set it back to `0` before packaging a release.
+
+To replace the screenshot placeholders, put PNG files in `ChallengePack/src/assets/news/`: `shells.png`, `items.png`, `shuffle.png`, `turn.png`, `health.png`, `mirror.png`, `pocket.png`, `contract.png`, `heal.png`. Images keep their aspect ratio inside the rectangles (180 × 106); editor import is unnecessary. Missing images keep the placeholder. News text uses the `CP_NEWS_*` localization keys.
+
 ### Validation
 
 Run the installer and engine checks from the repository root:
@@ -146,7 +154,7 @@ Run the installer and engine checks from the repository root:
 ```powershell
 python -m unittest discover -s tests -p test_installer.py -v
 $repoPath = (Get-Location).Path
-foreach ($scenario in @('probe', 'settings_rules', 'localization', 'smoke', 'gameplay', 'challenges', 'contract_hud', 'heal_bullets', 'failure_screen', 'contract_chance', 'protectors', 'hidden_items', 'lethal_bullets')) {
+foreach ($scenario in @('probe', 'settings_rules', 'localization', 'smoke', 'gameplay', 'challenges', 'contract_hud', 'heal_bullets', 'failure_screen', 'contract_chance', 'protectors', 'hidden_items', 'lethal_bullets', 'whats_new')) {
     python tools/run_godot.py --path ../game --script "$repoPath/tests/$scenario.gd"
     if ($LASTEXITCODE -ne 0) { throw "Check failed: $scenario" }
 }
