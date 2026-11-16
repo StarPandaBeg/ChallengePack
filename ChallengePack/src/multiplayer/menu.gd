@@ -12,6 +12,7 @@ var status: Label
 var hud: Label
 var ready_button: Button
 var open_button: Button
+var edit_button: Button
 var first_player: OptionButton
 var checks = {}
 var choices = {}
@@ -96,21 +97,27 @@ func setup(owner_session: Node):
 	grid.add_theme_constant_override("v_separation", 4)
 	scroll.add_child(grid)
 	for key in Labels:
+		var cell = HBoxContainer.new()
+		cell.custom_minimum_size.x = 400
+		cell.add_theme_constant_override("separation", 4)
+		grid.add_child(cell)
 		var button = Button.new()
-		button.custom_minimum_size = Vector2(400, 48)
+		button.custom_minimum_size = Vector2(0, 48)
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		button.add_theme_font_size_override("font_size", 16)
 		button.pressed.connect(cycle.bind(key))
-		grid.add_child(button)
+		cell.add_child(button)
 		choices[key] = button
+		if key == "contract":
+			edit_button = Button.new()
+			edit_button.add_theme_font_size_override("font_size", 14)
+			edit_button.pressed.connect(open_editor)
+			cell.add_child(edit_button)
 	first_player = OptionButton.new()
 	first_player.custom_minimum_size.x = 400
 	first_player.get_popup().theme = panel.theme
 	first_player.item_selected.connect(select_player)
 	grid.add_child(first_player)
-	var edit = Button.new()
-	edit.text = text("CP_EDIT_CONTRACTS")
-	edit.pressed.connect(open_editor)
-	column.add_child(edit)
 	status = Label.new()
 	status.custom_minimum_size = Vector2(800, 0)
 	status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -190,6 +197,8 @@ func refresh():
 	if session == null or not is_instance_valid(status): return
 	var values = session.rules.settings
 	var editable = session.host() and not session.in_game and not session.loading
+	edit_button.text = text("CP_EDIT_CONTRACTS")
+	edit_button.visible = values.contract != 0
 	for key in choices:
 		var options = Labels[key][1]
 		if key == "turn": options = ["CP_DEFAULT", "CP_MP_FIXED_FIRST", "CP_ROUND_ROBIN", "CP_RANDOM"]
